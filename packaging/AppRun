@@ -1,0 +1,15 @@
+#!/bin/sh
+# Lanzador del AppImage de TuxEnc
+HERE="$(dirname "$(readlink -f "$0")")"
+
+# Las bibliotecas propias solo para Qt; FFmpeg y los programas del sistema reciben el entorno original
+export TUXENC_ORIG_LD_LIBRARY_PATH="${LD_LIBRARY_PATH-}"
+export LD_LIBRARY_PATH="$HERE/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
+# Que ningún Qt/Python del sistema interfiera con el que va dentro
+unset QT_PLUGIN_PATH QML2_IMPORT_PATH PYTHONHOME PYTHONPATH
+# Diálogos de archivo nativos del escritorio (portal XDG) y decoración de ventana tipo GNOME en Wayland
+export QT_QPA_PLATFORMTHEME="${TUXENC_QT_THEME:-xdgdesktopportal}"
+export QT_WAYLAND_DECORATION="${QT_WAYLAND_DECORATION:-adwaita}"
+
+exec "$HERE/usr/python/bin/python3.12" -s -E -B "$HERE/usr/app/run.py" "$@"

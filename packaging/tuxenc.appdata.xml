@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.tuxenc</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>TuxEnc</name>
+  <summary>Video transcoder with a parallel queue</summary>
+  <summary xml:lang="es">Transcodificador de vídeo con cola paralela</summary>
+  <description>
+    <p>Convert videos to H.264, H.265, AV1 and VP9 with a minimal interface. Several videos are transcoded at the same time.</p>
+    <p xml:lang="es">Convierte vídeos a H.264, H.265, AV1 y VP9 con una interfaz minimalista. Varios vídeos se transcodifican a la vez.</p>
+    <p>It also identifies and renames shows and movies (TMDB, TVmaze, IMDb) and files them in your library.</p>
+    <p xml:lang="es">Además identifica y renombra series y películas (TMDB, TVmaze, IMDb) y las ordena en tu biblioteca.</p>
+  </description>
+  <releases>
+    <release version="1.0.0" date="2026-11-17"/>
+  </releases>
+  <launchable type="desktop-id">tuxenc.desktop</launchable>
+  <content_rating type="oars-1.1"/>
+</component>

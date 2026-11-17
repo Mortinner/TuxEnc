@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=TuxEnc
+GenericName=Video Transcoder
+GenericName[es]=Transcodificador de vídeo
+Comment=Convert videos to H.264, H.265, AV1 and VP9 — several at once
+Comment[es]=Convierte vídeos a H.264, H.265, AV1 y VP9 — varios a la vez
+Exec=tuxenc %F
+Icon=tuxenc
+Terminal=false
+Categories=AudioVideo;Video;AudioVideoEditing;
+StartupWMClass=tuxenc

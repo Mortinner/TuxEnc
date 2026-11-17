@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2f6bff"/>
+      <stop offset="1" stop-color="#7a3ff2"/>
+    </linearGradient>
+    <clipPath id="top"><rect x="50" y="52" width="156" height="34" rx="9"/></clipPath>
+  </defs>
+  <rect width="256" height="256" rx="58" fill="url(#bg)"/>
+  <!-- cuerpo de la claqueta -->
+  <rect x="50" y="98" width="156" height="110" rx="14" fill="#ffffff"/>
+  <!-- tapa con rayas, ligeramente abierta -->
+  <g transform="rotate(-9 50 90)">
+    <g clip-path="url(#top)">
+      <rect x="50" y="52" width="156" height="34" fill="#1b1f3b"/>
+      <g fill="#ffffff">
+        <polygon points="66,52 88,52 74,86 52,86"/>
+        <polygon points="110,52 132,52 118,86 96,86"/>
+        <polygon points="154,52 176,52 162,86 140,86"/>
+        <polygon points="198,52 220,52 206,86 184,86"/>
+      </g>
+    </g>
+  </g>
+  <!-- nombre viejo tachado -->
+  <rect x="70" y="120" width="116" height="12" rx="6" fill="#c9cff5"/>
+  <rect x="66" y="123" width="124" height="6" rx="3" fill="#e0457b"/>
+  <!-- flecha y nombre nuevo -->
+  <path d="M82 144 v14 m-7 -7 l7 8 l7 -8" fill="none" stroke="#7a3ff2" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="100" y="156" width="86" height="14" rx="7" fill="#2f6bff"/>
+  <rect x="70" y="182" width="64" height="10" rx="5" fill="#c9cff5"/>
+</svg>
