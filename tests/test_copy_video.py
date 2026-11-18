@@ -75,3 +75,45 @@ def test_real_run_copies_video_reencodes_audio_and_does_not_ask(tmp_path):
     assert out.main_video.codec == "h264" and (out.main_video.width, out.main_video.height) == (1920, 1080)
     assert out.audio[0].codec == "aac" and abs(out.duration - job.info.duration) < 0.5
     assert job.plan.video_copied and not job.bigger and time.time() - t0 < 15
+
+
+# ---- Audio: copiar la pista si ya está en el códec pedido con menos bitrate (caso «The Chosen» al 103 %)
+
+def _a(codec="aac", ch=2, kbps=128):
+    from tuxenc.probe import Stream
+    return Stream(index=1, kind="audio", codec=codec, channels=ch, bitrate=kbps)
+
+
+@pytest.mark.parametrize("stream, kw, copies", [
+    (_a(), {}, True),                                          # AAC 128 → pedido AAC 160: se copia
+    (_a(kbps=160), {}, True),                                  # igual: se copia
+    (_a(kbps=192), {}, False),                                 # tiene más: se recomprime
+    (_a(kbps=0), {}, False),                                   # bitrate desconocido: no se arriesga
+    (_a(ch=6, kbps=384), {}, False),                           # 5.1 → estéreo: hay que mezclar
+    (_a(ch=6, kbps=384), {"audio_mixdown": "keep", "audio_bitrate": 0}, True),  # 5.1 384 ≤ auto 384
+    (_a(codec="ac3", kbps=128), {}, False),                    # otro códec
+    (_a(), {"audio_copy_if_lower": False}, False),             # opción desactivada
+    (_a(codec="flac", kbps=900), {"audio_codec": "flac", "audio_mixdown": "keep"}, True),  # sin pérdida
+    (_a(codec="opus", kbps=96), {"audio_codec": "opus", "container": "webm", "video_encoder": "libvpx-vp9",
+                                 "audio_bitrate": 128}, True),
+])
+def test_audio_copy_rules(stream, kw, copies):
+    from tuxenc.command import _audio_args
+    args = _audio_args(0, stream, S(**kw))
+    assert (args == ["-c:a:0", "copy"]) is copies, args
+
+
+def test_audio_bitrate_measured_in_mkv_without_tags():
+    from tuxenc.probe import probe
+    mkv = probe(M + "chosen-remux.mkv")
+    assert 115 <= mkv.audio[0].bitrate <= 140, mkv.audio[0].bitrate   # medido de los paquetes
+
+
+def test_plan_copies_audio_for_chosen_mkv():
+    from tuxenc.probe import probe
+    from tuxenc.command import build_plan
+    info = probe(M + "chosen-remux.mkv")
+    plan = build_plan(info, S(bitrate=800), "/tmp/x.mkv")     # pide menos vídeo: recomprime el vídeo…
+    args = plan.passes[-1]
+    assert "-c:a:0" in args and args[args.index("-c:a:0") + 1] == "copy"   # …pero el audio se copia
+    assert not plan.video_copied

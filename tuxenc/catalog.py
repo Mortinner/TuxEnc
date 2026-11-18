@@ -265,6 +265,7 @@ class EncodeSettings:
     audio_codec: str = "copy"
     audio_bitrate: int = 0          # 0 = automático
     audio_mixdown: str = "keep"     # keep | stereo | 5.1
+    audio_copy_if_lower: bool = True  # pista ya en ese códec, mismos canales y ≤ bitrate: copiarla
     # Subtítulos
     sub_mode: str = "lang_all"      # none | forced | first | lang_all | all
     sub_langs: list = field(default_factory=lambda: ["spa", "eng"])

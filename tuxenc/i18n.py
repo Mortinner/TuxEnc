@@ -343,6 +343,14 @@ STRINGS: dict[str, tuple[str, str]] = {
     "quality_better": ("← más calidad", "← higher quality"),
     "quality_smaller": ("menos tamaño →", "smaller file →"),
     "bitrate": ("Bitrate (kbps)", "Bitrate (kbps)"),
+    "a_copy_if_lower": ("Si una pista ya está en ese formato con menos bitrate, copiarla sin recomprimir",
+                        "If a track is already in that format with a lower bitrate, copy it without re-encoding"),
+    "a_copy_if_lower_tip": ("Por ejemplo, una pista AAC estéreo de 128 kbps se copia tal cual en vez de "
+                            "recomprimirla a 160 kbps: no crece y no pierde calidad. Necesita los mismos "
+                            "canales y que el archivo indique el bitrate de la pista.",
+                            "For example, a 128 kbps stereo AAC track is copied as is instead of being "
+                            "re-encoded to 160 kbps: it doesn't grow or lose quality. Needs the same "
+                            "channels and the track bitrate to be known."),
     "copy_if_lower": ("Si el original ya tiene menos bitrate, copiar el vídeo sin recomprimir",
                       "If the original already has a lower bitrate, copy the video without re-encoding"),
     "copy_if_lower_tip": ("Recomprimir un vídeo que ya ocupa poco lo haría crecer y perder calidad. "

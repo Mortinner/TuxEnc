@@ -13,6 +13,7 @@
     <p xml:lang="es">Además identifica y renombra series y películas (TMDB, TVmaze, IMDb) y las ordena en tu biblioteca.</p>
   </description>
   <releases>
+    <release version="1.0.2" date="2026-11-18"/>
     <release version="1.0.1" date="2026-11-18"/>
     <release version="1.0.0" date="2026-11-17"/>
   </releases>

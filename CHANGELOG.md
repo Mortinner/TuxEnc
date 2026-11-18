@@ -6,6 +6,16 @@ All notable changes to TuxEnc are listed here (Spanish first, English below each
 
 ## [Sin publicar] · Unreleased
 
+## [1.0.2] - 2026-11-18
+
+### Mejorado
+- **Audio sin recomprimir cuando ya ocupa poco.** Si una pista ya está en el formato elegido (por ejemplo AAC), con los mismos canales y un bitrate igual o menor que el pedido, se copia tal cual en vez de recomprimirla. Así no crece ni pierde calidad. Es una casilla nueva en ⚙ Ajustes → Audio, activada por defecto. Era la causa de que algunos capítulos salieran algo más grandes que el original: su audio AAC de menos de 160 kbps se recomprimía a 160 kbps.
+- **Bitrate real del audio en MKV sin etiquetas `BPS`:** se mide en los dos primeros minutos del archivo. Lo usan la copia del audio y la decisión de copiar el vídeo, que antes suponía 128 kbps por pista estéreo.
+
+### Improved
+- Audio tracks already in the chosen format, with the same channels and an equal or lower bitrate, are copied instead of re-encoded (new option in Settings → Audio, on by default). This made some episodes slightly bigger than the original.
+- Audio bitrate is measured in MKV files without `BPS` tags, for both the audio and the video copy decisions.
+
 ## [1.0.1] - 2026-11-18
 
 ### Corregido
@@ -72,5 +82,6 @@ First public release.
   - Spanish and English UI.
 
 [Sin publicar]: #
+[1.0.2]: #
 [1.0.1]: #
 [1.0.0]: #

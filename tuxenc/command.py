@@ -194,6 +194,7 @@ def _audio_args(i: int, s: Stream, st: EncodeSettings) -> list[str]:
         args += [f"-ac:a:{i}", str(ch)]
     if codec == "opus":
         args += [f"-filter:a:{i}", "aformat=channel_layouts=7.1|5.1|stereo|mono"]
+    br = 0
     if codec != "flac":
         br = st.audio_bitrate
         if not br:
@@ -210,7 +211,29 @@ def _audio_args(i: int, s: Stream, st: EncodeSettings) -> list[str]:
         if codec == "mp3":
             br = min(br, 320)
         args += [f"-b:a:{i}", f"{br}k"]
+    if audio_copy_ok(s, st, codec, ch, br):
+        return [f"-c:a:{i}", "copy"]
     return args
+
+
+# Nombre de cada códec de audio de TuxEnc tal como lo da ffprobe
+_AUDIO_PROBE_NAME = {"aac": "aac", "opus": "opus", "ac3": "ac3", "eac3": "eac3", "mp3": "mp3", "flac": "flac"}
+
+
+def audio_copy_ok(s: Stream, st: EncodeSettings, codec: str, ch: int, br: int) -> bool:
+    """¿Copiar la pista en vez de recomprimirla? Si ya está en el códec pedido, con los mismos canales
+    y un bitrate conocido que no supera el pedido (recomprimir solo la haría crecer y perder calidad).
+    FLAC→FLAC se copia siempre (sin pérdida)."""
+    if not st.audio_copy_if_lower or s.codec != _AUDIO_PROBE_NAME.get(codec):
+        return False
+    if ch != (s.channels or 2):
+        return False
+    allowed = AUDIO_COPY_OK.get(st.container)
+    if allowed is not None and s.codec not in allowed:
+        return False
+    if codec == "flac":
+        return True
+    return bool(s.bitrate) and s.bitrate <= br * 1.05
 
 
 def _sub_codec(s: Stream, container: str) -> str:

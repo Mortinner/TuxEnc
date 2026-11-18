@@ -185,4 +185,46 @@ def probe(path: str, timeout: float = 60) -> MediaInfo:
 
     if not info.video:
         raise ProbeError("no_video")
+    if any(not a.bitrate for a in info.audio):
+        _measure_audio(info)
     return info
+
+
+def _measure_audio(info: MediaInfo, seconds: int = 120, timeout: float = 20) -> None:
+    """Bitrate de las pistas de audio que no lo declaran (MKV sin etiquetas BPS): se suman los
+    paquetes de los primeros minutos. Sirve para decidir si copiar el audio (y el vídeo) en vez de
+    recomprimir. Si falla, se deja como estaba (desconocido)."""
+    missing = {a.index: a for a in info.audio if not a.bitrate}
+    cmd = [ffprobe_bin(), "-v", "error", "-read_intervals", f"%+{seconds}", "-select_streams", "a",
+           "-show_entries", "packet=stream_index,pts_time,duration_time,size", "-of", "csv=p=0",
+           info.path]
+    try:
+        res = subprocess.run(cmd, env=clean_env(), capture_output=True, text=True,
+                             timeout=timeout, check=False)
+    except (OSError, subprocess.SubprocessError):
+        return
+    if res.returncode != 0:
+        return
+    size: dict[int, int] = {}
+    first: dict[int, float] = {}
+    last: dict[int, float] = {}
+    for line in res.stdout.splitlines():
+        parts = line.split(",")
+        if len(parts) < 4:
+            continue
+        try:
+            idx = int(parts[0])
+            pts = float(parts[1])
+            dur = float(parts[2]) if parts[2] not in ("", "N/A") else 0.0
+            n = int(parts[3])
+        except ValueError:
+            continue
+        if idx not in missing:
+            continue
+        size[idx] = size.get(idx, 0) + n
+        first.setdefault(idx, pts)
+        last[idx] = pts + dur
+    for idx, a in missing.items():
+        span = last.get(idx, 0) - first.get(idx, 0)
+        if span >= 5 and size.get(idx):
+            a.bitrate = int(round(size[idx] * 8 / span / 1000))

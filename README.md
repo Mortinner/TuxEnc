@@ -29,7 +29,7 @@ Acepta y vuelve a hacer doble clic.
 2. Elige un **preset** arriba (por ejemplo *H.265 · Alta calidad*). Con **⚙ Ajustes** puedes cambiar todo: códec, calidad, bitrate, resolución, filtros, pistas de audio y subtítulos…
 3. Pulsa **▶ Iniciar**.
 
-- **Vídeos que ya ocupan poco**: con bitrate medio o constante, si el original ya tiene menos bitrate que el pedido, TuxEnc **copia el vídeo sin recomprimir** (sin perder calidad y en segundos) y solo trabaja el audio, los subtítulos, el formato y el nombre. Se desactiva en ⚙ Ajustes → Vídeo.
+- **Vídeos que ya ocupan poco**: con bitrate medio o constante, si el original ya tiene menos bitrate que el pedido, TuxEnc **copia el vídeo sin recomprimir** (sin perder calidad y en segundos) y solo trabaja el audio, los subtítulos, el formato y el nombre. Se desactiva en ⚙ Ajustes → Vídeo. Con el **audio** pasa lo mismo: una pista que ya está en el formato elegido con menos bitrate se copia tal cual (⚙ Ajustes → Audio).
 - **🧹 Limpiar**: quita de la lista los terminados, los que no han empezado o todo (vaciar la cola). Nunca borra archivos.
 - **Simultáneos**: cuántos vídeos se convierten a la vez. *Auto* calcula el valor ideal para tu procesador.
 - **Mis idiomas**: indica en qué idiomas quieres el audio y los subtítulos. TuxEnc elige las pistas automáticamente en todos los vídeos. Si quieres cambiar las de un vídeo concreto, usa **Audio y subtítulos…** en esa fila.
@@ -115,7 +115,7 @@ TuxEnc converts videos to **H.264, H.265, AV1 and VP9**, just like HandBrake, bu
 2. Pick a **preset** at the top. **⚙ Settings** lets you change everything: codec, quality, bitrate, resolution, filters, audio and subtitle tracks…
 3. Press **▶ Start**.
 
-- **Already-small videos**: with average/constant bitrate, if the original already has a lower bitrate than requested, TuxEnc **copies the video without re-encoding** and only processes audio, subtitles, format and name (can be turned off in ⚙ Settings → Video).
+- **Already-small videos**: with average/constant bitrate, if the original already has a lower bitrate than requested, TuxEnc **copies the video without re-encoding** and only processes audio, subtitles, format and name (can be turned off in ⚙ Settings → Video). The same applies to **audio** tracks already in the chosen format with a lower bitrate (⚙ Settings → Audio).
 - **🧹 Clear**: removes finished videos, those not started, or everything (empty the queue) from the list. It never deletes files.
 - **At once**: how many videos are transcoded simultaneously. *Auto* picks the best value for your CPU.
 - **My languages**: the languages you want for audio and subtitles; tracks are chosen automatically. Use **Audio & subtitles…** on a row to pick them by hand for one video.
