@@ -114,6 +114,10 @@ class RenameController(QObject):
         self.identified.emit(job_id, payload)
 
     def _apply(self, job: Job, state: str, res) -> None:
+        self._apply_inner(job, state, res)
+        self.w._refresh_controls()
+
+    def _apply_inner(self, job: Job, state: str, res) -> None:
         job.ident, job.rt = state, res
         if state == OK:
             job.note = "✓ " + describe_match(res)
@@ -159,7 +163,10 @@ class RenameController(QObject):
             job.preview = ""
             return
         cfg = self.w.cfg
-        if cfg.convert_on:
+        if not job.staged and not job.task_rename:
+            job.preview = ""
+            return
+        if (cfg.convert_on if job.staged else job.task_convert):
             st = job.settings or self.w.panel.settings
             resolution = predicted_resolution(job.info, st)
             ext = CONTAINERS[st.container]["ext"]

@@ -65,6 +65,11 @@ class Job:
     order: float = 0.0
     # --- renombrado (Retitler) ---
     hold: bool = False             # esperando a que el usuario elija la coincidencia
+    staged: bool = False           # en «Preparar» (izquierda): aún no está en la cola
+    task_convert: bool = True      # tarea fijada al añadirlo a la cola
+    task_rename: bool = False
+    out_mode: str = ""             # destino fijado al añadirlo («source», «folder», «library»)
+    out_folder: str = ""
     metadata: dict = field(default_factory=dict)   # etiquetas que se escriben en el archivo
     ident: str = "off"             # off | pending | ok | ambiguous | none | error
     rt: object = None              # retitler.pipeline.Resolution
@@ -336,7 +341,7 @@ class QueueEngine:
     # ---- gestión de la cola
     def add(self, job: Job) -> None:
         with self._lock:
-            if self.active:
+            if self.active and self.queued(job):
                 self._lock_settings(job)
             if not job.order:
                 job.order = float(job.id) + 1e9
@@ -387,9 +392,11 @@ class QueueEngine:
                 if j.id == job_id and j.status in (FAILED, CANCELLED):
                     j.status, j.progress, j.error, j.eta = WAITING, 0.0, "", -1
                     j.output = ""
-                    if not self.active:
-                        j.settings = None
         self._schedule()
+
+    def queued(self, j: Job) -> bool:
+        """¿Está en la cola (no en preparación) y es algo que el motor tiene que convertir?"""
+        return not j.staged and j.task_convert
 
     def _lock_settings(self, job: Job) -> None:
         if job.settings is None:
@@ -400,7 +407,7 @@ class QueueEngine:
             self.active = True
             self.paused = False
             for j in self.jobs:
-                if j.status == WAITING:
+                if j.status == WAITING and self.queued(j):
                     self._lock_settings(j)
             for r in self.running.values():
                 r.resume()
@@ -423,8 +430,7 @@ class QueueEngine:
             for r in list(self.running.values()):
                 r.cancel()
             for j in self.jobs:
-                if j.status == WAITING:
-                    j.settings = None
+                if j.status == WAITING and self.queued(j):
                     j.hold = False
 
     def cancel_job(self, job_id: int) -> None:
@@ -475,14 +481,19 @@ class QueueEngine:
     def counts(self) -> dict:
         with self._lock:
             c = {k: 0 for k in (WAITING, PREPARING, RUNNING, PAUSED, DONE, FAILED, CANCELLED)}
+            c["staged"] = 0
             for j in self.jobs:
-                c[j.status] += 1
+                if j.staged:
+                    c["staged"] += 1
+                else:
+                    c[j.status] += 1
             return c
 
     def overall_progress(self) -> float:
         """Progreso global del lote en marcha (trabajos con ajustes fijados)."""
         with self._lock:
-            batch = [j for j in self.jobs if j.settings is not None or j.status in FINISHED]
+            batch = [j for j in self.jobs if not j.staged and j.task_convert
+                     and (j.settings is not None or j.status in FINISHED)]
             if not batch:
                 return 0.0
             total = sum(max(j.info.duration, 1) for j in batch)
@@ -498,7 +509,7 @@ class QueueEngine:
         finished_batch = None
         with self._lock:
             if self.active and not self.paused:
-                waiting = [j for j in self.jobs if j.status == WAITING and not j.hold]
+                waiting = [j for j in self.jobs if j.status == WAITING and not j.hold and self.queued(j)]
                 while waiting and len(self.running) < self.max_parallel:
                     job = waiting.pop(0)
                     self._lock_settings(job)
@@ -510,7 +521,7 @@ class QueueEngine:
                     runner.start()
             # Los retenidos (esperando coincidencia) mantienen la cola abierta: no se da por
             # terminada (ni se apaga el equipo) mientras queden vídeos por decidir.
-            if self.active and not self.running and not any(j.status == WAITING
+            if self.active and not self.running and not any(j.status == WAITING and self.queued(j)
                                                             for j in self.jobs):
                 self.active = False
                 finished_batch = [j for j in self.jobs if j.status in FINISHED]

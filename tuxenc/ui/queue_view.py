@@ -49,7 +49,7 @@ class ElidedLabel(QLabel):
 
 
 # Modo actual de la ventana (lo actualiza MainWindow): sin «Convertir», «Pistas…» no aplica
-MODE = {"convert": True}
+MODE = {"convert": True, "rename": False, "active": False}
 
 
 class JobRow(QFrame):
@@ -83,7 +83,13 @@ class JobRow(QFrame):
         self.bar.setObjectName("Thin")
         self.bar.setRange(0, 1000)
         self.bar.setTextVisible(False)
-        mid.addWidget(self.name)
+        top = QHBoxLayout()
+        top.setSpacing(8)
+        top.addWidget(self.name, 1)
+        self.task = QLabel()
+        self.task.setStyleSheet("font-size: 11px;")
+        top.addWidget(self.task, 0)
+        mid.addLayout(top)
         mid.addWidget(self.detail)
         mid.addWidget(self.ident)
         mid.addWidget(self.target)
@@ -145,6 +151,14 @@ class JobRow(QFrame):
 
     def update_from(self, job: Job) -> None:
         st = job.status
+        # Tarea del vídeo: mientras está pendiente, la que marcan los interruptores; después, la que se fijó
+        conv = MODE["convert"] if job.staged else job.task_convert
+        ren = MODE["rename"] if job.staged else job.task_rename
+        key = "task_both" if conv and ren else "task_conv" if conv else "task_ren" if ren else "task_none"
+        color = {"task_both": theme.ACCENT, "task_conv": theme.WARM, "task_ren": theme.AMBER}.get(key, theme.MUTED)
+        self.task.setText(tr(key))
+        self.task.setStyleSheet(f"font-size: 11px; font-weight: 600; color: {color}; border: 1px solid {color};"
+                                " border-radius: 8px; padding: 1px 8px;")
         self.dot.setStyleSheet(f"background: {_DOT[st]}; border-radius: 5px;")
         detail = job.info.summary()
         if job.output and st not in (WAITING,) and not job.rename:
@@ -208,6 +222,8 @@ class JobRow(QFrame):
                              t=format_duration(job.elapsed))
         elif st == WAITING and job.hold:
             text = "⏳ " + tr("held")
+        elif st == WAITING and job.staged and MODE.get("active"):
+            text = "✚ " + tr("st_new")
         elif st == FAILED:
             text = "✕ " + tr("st_failed")
             self.setToolTip(job.error)
@@ -221,7 +237,7 @@ class JobRow(QFrame):
 
         vis = {
             "match": renaming and st == WAITING and job.ident != "pending",
-            "tracks": (st == WAITING and MODE["convert"]
+            "tracks": (st == WAITING and conv
                        and bool(job.info.audio or job.info.subtitles)),
             "log": st in (FAILED, DONE) and bool(job.log_path) and not job.renamed_to,
             "retry": st in (FAILED, CANCELLED),

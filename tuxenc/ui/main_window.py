@@ -538,7 +538,8 @@ class MainWindow(QMainWindow):
 
     def _resolve_output(self, job: Job, st: EncodeSettings) -> str:
         job.rename = False
-        if self.cfg.rename_on and job.ident == ID_OK and job.rt is not None:
+        do_rename = self.cfg.rename_on if job.staged else job.task_rename
+        if do_rename and job.ident == ID_OK and job.rt is not None:
             dest = self.rename.destination()
             ext = CONTAINERS[st.container]["ext"]
             target, _note = self.rename.lib.target(Path(job.input), job.rt, dest,
@@ -553,7 +554,8 @@ class MainWindow(QMainWindow):
                 job.rename, job.dest = True, dest
                 job.metadata = self.rename.lib.metadata(job.rt)
                 return str(cand)
-        folder = self.cfg.output_folder if self.cfg.output_mode == "folder" else None
+        mode = job.out_mode or self.cfg.output_mode
+        folder = (job.out_folder or self.cfg.output_folder) if mode == "folder" else None
         if folder and not os.access(folder, os.W_OK):
             folder = None
         if folder is None and not os.access(os.path.dirname(job.input) or ".", os.W_OK):
@@ -682,7 +684,7 @@ class MainWindow(QMainWindow):
         if isinstance(info, Exception):
             self.failed_probes.append(os.path.basename(path))
         else:
-            job = Job(input=path, info=info, order=order)
+            job = Job(input=path, info=info, order=order, staged=True)
             self.engine.add(job)
             self.queue.sync(self.engine.jobs)
             if self.cfg.rename_on:
@@ -711,8 +713,8 @@ class MainWindow(QMainWindow):
                 return
             action = chosen.data()
         if action == "double":
-            needs_id = (self.cfg.rename_on and job.status == WAITING
-                        and job.ident not in ("ok", "off", "pending"))
+            needs_id = (job.status == WAITING and job.ident not in ("ok", "off", "pending")
+                        and (self.cfg.rename_on if job.staged else job.task_rename))
             action = "match" if needs_id else {DONE: "play", WAITING: "tracks"}.get(job.status, "")
         if action in ("use_conv", "use_orig", "keep_both"):
             self._decide_bigger(job, action)
@@ -780,34 +782,51 @@ class MainWindow(QMainWindow):
         self.queue.sync(self.engine.jobs)
         self._refresh_controls()
 
+    def pending_jobs(self) -> list[Job]:
+        """Añadidos y aún sin confirmar: siguen a los interruptores, al preset y al destino."""
+        return [j for j in self.engine.jobs if j.staged and j.status == WAITING]
+
     def _start(self) -> None:
+        """Iniciar con la cola parada; «Añadir (n)» o «Renombrar (n)» con la cola en marcha.
+        Cada vídeo confirmado guarda su tarea, sus ajustes y su destino: lo que se cambie
+        después ya no le afecta."""
         self.user_stopped = False
         convert, rename = self.cfg.convert_on, self.cfg.rename_on
-        waiting = [j for j in self.engine.jobs if j.status == WAITING]
+        pending = self.pending_jobs()
         if not convert and not rename:
             QMessageBox.information(self, APP_NAME, tr("need_a_mode"))
             return
         if rename and not convert:
-            ready = [j for j in waiting if j.ident == ID_OK and j.rt is not None]
+            # Solo renombrar: no pasa por la cola, se hace ya (aunque la cola esté convirtiendo)
+            ready = [j for j in pending if j.ident == ID_OK and j.rt is not None]
             if not ready:
                 QMessageBox.information(self, APP_NAME, tr("nothing_to_rename"))
                 return
-            missing = len(waiting) - len(ready)
+            missing = len(pending) - len(ready)
             if missing and QMessageBox.question(
                     self, APP_NAME, tr("unidentified_rename", n=missing)) != QMessageBox.Yes:
                 return
+            for j in ready:
+                j.staged = False
+                j.task_convert, j.task_rename = False, True
             self.rename.rename_jobs(ready)
             self._refresh_controls()
             return
-        for j in waiting:
-            j.hold = rename and j.ident != ID_OK
-        held = sum(1 for j in waiting if j.hold)
+        held = sum(1 for j in pending if rename and j.ident != ID_OK)
         if held and QMessageBox.question(
                 self, APP_NAME, tr("unidentified_convert", n=held)) != QMessageBox.Yes:
-            for j in waiting:
-                j.hold = False
             return
-        self.engine.start()
+        base = self.panel.settings
+        for j in pending:
+            j.staged = False
+            j.task_convert, j.task_rename = True, rename
+            j.out_mode, j.out_folder = self.cfg.output_mode, self.cfg.output_folder or ""
+            j.settings = base.copy()
+            j.hold = rename and j.ident != ID_OK
+        if self.engine.active:
+            self.engine.kick()            # a la tanda en marcha (si está en pausa, sigue en pausa)
+        else:
+            self.engine.start()
         self.queue.sync(self.engine.jobs)
         self._refresh_controls()
 
@@ -824,6 +843,10 @@ class MainWindow(QMainWindow):
                 return
         self.user_stopped = True
         self.engine.stop()
+        for j in self.engine.jobs:
+            if j.status == WAITING and not j.staged and j.task_convert:
+                j.staged, j.settings, j.hold = True, None, False
+        self.queue.sync(self.engine.jobs)
         self._refresh_controls()
 
     def _refresh_controls(self) -> None:
@@ -835,28 +858,53 @@ class MainWindow(QMainWindow):
         finished = c["done"] + c["failed"] + c["cancelled"]
         busy = self.engine.active or running > 0
         modes_ok = self.cfg.convert_on or self.cfg.rename_on
-        self.start_btn.setEnabled(waiting > 0 and not self.engine.active and modes_ok
-                                  and c["running"] == 0)
+        from .queue_view import MODE
+        if MODE.get("active") != self.engine.active:
+            MODE["active"] = self.engine.active
+            self.queue.sync(self.engine.jobs)
+        pending = c["staged"]
+        rename_only = self.cfg.rename_on and not self.cfg.convert_on
+        if self.engine.active and pending:
+            if rename_only:
+                n = sum(1 for j in self.pending_jobs() if j.ident == ID_OK and j.rt is not None)
+                self.start_btn.setText("🏷  " + tr("rename_n", n=n))
+                self.start_btn.setEnabled(n > 0)
+            else:
+                self.start_btn.setText("＋  " + tr("add_n", n=pending))
+                self.start_btn.setEnabled(modes_ok)
+            self.start_btn.setToolTip(tr("add_n_tip"))
+        else:
+            self.start_btn.setText("▶  " + tr("start"))
+            self.start_btn.setToolTip("")
+            self.start_btn.setEnabled((waiting + pending) > 0 and not self.engine.active and modes_ok
+                                      and c["running"] == 0)
         self.undo_btn.setVisible(self.cfg.rename_on and not self.cfg.convert_on
                                  and self.rename.can_undo())
         self.pause_btn.setEnabled(busy)
         self.pause_btn.setText(("▶  " + tr("resume")) if self.engine.paused
                                else ("⏸  " + tr("pause")))
         self.stop_btn.setEnabled(busy)
+        # «Simultáneos» solo se cambia con la cola parada; lo que se añade espera su turno
+        self.par_combo.setEnabled(not busy)
+        self.par_combo.setToolTip(tr("parallel_locked") if busy
+                                  else tr("parallel_tip", cores=cpu_count()))
         self.clear_btn.setEnabled(bool(jobs))
         if self.pending_probes:
             self.status_lbl.setText(tr("analyzing", n=self.pending_probes))
         elif self.engine.paused:
             self.status_lbl.setText(tr("status_paused"))
         elif busy:
-            self.status_lbl.setText(tr("status_run", run=running, wait=waiting, done=c["done"]))
-        elif jobs and finished == len(jobs):
+            text = tr("status_run", run=running, wait=waiting, done=c["done"])
+            if pending:
+                text += tr("status_pending_ren" if rename_only else "status_pending", n=pending)
+            self.status_lbl.setText(text)
+        elif jobs and finished == len(jobs) - pending and not pending:
             text = tr("queue_done_msg", ok=c["done"])
             if c["failed"]:
                 text += tr("queue_done_fail", n=c["failed"])
             self.status_lbl.setText(text)
         elif jobs:
-            self.status_lbl.setText(tr("status_idle", n=waiting))
+            self.status_lbl.setText(tr("status_idle", n=waiting + pending))
         else:
             self.status_lbl.setText(tr("status_empty"))
         self.total_bar.setValue(int(self.engine.overall_progress() * 1000) if (busy or finished)
@@ -918,6 +966,7 @@ class MainWindow(QMainWindow):
         conv = self.cfg.convert_on
         from .queue_view import MODE
         MODE["convert"] = conv
+        MODE["rename"] = self.cfg.rename_on
         self.queue.sync(self.engine.jobs)
         for w in (self.preset_combo, self.summary):
             w.setEnabled(conv)
@@ -933,7 +982,7 @@ class MainWindow(QMainWindow):
 
     def _on_mode_rename(self, on: bool) -> None:
         self.cfg.rename_on = on
-        waiting = [j for j in self.engine.jobs if j.status == WAITING]
+        waiting = self.pending_jobs()
         if on:
             self._offer_retitler_import()
             self.rename.identify(waiting)
@@ -973,7 +1022,7 @@ class MainWindow(QMainWindow):
         if reidentify:
             self.rename.lib.reload()
             waiting = [j for j in self.engine.jobs if j.status == WAITING
-                       and not getattr(j.rt, "manual", False)]
+                       and (j.staged or j.task_rename) and not getattr(j.rt, "manual", False)]
             self.rename.identify(waiting, force=True)
         self.rename.refresh_previews()
         self._update_bar()
@@ -1039,6 +1088,7 @@ class MainWindow(QMainWindow):
         if isinstance(payload, Exception):
             for j in jobs:
                 j.status = WAITING
+                j.staged = not j.task_convert
             self.rename.refresh_previews()
             QMessageBox.warning(self, APP_NAME, tr("rename_fail", err=str(payload)))
             self._refresh_controls()
@@ -1058,6 +1108,7 @@ class MainWindow(QMainWindow):
                 done += 1
             else:
                 j.status = WAITING
+                j.staged = not j.task_convert
         self.queue.sync(self.engine.jobs)
         self._refresh_controls()
         if self.cfg.end_action != "nothing" and done:
@@ -1072,6 +1123,8 @@ class MainWindow(QMainWindow):
         for j in self.engine.jobs:
             if j.renamed_to and j.renamed_to in back_from:
                 j.status, j.renamed_to, j.output, j.progress = WAITING, "", "", 0.0
+                if not j.task_convert:
+                    j.staged = True                # deshecho: vuelve a estar pendiente
         self.rename.refresh_previews()
         self._refresh_controls()
         QMessageBox.information(self, APP_NAME, tr("undo_done", n=len(payload.moves)))

@@ -6,6 +6,27 @@ All notable changes to TuxEnc are listed here (Spanish first, English below each
 
 ## [Sin publicar] · Unreleased
 
+## [1.2.3] - 2026-11-19
+
+### Corregido
+- **Con la cola en marcha, apagar «Convertir» y añadir vídeos para renombrar hacía que se convirtieran igualmente.** La cola miraba los interruptores al empezar cada vídeo y no los de cuando se añadió. Ahora cada vídeo guarda su tarea, sus ajustes y su destino al confirmarlo, y lo que es solo para renombrar nunca entra en la conversión.
+- Reintentar un vídeo ya no le hace perder los ajustes con los que se añadió.
+- En inglés, el botón «Audio & subtitles…» se veía como «Audio _subtitles…».
+
+### Cambiado
+- **El botón Iniciar confirma lo nuevo.** Con la cola en marcha queda inhabilitado; si añades vídeos, pasa a **«＋ Añadir (n)»** o, con solo «Renombrar», a **«🏷 Renombrar (n)»**. Mientras no lo pulses, esos vídeos («Nuevo · sin confirmar») siguen a los interruptores, al preset y a «Guardar en», y puedes corregir su identificación. Al pulsarlo:
+  - Las conversiones se suman a la cola y esperan su turno, sin pasar del número de «Simultáneos».
+  - Lo que es solo para renombrar no pasa por la cola: se renombra en ese momento, aunque la cola esté convirtiendo. Se puede deshacer.
+- Una vez confirmado, un vídeo ya no cambia aunque toques el preset o los interruptores.
+- **Detener:** lo que aún no había empezado vuelve a quedar pendiente y sigue de nuevo a los ajustes.
+- **«Simultáneos» solo se puede cambiar con la cola parada.**
+- Cada fila lleva una etiqueta con su tarea: «Convertir + renombrar», «Solo convertir» o «Solo renombrar».
+
+### English
+- Fixed: with the queue running, turning «Convert» off and adding videos to rename still converted them. Each video now keeps the task, settings and destination it was confirmed with.
+- With the queue running, the Start button turns into «＋ Add (n)» (or «🏷 Rename (n)» with only «Rename») when you add videos; until pressed they follow the current switches and preset. Conversions join the queue without exceeding «At once»; rename-only runs right away. «Stop» returns not-started videos to pending. «At once» can only be changed with the queue stopped. Task tag on each row.
+- Fixed: retrying no longer drops a video's settings; «Audio & subtitles…» showed as «Audio _subtitles…».
+
 ## [1.2.2] - 2026-11-18
 
 ### Corregido

@@ -29,12 +29,15 @@ Acepta y vuelve a hacer doble clic.
 2. Elige un **preset** arriba (por ejemplo *H.265 · Alta calidad*). Con **☰ → Conversión** (o pulsando la línea de resumen) puedes cambiar todo: códec, calidad, bitrate, resolución, filtros, pistas de audio y subtítulos…
 3. Pulsa **▶ Iniciar**.
 
+**Añadir vídeos con la cola en marcha:** aparecen como «Nuevo · sin confirmar» y el botón Iniciar pasa a **＋ Añadir (n)** (con solo «Renombrar», **🏷 Renombrar (n)**). Hasta que lo pulses, siguen a los interruptores, al preset y a «Guardar en», así que puedes cambiarlos o corregir la identificación. Al pulsarlo, las conversiones se suman a la cola y esperan su turno; lo que es solo para renombrar se hace en ese momento. Un vídeo confirmado ya no cambia aunque toques los ajustes. Cada fila indica su tarea («Solo convertir», «Solo renombrar»…).
+
 - **Vídeos que ya ocupan poco**: con bitrate medio o constante, si el original ya tiene menos bitrate que el pedido, TuxEnc **copia el vídeo sin recomprimir** (sin perder calidad y en segundos) y solo trabaja el audio, los subtítulos, el formato y el nombre. Se desactiva en ☰ → Conversión → Vídeo. Con el **audio** pasa lo mismo: una pista que ya está en el formato elegido con menos bitrate se copia tal cual (pestaña Audio).
 - **🧹 Limpiar**: quita de la lista los terminados, los que no han empezado o todo (vaciar la cola). Nunca borra archivos.
-- **Simultáneos**: cuántos vídeos se convierten a la vez. *Auto* calcula el valor ideal para tu procesador.
+- **Simultáneos**: cuántos vídeos se convierten a la vez. *Auto* calcula el valor ideal para tu procesador. Se cambia con la cola parada.
+- **Detener**: cancela lo que está en marcha; lo que no había empezado vuelve a quedar pendiente.
 - **Mis idiomas**: indica en qué idiomas quieres el audio y los subtítulos. TuxEnc elige las pistas automáticamente en todos los vídeos. Si quieres cambiar las de un vídeo concreto, usa **Audio y subtítulos…** en esa fila.
 - **Al terminar**: avisar, cerrar TuxEnc, suspender o apagar el equipo. Antes de suspender o apagar hay una cuenta atrás de 60 segundos que puedes cancelar.
-- **Presets propios**: en el botón **⋯** puedes guardar tus ajustes como preset, **importar presets de HandBrake** (archivo `.json` exportado desde HandBrake) o exportar los tuyos.
+- **Presets propios**: en **☰ → Presets** puedes guardar tus ajustes como preset, **importar presets de HandBrake** (archivo `.json` exportado desde HandBrake) o exportar los tuyos.
 - Tus archivos originales **nunca se sobrescriben**.
 
 ## Renombrar y ordenar la biblioteca
@@ -127,12 +130,15 @@ TuxEnc converts videos to **H.264, H.265, AV1 and VP9**, just like HandBrake, bu
 2. Pick a **preset** at the top. **☰ → Conversion** (or a click on the summary line) lets you change everything: codec, quality, bitrate, resolution, filters, audio and subtitle tracks…
 3. Press **▶ Start**.
 
+**Adding videos while the queue runs:** they show as «New · not confirmed» and Start turns into **＋ Add (n)** (or **🏷 Rename (n)** with only «Rename»). Until you press it they follow the current switches, preset and *Save to*. Conversions then join the queue and wait their turn; rename-only runs right away. Confirmed videos no longer change. Each row shows its task.
+
 - **Already-small videos**: with average/constant bitrate, if the original already has a lower bitrate than requested, TuxEnc **copies the video without re-encoding** and only processes audio, subtitles, format and name (can be turned off in ☰ → Conversion → Video). The same applies to **audio** tracks already in the chosen format with a lower bitrate (Audio tab).
 - **🧹 Clear**: removes finished videos, those not started, or everything (empty the queue) from the list. It never deletes files.
-- **At once**: how many videos are transcoded simultaneously. *Auto* picks the best value for your CPU.
-- **My languages**: the languages you want for audio and subtitles; tracks are chosen automatically. Use **Audio & subtitles…** on a row to pick them by hand for one video.
+- **At once**: how many videos are transcoded simultaneously. *Auto* picks the best value for your CPU. It can be changed with the queue stopped.
+- **Stop** cancels what is running; videos not started go back to pending.
+- **My languages**: the languages you want for audio and subtitles; tracks are chosen automatically. Use **Audio and subtitles…** on a row to pick them by hand for one video.
 - **When done**: notify, quit, suspend or shut down. Suspend and shut down show a 60-second countdown you can cancel.
-- **⋯** menu: save your own presets, **import HandBrake presets** (`.json`), export yours.
+- **☰ → Presets**: save your own presets, **import HandBrake presets** (`.json`), export yours.
 - Your original files are **never overwritten**.
 
 ## Renaming and library
