@@ -6,6 +6,14 @@ All notable changes to TuxEnc are listed here (Spanish first, English below each
 
 ## [Sin publicar] · Unreleased
 
+## [1.2.2] - 2026-11-18
+
+### Corregido
+- **Elegir un capítulo a mano en «Identificar…» no cambiaba nada** si el nombre del archivo ya traía un título y el buscador lo daba en inglés: la opción «conservar el título del archivo» volvía a poner el del archivo. Ahora, cuando eliges el capítulo en la lista, manda tu elección. La opción sigue aplicándose a la identificación automática y a los capítulos que reciben la serie con «Usar esta misma serie…».
+
+### English
+- Fixed: picking an episode by hand in «Identify…» was overridden by the «keep the file's title» option.
+
 ## [1.2.1] - 2026-11-18
 
 ### Corregido
@@ -135,6 +143,7 @@ First public release.
   - Spanish and English UI.
 
 [Sin publicar]: #
+[1.2.2]: #
 [1.2.1]: #
 [1.2.0]: #
 [1.1.0]: #

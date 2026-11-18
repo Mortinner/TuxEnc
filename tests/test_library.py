@@ -240,3 +240,19 @@ def test_use_converted_trashes_original_and_subs(env, fake_trash):
     assert not (down / "Babel.2006.BluRay.mkv").exists()
     assert not (down / "Babel.2006.BluRay.spa.forced.srt").exists()
     assert Path(job.output).exists()
+
+
+def test_manual_episode_pick_overrides_file_title(env):
+    """Caso Foyle's War T9: el usuario elige a mano el capítulo con el título en inglés y debe quedarse."""
+    lib, dest, down, tmp = env
+    from retitler.providers import EpisodeInfo
+    from tests.fake_search import ARROW
+    f = down / "Arrow (2012) - S01E02 - Mi titulo.mkv"
+    shutil.copy(down / "Arrow.S01E03.1080p.WEB-DL.mkv", f)
+    lib.searcher.episode_titles_detailed = lambda r, s, eps: [EpisodeInfo(s, n, f"English {n}", source="tvmaze") for n in eps]
+    st, res, _ = lib.identify(str(f))
+    assert res.titles == ("Mi titulo",) and res.title_sources == ("archivo",)        # automático: el del archivo
+    st, res2 = lib.choose(res, ARROW)                                                  # «misma serie»: sin elegir capítulo
+    assert res2.titles == ("Mi titulo",)
+    st, res3 = lib.choose(res, ARROW, 1, (2,))                                         # elegido a mano: lo que eligió
+    assert res3.titles == ("English 2",) and res3.title_sources == ("tvmaze",)
