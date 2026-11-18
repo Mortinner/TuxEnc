@@ -6,6 +6,14 @@ All notable changes to TuxEnc are listed here (Spanish first, English below each
 
 ## [Sin publicar] · Unreleased
 
+## [1.0.1] - 2026-11-18
+
+### Corregido
+- El porcentaje, la barra y el tiempo restante se quedaban congelados durante muchos minutos y de repente saltaban (por ejemplo, del 3 % al 95 %), aunque la conversión seguía avanzando. Pasaba con vídeos que tienen pistas de subtítulos con pocos textos: FFmpeg informa del tiempo de la pista más atrasada. Ahora el avance se calcula también con los fotogramas de vídeo ya convertidos.
+
+### Fixed
+- Progress, bar and remaining time froze for long periods and then jumped (e.g. 3 % → 95 %) while the conversion kept going. It happened with videos that have sparse subtitle tracks (FFmpeg reports the time of the most delayed track). Progress now also uses the number of video frames already written.
+
 ## [1.0.0] - 2026-11-17
 
 Primera versión pública.
@@ -64,4 +72,5 @@ First public release.
   - Spanish and English UI.
 
 [Sin publicar]: #
+[1.0.1]: #
 [1.0.0]: #

@@ -8,6 +8,7 @@ import shutil
 import signal
 import subprocess
 import threading
+from fractions import Fraction
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -81,6 +82,18 @@ class Job:
     @property
     def name(self) -> str:
         return os.path.basename(self.input)
+
+
+def _output_fps(job: "Job") -> float:
+    """Fotogramas por segundo del vídeo de salida (para calcular el avance por fotogramas)."""
+    st = job.settings
+    if st is not None and st.framerate not in ("", "source"):
+        try:
+            return float(Fraction(st.framerate))
+        except (ValueError, ZeroDivisionError):
+            pass
+    v = job.info.main_video if job.info else None
+    return float(v.fps) if v and v.fps else 0.0
 
 
 class _Runner(threading.Thread):
@@ -190,6 +203,7 @@ class _Runner(threading.Thread):
         job.log_path = str(LOG_DIR / f"job-{job.id}.log")
         start = time.monotonic()
         duration = max(job.info.duration, 0.001)
+        out_fps = _output_fps(job)
 
         with open(job.log_path, "w", encoding="utf-8", errors="replace") as log:
             log.write(f"TuxEnc — {job.input}\n-> {job.output}\n\n")
@@ -207,15 +221,24 @@ class _Runner(threading.Thread):
                 if self.engine.paused:
                     self.pause()
                 last_emit = 0.0
+                t_time = t_frames = 0.0
                 assert self.proc.stdout is not None
                 for line in self.proc.stdout:
                     key, _, val = line.strip().partition("=")
-                    if key == "out_time_us" or key == "out_time_ms":
+                    if key in ("out_time_us", "out_time_ms", "frame"):
+                        # FFmpeg da out_time como el de la pista MÁS ATRASADA: una pista de subtítulos
+                        # con pocos textos lo deja clavado (p. ej. en 0:02) mientras el vídeo avanza.
+                        # Los fotogramas de vídeo ya escritos / fps dicen por dónde va de verdad.
                         try:
-                            t = int(val) / 1_000_000
+                            num = int(val)
                         except ValueError:
                             continue
-                        frac = min(1.0, max(0.0, t / duration))
+                        if key == "frame":
+                            if out_fps > 0:
+                                t_frames = num / out_fps
+                        else:
+                            t_time = num / 1_000_000
+                        frac = min(1.0, max(0.0, max(t_time, t_frames) / duration))
                         job.progress = ((n - 1) + frac) / job.pass_total
                     elif key == "fps":
                         try:
