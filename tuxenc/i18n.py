@@ -145,8 +145,24 @@ STRINGS: dict[str, tuple[str, str]] = {
     "post_warning": ("Terminado con avisos: {w}", "Done with warnings: {w}"),
 
     # preferencias: renombrado
-    "tab_general": ("🔧 Preferencias", "🔧 Preferences"),
-    "tab_rename": ("🏷 Renombrado y buscadores", "🏷 Renaming and search services"),
+    "tab_conversion": ("Conversión", "Conversion"),
+    "tab_rename": ("Renombrado", "Renaming"),
+    "tab_engines": ("Buscadores", "Search services"),
+    "tab_presets": ("Presets", "Presets"),
+    "tab_prefs": ("Preferencias", "Preferences"),
+    "tab_about": ("Acerca de", "About"),
+    "menu_tip": ("Ajustes de TuxEnc", "TuxEnc settings"),
+    "conv_info": ("Ajustes de conversión. Preset: {preset}", "Conversion settings. Preset: {preset}"),
+    "conv_info_off": ("la conversión está desactivada, pero puedes dejarlo configurado",
+                      "conversion is off, but you can set it up anyway"),
+    "presets_hint": ("Los presets guardan todos los ajustes de conversión. Los marcados con ★ son tuyos. "
+                     "Doble clic para usar uno; arriba, en la ventana principal, también puedes cambiarlo.",
+                     "Presets store all conversion settings. Those marked ★ are yours. Double-click to use "
+                     "one; you can also switch it from the main window."),
+    "preset_use": ("Usar este preset", "Use this preset"),
+    "preset_current": ("en uso", "in use"),
+    "preset_builtin": ("Preset incorporado", "Built-in preset"),
+    "preset_user": ("Preset tuyo", "Your preset"),
     "settings_tip": ("Conversión, renombrado y buscadores, y preferencias de TuxEnc",
                      "Conversion, renaming and search services, and TuxEnc preferences"),
     "menu_conversion": ("Conversión (vídeo, audio y subtítulos)", "Conversion (video, audio and subtitles)"),
@@ -319,7 +335,7 @@ STRINGS: dict[str, tuple[str, str]] = {
 
     # presets
     "preset": ("Preset", "Preset"),
-    "preset_save": ("Guardar como preset…", "Save as preset…"),
+    "preset_save": ("Guardar los ajustes actuales como preset…", "Save current settings as a preset…"),
     "preset_delete": ("Eliminar este preset", "Delete this preset"),
     "preset_import": ("Importar presets de HandBrake…", "Import HandBrake presets…"),
     "preset_export": ("Exportar mis presets…", "Export my presets…"),
@@ -525,12 +541,25 @@ STRINGS: dict[str, tuple[str, str]] = {
         "Metadata provided by TheTVDB · <a href='https://thetvdb.com/'>thetvdb.com</a><br>"
         "Data from TVmaze (CC BY-SA) · <a href='https://www.tvmaze.com/'>tvmaze.com</a><br>"
         "IMDb via OMDb · <a href='https://www.omdbapi.com/'>omdbapi.com</a>"),
-    "about_text": ("<b>TuxEnc {v}</b><br>Transcodificador de vídeo para Linux con cola paralela.<br><br>"
-                   "Software libre bajo licencia <b>GNU GPL v3</b>.<br>"
+    "about_text": ("<span style='font-size:20px'><b>TuxEnc {v}</b></span><br>"
+                   "Transcodificador de vídeo para Linux con cola paralela, y renombrador de series y "
+                   "películas para tu biblioteca.<br><br>"
                    "Usa <b>FFmpeg</b> (x264, x265, SVT-AV1, libvpx, Opus…) y <b>Qt</b>.",
-                   "<b>TuxEnc {v}</b><br>Video transcoder for Linux with a parallel queue.<br><br>"
-                   "Free software under the <b>GNU GPL v3</b> license.<br>"
+                   "<span style='font-size:20px'><b>TuxEnc {v}</b></span><br>"
+                   "Video transcoder for Linux with a parallel queue, and TV show and movie renamer "
+                   "for your library.<br><br>"
                    "Uses <b>FFmpeg</b> (x264, x265, SVT-AV1, libvpx, Opus…) and <b>Qt</b>."),
+    "about_author": ("<b>Desarrollado por {author}</b><br>"
+                     "Contacto: <a href='mailto:{mail}'>{mail}</a><br>"
+                     "<span style='color:#8d97b5'>Con la ayuda de Claude, de Anthropic.</span>",
+                     "<b>Developed by {author}</b><br>"
+                     "Contact: <a href='mailto:{mail}'>{mail}</a><br>"
+                     "<span style='color:#8d97b5'>With the help of Claude, by Anthropic.</span>"),
+    "about_license": ("Software libre bajo licencia <b>GNU GPL v3</b>: puedes usarlo, estudiarlo, "
+                      "compartirlo y modificarlo · <a href='https://www.gnu.org/licenses/gpl-3.0.html'>"
+                      "gnu.org/licenses/gpl-3.0</a>",
+                      "Free software under the <b>GNU GPL v3</b>: you may use, study, share and modify it · "
+                      "<a href='https://www.gnu.org/licenses/gpl-3.0.html'>gnu.org/licenses/gpl-3.0</a>"),
 
     # primer arranque / integración
     "integrate_q_title": ("Bienvenido a TuxEnc", "Welcome to TuxEnc"),

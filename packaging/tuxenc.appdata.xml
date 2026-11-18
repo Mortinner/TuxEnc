@@ -12,7 +12,12 @@
     <p>It also identifies and renames shows and movies (TMDB, TheTVDB, TVmaze, IMDb) and files them in your library.</p>
     <p xml:lang="es">Además identifica y renombra series y películas (TMDB, TheTVDB, TVmaze, IMDb) y las ordena en tu biblioteca.</p>
   </description>
+  <developer id="io.github.tuxenc.mortinner">
+    <name>Mortinner</name>
+  </developer>
+  <update_contact>mortinner@gmail.com</update_contact>
   <releases>
+    <release version="1.2.0" date="2026-11-18"/>
     <release version="1.1.0" date="2026-11-18"/>
     <release version="1.0.2" date="2026-11-18"/>
     <release version="1.0.1" date="2026-11-18"/>

@@ -6,11 +6,11 @@ from PySide6.QtCore import Qt, QTimer, QUrl
 from PySide6.QtGui import QDesktopServices, QFont, QPixmap, QTextCursor
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFormLayout,
                                QFrame, QHBoxLayout, QLabel, QListWidget, QListWidgetItem,
-                               QPlainTextEdit, QPushButton, QScrollArea, QTabWidget, QVBoxLayout,
+                               QPlainTextEdit, QPushButton, QScrollArea, QVBoxLayout,
                                QWidget)
 
 from .. import VERSION, i18n
-from ..catalog import CONTAINERS, ENCODERS_BY_ID, EncodeSettings, lang_name
+from ..catalog import CONTAINERS, EncodeSettings, lang_name
 from ..command import _sub_fits_container, select_audio, select_subtitles
 from ..i18n import tr
 from ..paths import LOG_DIR, ASSETS_DIR
@@ -155,151 +155,6 @@ class TracksDialog(QDialog):
         burn = self.burn.currentData()
         subs = [i for i in self._checked(self.subs) if i != burn]
         return self._checked(self.audio), subs, burn
-
-
-class PreferencesDialog(QDialog):
-    def __init__(self, cfg, available: list[str] | None, integration_api, parent=None,
-                 rename=None, tab: str = ""):
-        super().__init__(parent)
-        self.integrated_now, self.integrated_update, self.integrated_old = False, False, ""
-        self.cfg = cfg
-        self.api = integration_api
-        self.setWindowTitle(tr("settings") + " · TuxEnc")
-        self.setMinimumWidth(640)
-        self.resize(700, 760)
-        outer = QVBoxLayout(self)
-        self.tabs = QTabWidget()
-        outer.addWidget(self.tabs)
-        general = QWidget()
-        lay = QVBoxLayout(general)
-        lay.setSpacing(10)
-
-        lay.addWidget(_section(tr("ui_language")))
-        self.lang = QComboBox()
-        for label, data in ((tr("lang_auto"), "auto"), ("Español", "es"), ("English", "en")):
-            self.lang.addItem(label, data)
-        self.lang.setCurrentIndex(max(0, self.lang.findData(cfg.ui_lang)))
-        lay.addWidget(self.lang)
-        self.lang_note = QLabel(tr("restart_needed"))
-        self.lang_note.setObjectName("Muted")
-        self.lang_note.setVisible(False)
-        lay.addWidget(self.lang_note)
-        self.lang.currentIndexChanged.connect(lambda *_: self.lang_note.setVisible(True))
-
-        lay.addWidget(_section(tr("integration")))
-        self.int_label = QLabel()
-        self.int_label.setWordWrap(True)
-        lay.addWidget(self.int_label)
-        row = QHBoxLayout()
-        self.int_btn = QPushButton()
-        self.int_btn.clicked.connect(self._integrate)
-        self.shortcut_btn = QPushButton(tr("shortcut_again"))
-        self.shortcut_btn.clicked.connect(self._integrate)
-        row.addWidget(self.int_btn)
-        row.addWidget(self.shortcut_btn)
-        row.addStretch(1)
-        lay.addLayout(row)
-        self._refresh_integration()
-
-        lay.addWidget(_section(tr("encoders_found")))
-        if available is None:
-            enc_text = tr("detecting")
-        else:
-            cpu = [ENCODERS_BY_ID[e].label for e in available if not ENCODERS_BY_ID[e].hw]
-            gpu = [ENCODERS_BY_ID[e].label for e in available if ENCODERS_BY_ID[e].hw]
-            enc_text = "CPU: " + ", ".join(cpu)
-            enc_text += "\nGPU: " + (", ".join(gpu) if gpu else tr("gpu_none"))
-        enc = QLabel(enc_text)
-        enc.setWordWrap(True)
-        enc.setObjectName("Muted")
-        lay.addWidget(enc)
-        diag = QPushButton(tr("gpu_diag"))
-        diag.clicked.connect(lambda: LogDialog(tr("gpu_diag_title"),
-                                               str(LOG_DIR / "gpu-detect.log"), self).exec())
-        row_d = QHBoxLayout()
-        row_d.addWidget(diag)
-        row_d.addStretch(1)
-        lay.addLayout(row_d)
-
-        lay.addWidget(_section(tr("logs")))
-        logs = QPushButton(tr("open_logs"))
-        logs.clicked.connect(lambda: (LOG_DIR.mkdir(parents=True, exist_ok=True),
-                                      QDesktopServices.openUrl(QUrl.fromLocalFile(str(LOG_DIR)))))
-        row2 = QHBoxLayout()
-        row2.addWidget(logs)
-        row2.addStretch(1)
-        lay.addLayout(row2)
-
-        lay.addWidget(_section(tr("about")))
-        about_row = QHBoxLayout()
-        about_row.addWidget(_icon_label(56), 0, Qt.AlignTop)
-        about = QLabel(tr("about_text", v=VERSION))
-        about.setWordWrap(True)
-        about.setTextFormat(Qt.RichText)
-        about_row.addWidget(about, 1)
-        lay.addLayout(about_row)
-        credits = QLabel(tr("credits_text"))
-        credits.setWordWrap(True)
-        credits.setTextFormat(Qt.RichText)
-        credits.setOpenExternalLinks(True)
-        credits.setObjectName("Muted")
-        lay.addWidget(credits)
-
-        lay.addStretch(1)
-        self.tabs.addTab(_scrolled(general), tr("tab_general"))
-        self.rename_tab = None
-        if rename is not None:
-            from .rename_prefs import RenamePrefs
-            self.rename_tab = RenamePrefs(cfg, rename)
-            self.tabs.addTab(_scrolled(self.rename_tab), tr("tab_rename"))
-            if tab == "rename":
-                self.tabs.setCurrentIndex(1)
-
-        bb = QDialogButtonBox()
-        bb.addButton(tr("close"), QDialogButtonBox.AcceptRole)
-        bb.accepted.connect(self.accept)
-        outer.addWidget(bb)
-
-    @property
-    def search_changed(self) -> bool:
-        return bool(self.rename_tab and self.rename_tab.search_changed)
-
-    def _refresh_integration(self):
-        api = self.api
-        if not api.running_from_appimage():
-            self.int_label.setText(tr("integrated_dev"))
-            self.int_btn.setVisible(False)
-            self.shortcut_btn.setVisible(False)
-            return
-        if api.is_integrated():
-            self.int_label.setText(tr("integrated_yes"))
-            if api.running_installed_copy():
-                self.int_btn.setVisible(False)
-            else:
-                self.int_btn.setText(tr("integrate_update"))
-                self.int_btn.setVisible(True)
-            self.shortcut_btn.setVisible(True)
-        else:
-            self.int_label.setText(tr("integrated_no"))
-            self.int_btn.setText(tr("integrate_now"))
-            self.int_btn.setVisible(True)
-            self.shortcut_btn.setVisible(False)
-
-    def _integrate(self):
-        from PySide6.QtWidgets import QMessageBox
-        update, old = self.api.is_integrated(), self.api.installed_version()
-        try:
-            self.api.integrate(True)
-        except Exception as exc:  # noqa: BLE001
-            QMessageBox.warning(self, "TuxEnc", tr("integrate_fail", err=str(exc)))
-            self._refresh_integration()
-            return
-        # La ventana principal avisa y reinicia desde la copia instalada al cerrar Preferencias
-        self.integrated_now, self.integrated_update, self.integrated_old = True, update, old
-        self.accept()
-
-    def chosen_lang(self) -> str:
-        return self.lang.currentData()
 
 
 class IntegrationDialog(QDialog):

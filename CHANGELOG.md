@@ -6,6 +6,25 @@ All notable changes to TuxEnc are listed here (Spanish first, English below each
 
 ## [Sin publicar] · Unreleased
 
+## [1.2.0] - 2026-11-18
+
+### Cambiado
+- **Un solo menú ☰** arriba a la derecha (sustituye a «⚙ Ajustes» y a «⋯»), con seis entradas: Conversión, Renombrado, Buscadores, Presets, Preferencias y Acerca de.
+- **Ventana única de ajustes** con una pestaña para cada una. Todo se puede configurar siempre, estén activados o no la conversión y el renombrado. Los ajustes de conversión dejan el panel lateral y pasan a su pestaña; la cola ocupa ahora todo el ancho. Pulsar la línea de resumen abre la pestaña Conversión.
+- **Presets** en su propia pestaña: usar, guardar los ajustes actuales, eliminar los tuyos, importar de HandBrake y exportar. El desplegable de presets sigue en la ventana principal.
+- **Interruptores deslizantes** para activar Convertir y Renombrar, en lugar de botones.
+
+### Añadido
+- «Acerca de» con autor (Mortinner), contacto, licencia y créditos de los datos.
+
+### Corregido
+- Al cerrar los ajustes podía preguntar por un reinicio de idioma aunque no se hubiera cambiado (con el idioma en «Automático»).
+
+### English
+- Single **☰** menu and one settings window with tabs (Conversion, Renaming, Search services, Presets, Preferences, About), always configurable. The side panel is gone; the queue uses the full width.
+- Presets tab; on/off switches for Convert and Rename; About with author and contact.
+- Fixed a spurious language restart question.
+
 ## [1.1.0] - 2026-11-18
 
 ### Añadido
@@ -101,6 +120,7 @@ First public release.
   - Spanish and English UI.
 
 [Sin publicar]: #
+[1.2.0]: #
 [1.1.0]: #
 [1.0.2]: #
 [1.0.1]: #

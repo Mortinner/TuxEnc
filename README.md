@@ -26,10 +26,10 @@ Acepta y vuelve a hacer doble clic.
 ## Cómo se usa
 
 1. **Arrastra** vídeos o carpetas enteras a la ventana (o usa *＋ Añadir*).
-2. Elige un **preset** arriba (por ejemplo *H.265 · Alta calidad*). Con **⚙ Ajustes → 🎞 Conversión** puedes cambiar todo: códec, calidad, bitrate, resolución, filtros, pistas de audio y subtítulos…
+2. Elige un **preset** arriba (por ejemplo *H.265 · Alta calidad*). Con **☰ → Conversión** (o pulsando la línea de resumen) puedes cambiar todo: códec, calidad, bitrate, resolución, filtros, pistas de audio y subtítulos…
 3. Pulsa **▶ Iniciar**.
 
-- **Vídeos que ya ocupan poco**: con bitrate medio o constante, si el original ya tiene menos bitrate que el pedido, TuxEnc **copia el vídeo sin recomprimir** (sin perder calidad y en segundos) y solo trabaja el audio, los subtítulos, el formato y el nombre. Se desactiva en ⚙ Ajustes → 🎞 Conversión → Vídeo. Con el **audio** pasa lo mismo: una pista que ya está en el formato elegido con menos bitrate se copia tal cual (pestaña Audio).
+- **Vídeos que ya ocupan poco**: con bitrate medio o constante, si el original ya tiene menos bitrate que el pedido, TuxEnc **copia el vídeo sin recomprimir** (sin perder calidad y en segundos) y solo trabaja el audio, los subtítulos, el formato y el nombre. Se desactiva en ☰ → Conversión → Vídeo. Con el **audio** pasa lo mismo: una pista que ya está en el formato elegido con menos bitrate se copia tal cual (pestaña Audio).
 - **🧹 Limpiar**: quita de la lista los terminados, los que no han empezado o todo (vaciar la cola). Nunca borra archivos.
 - **Simultáneos**: cuántos vídeos se convierten a la vez. *Auto* calcula el valor ideal para tu procesador.
 - **Mis idiomas**: indica en qué idiomas quieres el audio y los subtítulos. TuxEnc elige las pistas automáticamente en todos los vídeos. Si quieres cambiar las de un vídeo concreto, usa **Audio y subtítulos…** en esa fila.
@@ -48,19 +48,19 @@ Arriba a la izquierda hay dos interruptores: **🎞 Convertir** y **🏷 Renombr
 | **Los dos** | El vídeo convertido nace ya con su nombre definitivo y en su carpeta. |
 
 - **Identificación**: al añadir vídeos, cada fila dice qué es («Arrow (2012) · S01E02 · Honra a tu padre») y cómo quedará. Si hay dudas, el botón **Identificar…** abre una ventana con dos pasos: a la izquierda eliges la serie o película (o la buscas a mano) y a la derecha, en las series, las temporadas y capítulos disponibles para elegir el tuyo con un clic. Si un capítulo recién estrenado aún no aparece, se puede escribir a mano. La serie elegida se puede aplicar a todos los capítulos de esa serie de una vez.
-  - **Títulos de capítulo en español:** se buscan en TMDB (español de España y, si no, de Latinoamérica) y en **TheTVDB**, que suele tener las series menos conocidas traducidas. Si solo existe en inglés y tu archivo ya trae un título («Serie - S01E01 - La mujer alemana»), se conserva el tuyo (se puede desactivar en ⚙ Ajustes → 🏷 Renombrado y buscadores). La fila indica «(título de tu archivo)» o «(en inglés)».
+  - **Títulos de capítulo en español:** se buscan en TMDB (español de España y, si no, de Latinoamérica) y en **TheTVDB**, que suele tener las series menos conocidas traducidas. Si solo existe en inglés y tu archivo ya trae un título («Serie - S01E01 - La mujer alemana»), se conserva el tuyo (se puede desactivar en ☰ → Renombrado). La fila indica «(título de tu archivo)» o «(en inglés)».
   - **¿No sale por su nombre?** (pasa con títulos que solo existen traducidos en algunas webs, p. ej. «Aeropuerto de Dubái»): búscala en IMDb, TMDB, TheTVDB o TVmaze, copia la dirección de su página y pégala en el buscador de **Identificar…**. También vale el código de IMDb (`tt3324124`).
-- **Buscadores, sin configurar nada**: TuxEnc trae sus propias claves de **TMDB** y **TheTVDB**, y **TVmaze** no necesita clave. **IMDb (OMDb)** es opcional y necesita tu propia clave gratuita (su límite diario se agotaría si se compartiera). En **⚙ Ajustes → 🏷 Renombrado y buscadores** ves el estado de cada uno y puedes poner tus propias claves si lo prefieres. Si ya usabas Retitler, TuxEnc te ofrece importar sus claves.
+- **Buscadores, sin configurar nada**: TuxEnc trae sus propias claves de **TMDB** y **TheTVDB**, y **TVmaze** no necesita clave. **IMDb (OMDb)** es opcional y necesita tu propia clave gratuita (su límite diario se agotaría si se compartiera). En **☰ → Buscadores** ves el estado de cada uno y puedes poner tus propias claves si lo prefieres. Si ya usabas Retitler, TuxEnc te ofrece importar sus claves.
 - **Formatos**: por defecto, así:
   - Series: `Serie (2012)/Season 01/Serie (2012) - S01E02 - Título - [1080p].mkv`
   - Películas: `B/Babel (2006) - [1080p].mkv`
 
   Se pueden cambiar con presets o a mano. Variables: `{series}` `{season}` `{episode}` `{title}` `{year}` `{resolution}` `{initial}`.
 - **Resolución automática** (`{resolution}`): 2160p, 1080p, 720p o 480p. El lado largo del vídeo se compara con los anchos estándar y el corto con los altos estándar, y gana el más alto (a medio camino se redondea hacia arriba). Así, 1920×804 es 1080p y 1280×536 es 720p. Al convertir se mide **el vídeo resultante**: una película 4K convertida con máximo 1080p se llama `[1080p]`.
-- **Biblioteca**: en **Guardar en** elige **📚 Biblioteca**. Las series van a tu carpeta de series y las películas a la de películas (se configuran en ⚙ Ajustes → 🏷 Renombrado y buscadores).
+- **Biblioteca**: en **Guardar en** elige **📚 Biblioteca**. Las series van a tu carpeta de series y las películas a la de películas (se configuran en ☰ → Renombrado).
 - **Subtítulos externos** (`.srt` junto al vídeo): se renombran o copian con el nombre nuevo, conservando el idioma (`.spa.forced.srt`).
 - **Metadatos**: al convertir se escriben dentro del archivo el título, la serie, la temporada y el episodio.
-- **El original**: al convertir y renombrar se deja donde está, o se envía a la papelera si lo eliges en ⚙ Ajustes → 🏷 Renombrado y buscadores.
+- **El original**: al convertir y renombrar se deja donde está, o se envía a la papelera si lo eliges en ☰ → Renombrado.
 - **Si el convertido ocupa más que el original**, el original nunca se borra solo: la fila te pregunta con cuál te quedas (**El convertido**, **El original** o **Los dos**). Si eliges el original, el convertido va a la papelera y el original ocupa su lugar en la biblioteca, ya con su nombre final.
 - Si un vídeo no está identificado al pulsar Iniciar, **espera en la cola** hasta que elijas su coincidencia. La cola no se da por terminada (ni se apaga el equipo) mientras quede alguno por decidir.
 
@@ -85,6 +85,14 @@ Si no llegaste a integrarlo, basta con borrar el AppImage.
 ## Requisitos
 
 Linux de 64 bits con glibc 2.34 o superior: Ubuntu 22.04+, Linux Mint 21+, Debian 12+, Fedora 36+, Arch, CachyOS, Manjaro, openSUSE Tumbleweed… Funciona en X11 y en Wayland. No hay que instalar nada más: FFmpeg va incluido.
+
+## Ajustes
+
+Todo está en el menú **☰** (arriba a la derecha), en una sola ventana con pestañas: **Conversión**, **Renombrado**, **Buscadores**, **Presets**, **Preferencias** y **Acerca de**. Se puede configurar todo siempre, aunque la conversión o el renombrado estén apagados.
+
+## Autor
+
+Desarrollado por **Mortinner** · contacto: [mortinner@gmail.com](mailto:mortinner@gmail.com) · con la ayuda de Claude, de Anthropic.
 
 ## Datos de series y películas
 
@@ -116,10 +124,10 @@ TuxEnc converts videos to **H.264, H.265, AV1 and VP9**, just like HandBrake, bu
 ## Usage
 
 1. **Drag** videos or whole folders into the window (or use *＋ Add*).
-2. Pick a **preset** at the top. **⚙ Settings → 🎞 Conversion** lets you change everything: codec, quality, bitrate, resolution, filters, audio and subtitle tracks…
+2. Pick a **preset** at the top. **☰ → Conversion** (or a click on the summary line) lets you change everything: codec, quality, bitrate, resolution, filters, audio and subtitle tracks…
 3. Press **▶ Start**.
 
-- **Already-small videos**: with average/constant bitrate, if the original already has a lower bitrate than requested, TuxEnc **copies the video without re-encoding** and only processes audio, subtitles, format and name (can be turned off in ⚙ Settings → 🎞 Conversion → Video). The same applies to **audio** tracks already in the chosen format with a lower bitrate (Audio tab).
+- **Already-small videos**: with average/constant bitrate, if the original already has a lower bitrate than requested, TuxEnc **copies the video without re-encoding** and only processes audio, subtitles, format and name (can be turned off in ☰ → Conversion → Video). The same applies to **audio** tracks already in the chosen format with a lower bitrate (Audio tab).
 - **🧹 Clear**: removes finished videos, those not started, or everything (empty the queue) from the list. It never deletes files.
 - **At once**: how many videos are transcoded simultaneously. *Auto* picks the best value for your CPU.
 - **My languages**: the languages you want for audio and subtitles; tracks are chosen automatically. Use **Audio & subtitles…** on a row to pick them by hand for one video.
@@ -131,8 +139,8 @@ TuxEnc converts videos to **H.264, H.265, AV1 and VP9**, just like HandBrake, bu
 
 Two switches at the top left: **🎞 Convert** and **🏷 Rename**. Use either or both. Rename only is instant and can be **↶ undone**; with both, the converted file is born with its final name and folder.
 
-- Each row shows what the video is and how it will be named; **Identify…** lets you pick or search the show or movie and, for shows, click the episode from the list of seasons and episodes (or type it if it's brand new). If an episode title only exists in English but your file name already has one, yours is kept (⚙ Settings → 🏷 Renaming and search services); TheTVDB often has translated episode titles too. If it doesn't show up by name, paste the link to its IMDb, TMDB, TheTVDB or TVmaze page (or the IMDb code, `tt1234567`) into the search box.
-- Search services work out of the box: TuxEnc includes its own **TMDB** and **TheTVDB** keys and **TVmaze** needs none. **IMDb (OMDb)** is optional and needs your own free key. **⚙ Settings → 🏷 Renaming and search services** shows each one's status and lets you use your own keys. Retitler keys can be imported.
+- Each row shows what the video is and how it will be named; **Identify…** lets you pick or search the show or movie and, for shows, click the episode from the list of seasons and episodes (or type it if it's brand new). If an episode title only exists in English but your file name already has one, yours is kept (☰ → Renaming); TheTVDB often has translated episode titles too. If it doesn't show up by name, paste the link to its IMDb, TMDB, TheTVDB or TVmaze page (or the IMDb code, `tt1234567`) into the search box.
+- Search services work out of the box: TuxEnc includes its own **TMDB** and **TheTVDB** keys and **TVmaze** needs none. **IMDb (OMDb)** is optional and needs your own free key. **☰ → Search services** shows each one's status and lets you use your own keys. Retitler keys can be imported.
 - Default formats: `Show (2012)/Season 01/Show (2012) - S01E02 - Title - [1080p].mkv` and `B/Babel (2006) - [1080p].mkv`. Variables: `{series}` `{season}` `{episode}` `{title}` `{year}` `{resolution}` `{initial}`.
 - `{resolution}` is 2160p/1080p/720p/480p: long side vs standard widths, short side vs standard heights, the higher class wins (ties round up). When converting, the **resulting** video is measured.
 - **Save to → 📚 Library** sends shows and movies to their own folders. External subtitles follow the video; metadata tags are written when converting; the original can optionally go to the trash.
@@ -154,6 +162,14 @@ Open the applications menu and choose **"Uninstall TuxEnc"**. It removes the pro
 ## Requirements
 
 64-bit Linux with glibc 2.34+ (Ubuntu 22.04+, Mint 21+, Debian 12+, Fedora 36+, Arch, CachyOS…). X11 and Wayland. FFmpeg is bundled.
+
+## Settings
+
+Everything is in the **☰** menu (top right), in a single window with tabs: **Conversion**, **Renaming**, **Search services**, **Presets**, **Preferences** and **About**. Everything can always be configured, even when conversion or renaming are switched off.
+
+## Author
+
+Developed by **Mortinner** · contact: [mortinner@gmail.com](mailto:mortinner@gmail.com) · with the help of Claude, by Anthropic.
 
 ## TV and movie data
 

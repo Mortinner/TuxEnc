@@ -46,19 +46,18 @@ print("   copia instalada actualizada:", integration.INSTALLED_APPIMAGE.read_tex
 print("   reinicio pedido:", w.restart_request, "| ventana cerrada:", not w.isVisible())
 
 # --- 2) idioma: de español a inglés
+import tuxenc.ui.settings_window as swm
 class FakePrefs:
-    def __init__(self, *a, **k):
-        self.search_changed, self.integrated_now = False, False
-    def exec(self): return 1
-    def chosen_lang(self): return "en"
-mw.PreferencesDialog = FakePrefs
+    lang = "en"
+swm.SettingsWindow.open_tab = lambda self, tab="conversion": None
+swm.SettingsWindow.chosen_lang = lambda self: FakePrefs.lang
 w2 = mw.MainWindow(Config()); w2.show(); pump(0.3)
 w2.add_paths(["/home/claude/testmedia/clip2.mp4"]); assert wait(lambda: len(w2.engine.jobs) == 1 and not w2.pending_probes)
 w2._open_prefs(); pump(0.3)
 print("2) pregunta:", shown[-1][0].replace("<br>", " | "), "| idioma del aviso:", shown[-1][1], "| con «Más tarde»:", shown[-1][2])
 print("   reinicio pedido:", w2.restart_request)
 # mismo idioma: no pregunta
-FakePrefs.chosen_lang = lambda self: "es"; i18n.set_language("es")
+FakePrefs.lang = "auto"; i18n.set_language("es")
 w3 = mw.MainWindow(Config()); w3.show(); n = len(shown); w3._open_prefs(); pump(0.2)
 print("   sin cambiar de idioma no pregunta:", len(shown) == n and w3.restart_request is None)
 

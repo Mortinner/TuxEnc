@@ -58,9 +58,12 @@ class RenamePrefs(QWidget):
         lay = QVBoxLayout(self)
         lay.setSpacing(10)
 
-        # ---------------------------------------------------------------- buscadores
-        lay.addWidget(_section(tr("rp_keys")))
-        lay.addWidget(_muted(tr("rp_keys_hint") if KeyStore.BUILTIN else tr("rp_keys_hint_nobuiltin")))
+        # ---------------------------------------------------------------- buscadores (pestaña propia)
+        self.engines_page = QWidget()
+        elay = QVBoxLayout(self.engines_page)
+        elay.setSpacing(10)
+        elay.addWidget(_section(tr("rp_keys")))
+        elay.addWidget(_muted(tr("rp_keys_hint") if KeyStore.BUILTIN else tr("rp_keys_hint_nobuiltin")))
         form = QFormLayout()
         form.setHorizontalSpacing(12)
         form.setVerticalSpacing(10)
@@ -97,17 +100,17 @@ class RenamePrefs(QWidget):
                     box.addWidget(pin)
             form.addRow(label, box)
             self.key_rows[service] = (edit, status, clear, pin)
-        lay.addLayout(form)
+        elay.addLayout(form)
         self.import_btn = QPushButton(tr("rp_import_retitler"))
         self.import_btn.clicked.connect(self._import)
         ir = QHBoxLayout()
         ir.addWidget(self.import_btn)
         ir.addStretch(1)
-        lay.addLayout(ir)
+        elay.addLayout(ir)
         self._refresh_keys()
 
-        # ---------------------------------------------------------------- títulos
-        lay.addWidget(_section(tr("rp_titles")))
+        # ---------------------------------------------------------------- idioma de los títulos
+        elay.addWidget(_section(tr("rp_titles")))
         f2 = QFormLayout()
         self.lang = QComboBox()
         self.lang.addItem("Español", "es")
@@ -115,7 +118,8 @@ class RenamePrefs(QWidget):
         self.lang.setCurrentIndex(max(0, self.lang.findData(self.lib.settings.language)))
         self.lang.currentIndexChanged.connect(self._on_lang)
         f2.addRow(tr("rp_title_lang"), self.lang)
-        lay.addLayout(f2)
+        elay.addLayout(f2)
+        elay.addStretch(1)
 
         # ---------------------------------------------------------------- formatos
         lay.addWidget(_section(tr("rp_formats")))

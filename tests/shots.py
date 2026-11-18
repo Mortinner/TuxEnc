@@ -23,7 +23,7 @@ w.grab().save(f"{out}/{lang}-1-empty.png")
 M = "/home/claude/testmedia/"
 w.add_paths([M + "Película de prueba [2024].mkv", M + "clip1.mp4", M + "clip2.mp4", M + "clip3.mp4", M + "entrelazado.mkv"])
 pump(3)
-w.adv_btn.setChecked(True); pump(0.5)
+pass  # el panel de conversión está ahora en la ventana de ajustes
 w.grab().save(f"{out}/{lang}-2-queue-settings.png")
 w.engine.set_parallel(2)
 w.panel.tabs.setCurrentIndex(2); pump(0.3)
@@ -34,11 +34,11 @@ w.panel.tabs.setCurrentIndex(3); pump(0.3)
 while w.engine.active: pump(0.5)
 pump(1)
 w.grab().save(f"{out}/{lang}-4-done.png")
-from tuxenc.ui.dialogs import TracksDialog, PreferencesDialog, IntegrationDialog
+from tuxenc.ui.dialogs import TracksDialog, IntegrationDialog
 from tuxenc import integration
 j = next(x for x in w.engine.jobs if x.name.startswith("Pel")); j.status = "waiting"
 d = TracksDialog(j, w.panel.settings, w); d.show(); pump(0.5); d.grab().save(f"{out}/{lang}-5-tracks.png"); d.close()
-d = PreferencesDialog(cfg, w.available, integration, w); d.show(); pump(0.5); d.grab().save(f"{out}/{lang}-6-prefs.png"); d.close()
+d = w.settings_window; d.tabs.setCurrentIndex(4); d.show(); pump(0.5); d.grab().save(f"{out}/{lang}-6-prefs.png"); d.hide()
 d = IntegrationDialog(False, w); d.show(); pump(0.5); d.grab().save(f"{out}/{lang}-7-integrate.png"); d.close()
 print("jobs:", [(j.name, j.status, j.error[:80]) for j in w.engine.jobs])
 w.engine.shutdown()

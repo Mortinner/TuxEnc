@@ -48,6 +48,7 @@ QToolButton#Mode:checked {{ background: #1f3b52; border-color: {ACCENT}; color: 
 QToolButton#Flat {{ background: transparent; border: none; padding: 3px 6px; color: {MUTED}; }}
 QToolButton#Flat:hover {{ color: {TEXT}; background: {PANEL2}; border-radius: 6px; }}
 QToolButton::menu-indicator {{ image: none; width: 0; }}
+QToolButton#MenuBtn {{ font-size: 18px; padding: 2px 12px; min-width: 22px; }}
 
 QComboBox, QSpinBox, QLineEdit {{
     background: {PANEL2}; border: 1px solid {BORDER}; border-radius: 8px; padding: 5px 8px;

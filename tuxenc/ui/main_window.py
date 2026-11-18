@@ -8,10 +8,10 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Qt, QTimer, QUrl, Signal
-from PySide6.QtGui import QAction, QDesktopServices, QIcon, QPixmap
+from PySide6.QtGui import QDesktopServices, QIcon, QPixmap
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QFileDialog, QFrame, QHBoxLayout,
                                QInputDialog, QLabel, QMainWindow, QMenu, QMessageBox,
-                               QProgressBar, QPushButton, QSizePolicy, QSplitter, QStackedWidget,
+                               QProgressBar, QPushButton, QSizePolicy, QStackedWidget,
                                QToolButton, QVBoxLayout, QWidget)
 
 from .. import APP_NAME, VERSION, i18n, integration
@@ -27,7 +27,9 @@ from ..presets import (Preset, builtin_presets, import_handbrake, load_user_pres
                        save_user_presets)
 from ..probe import VIDEO_EXTENSIONS, ProbeError, probe
 from . import theme
-from .dialogs import (CountdownDialog, LogDialog, PreferencesDialog,
+from .settings_window import SettingsWindow
+from .switch import Switch
+from .dialogs import (CountdownDialog, LogDialog,
                       TracksDialog)
 from .queue_view import DropZone, QueueList, job_menu
 from .rename_ctrl import RenameController
@@ -113,7 +115,6 @@ class MainWindow(QMainWindow):
                 self.restoreGeometry(bytes.fromhex(cfg.geometry))
             except ValueError:
                 pass
-        self.set_advanced_visible(cfg.advanced_open)
         self._apply_modes()
         self._start_hw_detection()
 
@@ -166,32 +167,22 @@ class MainWindow(QMainWindow):
         self.preset_combo.setToolTip(tr("preset"))
         self.preset_combo.activated.connect(self._on_preset_chosen)
         hl.addWidget(self.preset_combo, 1)
-        self.preset_menu_btn = QToolButton()
-        self.preset_menu_btn.setText("⋯")
-        self.preset_menu_btn.setPopupMode(QToolButton.InstantPopup)
-        pm = QMenu(self.preset_menu_btn)
-        pm.addAction(tr("preset_save"), self._save_preset)
-        self.delete_preset_act = pm.addAction(tr("preset_delete"), self._delete_preset)
-        pm.addSeparator()
-        pm.addAction(tr("preset_import"), self._import_handbrake)
-        pm.addAction(tr("preset_export"), self._export_presets)
-        self.preset_menu_btn.setMenu(pm)
-        hl.addWidget(self.preset_menu_btn)
 
-        # Un solo «⚙ Ajustes ▾»: conversión (panel lateral), renombrado y buscadores, preferencias
-        self.settings_btn = QToolButton()
-        self.settings_btn.setText("⚙ " + tr("settings") + "  ▾")
-        self.settings_btn.setToolTip(tr("settings_tip"))
-        self.settings_btn.setPopupMode(QToolButton.InstantPopup)
-        sm = QMenu(self.settings_btn)
-        self.adv_btn = QAction("🎞  " + tr("menu_conversion"), sm)     # abre/cierra el panel lateral
-        self.adv_btn.setCheckable(True)
-        self.adv_btn.toggled.connect(self.set_advanced_visible)
-        sm.addAction(self.adv_btn)
-        sm.addAction("🏷  " + tr("menu_rename"), lambda: self._open_prefs(tab="rename"))
-        sm.addAction("🔧  " + tr("menu_prefs"), lambda: self._open_prefs(tab="general"))
-        self.settings_btn.setMenu(sm)
-        hl.addWidget(self.settings_btn)
+        # ☰: una sola entrada a todos los ajustes (ventana única con pestañas)
+        self.menu_btn = QToolButton()
+        self.menu_btn.setText("☰")
+        self.menu_btn.setObjectName("MenuBtn")
+        self.menu_btn.setToolTip(tr("menu_tip"))
+        self.menu_btn.setPopupMode(QToolButton.InstantPopup)
+        mm = QMenu(self.menu_btn)
+        for tab, icon, key in (("conversion", "🎞", "tab_conversion"), ("rename", "🏷", "tab_rename"),
+                               ("engines", "🔎", "tab_engines"), ("presets", "★", "tab_presets"),
+                               ("prefs", "🔧", "tab_prefs"), ("about", "ℹ", "tab_about")):
+            if tab == "prefs":
+                mm.addSeparator()
+            mm.addAction(f"{icon}  " + tr(key) + "…", lambda t=tab: self.open_settings(t))
+        self.menu_btn.setMenu(mm)
+        hl.addWidget(self.menu_btn)
         root.addWidget(header)
 
         # ---- resumen de ajustes (clic = abrir panel)
@@ -203,23 +194,17 @@ class MainWindow(QMainWindow):
             f"QPushButton#SummaryBtn {{ background: transparent; border: none; color: {theme.MUTED};"
             " text-align: left; padding: 0 16px 8px 62px; }"
             f"QPushButton#SummaryBtn:hover {{ color: {theme.TEXT}; }}")
-        self.summary.clicked.connect(lambda: self.adv_btn.setChecked(not self.adv_btn.isChecked()))
+        self.summary.clicked.connect(lambda: self.open_settings("conversion"))
         self.summary.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
         self.summary.setStyleSheet(self.summary.styleSheet().replace("padding: 0 16px 8px 62px",
                                                                      "padding: 0 8px 0 4px"))
         modes = QHBoxLayout()
         modes.setContentsMargins(16, 0, 16, 8)
         modes.setSpacing(6)
-        self.conv_btn = QToolButton()
-        self.conv_btn.setText("🎞  " + tr("mode_convert"))
+        self.conv_btn = Switch("🎞  " + tr("mode_convert"))
         self.conv_btn.setToolTip(tr("mode_convert_tip"))
-        self.conv_btn.setCheckable(True)
-        self.ren_btn = QToolButton()
-        self.ren_btn.setText("🏷  " + tr("mode_rename"))
+        self.ren_btn = Switch("🏷  " + tr("mode_rename"))
         self.ren_btn.setToolTip(tr("mode_rename_tip"))
-        self.ren_btn.setCheckable(True)
-        for b in (self.conv_btn, self.ren_btn):
-            b.setObjectName("Mode")
         self.conv_btn.setChecked(self.cfg.convert_on)
         self.ren_btn.setChecked(self.cfg.rename_on)
         self.conv_btn.toggled.connect(self._on_mode_convert)
@@ -228,6 +213,7 @@ class MainWindow(QMainWindow):
         self.undo_btn.setText("↶ " + tr("undo_rename"))
         self.undo_btn.setToolTip(tr("undo_rename_tip"))
         self.undo_btn.clicked.connect(self._undo_rename)
+        modes.setSpacing(18)
         modes.addWidget(self.conv_btn)
         modes.addWidget(self.ren_btn)
         modes.addWidget(self.undo_btn)
@@ -262,11 +248,9 @@ class MainWindow(QMainWindow):
         self._bar_dismissed: set[str] = set()
 
         # ---- cuerpo: cola + panel
-        self.splitter = QSplitter(Qt.Horizontal)
-        self.splitter.setChildrenCollapsible(False)
         left = QWidget()
         ll = QVBoxLayout(left)
-        ll.setContentsMargins(16, 4, 8, 12)
+        ll.setContentsMargins(16, 4, 16, 12)
         self.stack = QStackedWidget()
         self.drop = DropZone()
         self.drop.add_files.connect(self.add_files_dialog)
@@ -276,25 +260,11 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.drop)
         self.stack.addWidget(self.queue)
         ll.addWidget(self.stack)
-        self.splitter.addWidget(left)
-
-        self.panel_wrap = QFrame()
-        self.panel_wrap.setObjectName("Card")
-        pw = QVBoxLayout(self.panel_wrap)
-        pw.setContentsMargins(4, 4, 4, 4)
+        root.addWidget(left, 1)
+        # Ajustes de conversión: el panel de siempre, ahora en la pestaña «Conversión» de los ajustes
         self.panel = SettingsPanel()
         self.panel.changed.connect(self._on_settings_changed)
-        pw.addWidget(self.panel)
-        side = QWidget()
-        sl = QVBoxLayout(side)
-        sl.setContentsMargins(8, 4, 16, 12)
-        sl.addWidget(self.panel_wrap)
-        self.side = side
-        self.side.setMinimumWidth(400)
-        self.splitter.addWidget(side)
-        self.splitter.setStretchFactor(0, 3)
-        self.splitter.setStretchFactor(1, 2)
-        root.addWidget(self.splitter, 1)
+        self._settings_win = None
 
         # ---- pie
         footer = QFrame()
@@ -524,15 +494,11 @@ class MainWindow(QMainWindow):
         modified = self._is_modified()
         tail = f"    ✎ ({tr('modified')})" if modified else "    ✎"
         self.summary.setText("   ·   ".join(parts) + tail)
-        p = self._preset(self.current_key)
-        self.delete_preset_act.setEnabled(bool(p and not p.builtin))
 
     def set_advanced_visible(self, on: bool) -> None:
-        self.side.setVisible(on)
-        self.adv_btn.blockSignals(True)
-        self.adv_btn.setChecked(on)
-        self.adv_btn.blockSignals(False)
-        self.cfg.advanced_open = on
+        """Compatibilidad: abrir los ajustes de conversión."""
+        if on:
+            self.open_settings("conversion")
 
     # ================================================================== salida / opciones
     def _fill_output_combo(self) -> None:
@@ -953,10 +919,8 @@ class MainWindow(QMainWindow):
         from .queue_view import MODE
         MODE["convert"] = conv
         self.queue.sync(self.engine.jobs)
-        for w in (self.preset_combo, self.preset_menu_btn, self.adv_btn, self.summary):
+        for w in (self.preset_combo, self.summary):
             w.setEnabled(conv)
-        if not conv and self.adv_btn.isChecked():
-            self.set_advanced_visible(False)
         self._fill_output_combo()
         self._update_bar()
         self._refresh_controls()
@@ -1059,7 +1023,7 @@ class MainWindow(QMainWindow):
         return out
 
     def _on_bar_action(self) -> None:
-        self._open_prefs(tab="rename")
+        self.open_settings("rename" if self._bar_kind == "library" else "engines")
 
     def _dismiss_bar(self) -> None:
         self._bar_dismissed.add(self._bar_kind)
@@ -1139,11 +1103,20 @@ class MainWindow(QMainWindow):
 
     # ================================================================== otros
     def _open_prefs(self, tab: str = "") -> None:
-        dlg = PreferencesDialog(self.cfg, self.available, integration, self, rename=self.rename,
-                                tab=tab)
-        dlg.exec()
+        self.open_settings({"general": "prefs", "": "prefs"}.get(tab, tab))
+
+    @property
+    def settings_window(self) -> SettingsWindow:
+        if self._settings_win is None:
+            self._settings_win = SettingsWindow(self)
+        return self._settings_win
+
+    def open_settings(self, tab: str = "conversion") -> None:
+        dlg = self.settings_window
+        dlg.open_tab(tab)
         new_lang = dlg.chosen_lang()
-        lang_changed = i18n.effective(new_lang) != i18n.current()
+        # Solo si el usuario cambió el desplegable (y eso cambia el idioma que se ve)
+        lang_changed = new_lang != self.cfg.ui_lang and i18n.effective(new_lang) != i18n.current()
         self.cfg.ui_lang = new_lang
         self.cfg.save()
         self._fill_output_combo()
