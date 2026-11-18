@@ -9,10 +9,11 @@
   <description>
     <p>Convert videos to H.264, H.265, AV1 and VP9 with a minimal interface. Several videos are transcoded at the same time.</p>
     <p xml:lang="es">Convierte vídeos a H.264, H.265, AV1 y VP9 con una interfaz minimalista. Varios vídeos se transcodifican a la vez.</p>
-    <p>It also identifies and renames shows and movies (TMDB, TVmaze, IMDb) and files them in your library.</p>
-    <p xml:lang="es">Además identifica y renombra series y películas (TMDB, TVmaze, IMDb) y las ordena en tu biblioteca.</p>
+    <p>It also identifies and renames shows and movies (TMDB, TheTVDB, TVmaze, IMDb) and files them in your library.</p>
+    <p xml:lang="es">Además identifica y renombra series y películas (TMDB, TheTVDB, TVmaze, IMDb) y las ordena en tu biblioteca.</p>
   </description>
   <releases>
+    <release version="1.1.0" date="2026-11-18"/>
     <release version="1.0.2" date="2026-11-18"/>
     <release version="1.0.1" date="2026-11-18"/>
     <release version="1.0.0" date="2026-11-17"/>

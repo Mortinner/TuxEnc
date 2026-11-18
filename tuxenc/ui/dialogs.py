@@ -164,7 +164,7 @@ class PreferencesDialog(QDialog):
         self.integrated_now, self.integrated_update, self.integrated_old = False, False, ""
         self.cfg = cfg
         self.api = integration_api
-        self.setWindowTitle(tr("preferences"))
+        self.setWindowTitle(tr("settings") + " · TuxEnc")
         self.setMinimumWidth(640)
         self.resize(700, 760)
         outer = QVBoxLayout(self)
@@ -238,6 +238,12 @@ class PreferencesDialog(QDialog):
         about.setTextFormat(Qt.RichText)
         about_row.addWidget(about, 1)
         lay.addLayout(about_row)
+        credits = QLabel(tr("credits_text"))
+        credits.setWordWrap(True)
+        credits.setTextFormat(Qt.RichText)
+        credits.setOpenExternalLinks(True)
+        credits.setObjectName("Muted")
+        lay.addWidget(credits)
 
         lay.addStretch(1)
         self.tabs.addTab(_scrolled(general), tr("tab_general"))

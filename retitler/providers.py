@@ -26,7 +26,7 @@ from .log import log
 __all__ = [
     "CachedFetch", "EpisodeInfo", "RATE_LIMITER", "RateLimiter", "InvalidApiKey", "JsonCache", "NotFound", "ProviderError",
     "ENGLISH_SOURCES", "OMDbClient", "PROVIDER_NAMES", "PROVIDER_RANK", "ResultKind", "SOURCE_NAMES", "SearchResult", "TMDBClient",
-    "TVmazeClient", "is_placeholder", "urllib_fetch",
+    "TVDBClient", "TVmazeClient", "is_placeholder", "urllib_fetch", "urllib_post",
 ]
 
 USER_AGENT = "Retitler/0.1 (+renombrador de series y peliculas)"
@@ -51,8 +51,8 @@ class ResultKind(str, Enum):
 
 
 # Nombre de cada motor para mostrar, y su prioridad cuando dos coinciden igual de bien.
-PROVIDER_NAMES = {"tmdb": "TMDB", "tvmaze": "TVmaze", "omdb": "IMDb"}
-PROVIDER_RANK = {"tmdb": 0, "tvmaze": 1, "omdb": 2}
+PROVIDER_NAMES = {"tmdb": "TMDB", "tvdb": "TheTVDB", "tvmaze": "TVmaze", "omdb": "IMDb"}
+PROVIDER_RANK = {"tmdb": 0, "tvdb": 1, "tvmaze": 2, "omdb": 3}
 
 
 @dataclass(frozen=True)
@@ -89,9 +89,10 @@ class EpisodeInfo:
 
 
 SOURCE_NAMES = {"tmdb": "TMDB", "tmdb-mx": "TMDB (español de Latinoamérica)", "tmdb-en": "TMDB (inglés)",
+                "tvdb": "TheTVDB", "tvdb-en": "TheTVDB (idioma original)",
                 "tvmaze": "TVmaze", "omdb": "IMDb", "archivo": "tu archivo"}
-# Fuentes cuyos títulos están en inglés (TVmaze e IMDb solo tienen inglés)
-ENGLISH_SOURCES = frozenset({"tmdb-en", "tvmaze", "omdb"})
+# Fuentes cuyos títulos no están en el idioma pedido (TVmaze e IMDb solo tienen inglés)
+ENGLISH_SOURCES = frozenset({"tmdb-en", "tvdb-en", "tvmaze", "omdb"})
 
 # TMDB y TVmaze devuelven «Episodio 9» / «Episode 9» cuando el episodio aún no tiene título.
 _PLACEHOLDER = re.compile(r"^\s*(?:episode|episodio|épisode|episódio|folge|episodi|capítulo|capitulo|afl\.?)\s*#?\s*\d+\s*$", re.I)
@@ -185,6 +186,30 @@ def urllib_fetch(url: str, headers: Mapping[str, str], timeout: float = 10.0) ->
         except (OSError, ValueError):
             raise ProviderError("Respuesta no válida del servidor") from None
     raise ProviderError("Demasiadas peticiones; inténtalo de nuevo en unos segundos")
+
+
+def urllib_post(url: str, body: Mapping[str, Any], headers: Mapping[str, str] | None = None,
+                timeout: float = 10.0) -> Any:
+    """POST con cuerpo JSON (solo lo usa el inicio de sesión de TheTVDB). Nunca se cachea."""
+    request = urllib.request.Request(
+        url, data=json.dumps(dict(body)).encode("utf-8"), method="POST",
+        headers={"Accept": "application/json", "Content-Type": "application/json",
+                 "User-Agent": USER_AGENT, **dict(headers or {})})
+    RATE_LIMITER.wait(urlsplit(url).netloc)
+    try:
+        log.debug("POST %s", _safe_url(url))
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        log.warning("HTTP %s en %s", exc.code, _safe_url(url))
+        if exc.code in (401, 403):
+            raise InvalidApiKey("El servidor rechazó la clave de API") from None
+        raise ProviderError(f"El servidor respondió con error HTTP {exc.code}") from None
+    except urllib.error.URLError as exc:
+        log.warning("Sin conexión con %s: %s", urlsplit(url).netloc, exc.reason)
+        raise ProviderError("No se pudo conectar con el servidor") from None
+    except (OSError, ValueError):
+        raise ProviderError("Respuesta no válida del servidor") from None
 
 
 class JsonCache:
@@ -424,6 +449,166 @@ class TMDBClient:
 # --------------------------------------------------------------------------- #
 # TVmaze (sin clave; solo series; títulos en inglés)
 # --------------------------------------------------------------------------- #
+# --------------------------------------------------------------------------- #
+# TheTVDB (API v4)
+# --------------------------------------------------------------------------- #
+Post = Callable[[str, Mapping[str, Any], Mapping[str, str]], Any]
+
+
+class TVDBClient:
+    """Series en TheTVDB. Suele ser el único con los títulos de capítulo traducidos.
+
+    Inicio de sesión: POST /login con la clave (y el PIN de suscriptor si la clave lo exige) →
+    token de un mes, que se guarda en memoria y se renueva si el servidor lo rechaza.
+    Las películas se dejan a TMDB/IMDb.
+    """
+
+    BASE = "https://api4.thetvdb.com/v4"
+    LANGS = {"es": "spa", "en": "eng", "fr": "fra", "de": "deu", "it": "ita", "pt": "por"}
+
+    def __init__(self, api_key: str, language: str = "es", pin: str = "", fetch: Fetch | None = None,
+                 post: Post | None = None, cache: JsonCache | None = None) -> None:
+        if not api_key:
+            raise InvalidApiKey("Falta la clave de TheTVDB")
+        self._key, self._pin = api_key, pin
+        self._lang = self.LANGS.get(language, language if len(language) == 3 else "eng")
+        raw: Fetch = fetch or urllib_fetch
+        self._raw = raw
+        self._fetch: Fetch = CachedFetch(raw, cache) if cache else raw
+        self._post: Post = post or urllib_post
+        self._token: str | None = None
+        self._lock = threading.Lock()
+
+    # -- sesión ------------------------------------------------------------ #
+    def _login(self) -> str:
+        body = {"apikey": self._key}
+        if self._pin:
+            body["pin"] = self._pin
+        data = self._post(f"{self.BASE}/login", body, {})
+        token = (data.get("data") or {}).get("token") if isinstance(data, dict) else None
+        if not token:
+            raise InvalidApiKey("TheTVDB no aceptó la clave")
+        return str(token)
+
+    def _get(self, path: str, **params: Any) -> Any:
+        url = f"{self.BASE}{path}" + (f"?{urlencode(params)}" if params else "")
+        for attempt in (1, 2):
+            with self._lock:
+                if self._token is None:
+                    self._token = self._login()
+                token = self._token
+            try:
+                data = self._fetch(url, {"Authorization": f"Bearer {token}"})
+            except InvalidApiKey:
+                if attempt == 1:                 # token caducado: se pide otro una vez
+                    with self._lock:
+                        self._token = None
+                    continue
+                raise
+            return data.get("data") if isinstance(data, dict) else None
+        return None
+
+    # -- búsqueda ---------------------------------------------------------- #
+    def _result(self, row: Mapping[str, Any]) -> SearchResult | None:
+        ident = row.get("tvdb_id") or row.get("id")
+        try:
+            ident = int(str(ident).replace("series-", ""))
+        except (TypeError, ValueError):
+            return None
+        trans = row.get("translations") if isinstance(row.get("translations"), dict) else {}
+        original = row.get("name") or ""
+        title = trans.get(self._lang) or original
+        year = row.get("year")
+        year = int(year) if str(year or "").isdigit() else _year(row.get("first_air_time") or row.get("firstAired"))
+        return SearchResult("tvdb", ResultKind.SERIES, ident, title, year, original,
+                            str(row.get("overview") or ""), float(row.get("score") or 0) / 100000)
+
+    def search_series(self, query: str) -> list[SearchResult]:
+        rows = self._get("/search", query=query, type="series", limit=20)
+        return [r for r in (self._result(x) for x in _items(rows)) if r is not None]
+
+    def lookup_imdb(self, imdb_id: str) -> SearchResult | None:
+        try:
+            rows = self._get(f"/search/remoteid/{imdb_id}")
+        except NotFound:
+            return None
+        for row in _items(rows):
+            series = row.get("series")
+            if isinstance(series, dict) and series.get("id"):
+                return self.get_by_id(int(series["id"]))
+        return None
+
+    def get_by_id(self, ident: int) -> SearchResult | None:
+        try:
+            row = self._get(f"/series/{int(ident)}")
+        except NotFound:
+            return None
+        if not isinstance(row, dict):
+            return None
+        res = self._result({**row, "tvdb_id": row.get("id")})
+        if res is None:
+            return None
+        try:
+            tr = self._get(f"/series/{int(ident)}/translations/{self._lang}")
+            if isinstance(tr, dict) and tr.get("name"):
+                res = replace(res, title=str(tr["name"]))
+        except (NotFound, InvalidApiKey):
+            pass
+        return res
+
+    def get_by_slug(self, slug: str) -> SearchResult | None:
+        try:
+            row = self._get(f"/series/slug/{slug}")
+        except NotFound:
+            return None
+        return self.get_by_id(int(row["id"])) if isinstance(row, dict) and row.get("id") else None
+
+    # -- temporadas y capítulos -------------------------------------------- #
+    def _episodes(self, series_id: int, season: int | None, lang: str | None) -> list[dict]:
+        path = f"/series/{series_id}/episodes/default" + (f"/{lang}" if lang else "")
+        out: list[dict] = []
+        for page in range(50):
+            params: dict[str, Any] = {"page": page}
+            if season is not None:
+                params["season"] = season
+            data = self._get(path, **params)
+            eps = _items(data, "episodes") if isinstance(data, dict) else []
+            out += eps
+            if len(eps) < 500:                   # TheTVDB pagina de 500 en 500
+                break
+        return out
+
+    def list_seasons(self, series_id: int) -> list[int]:
+        nums = {int(e["seasonNumber"]) for e in self._episodes(series_id, None, None)
+                if str(e.get("seasonNumber", "")).lstrip("-").isdigit()}
+        return sorted(nums)
+
+    def get_season(self, series_id: int, season: int) -> list[EpisodeInfo]:
+        orig = {int(e["number"]): e for e in self._episodes(series_id, season, None)
+                if str(e.get("number", "")).isdigit()}
+        local: dict[int, dict] = {}
+        if self._lang != "eng":
+            try:
+                local = {int(e["number"]): e for e in self._episodes(series_id, season, self._lang)
+                         if str(e.get("number", "")).isdigit()}
+            except NotFound:
+                local = {}
+        out = []
+        for n in sorted(set(orig) | set(local)):
+            o, t = orig.get(n, {}), local.get(n, {})
+            name_o, name_t = str(o.get("name") or "").strip(), str(t.get("name") or "").strip()
+            date = str(o.get("aired") or t.get("aired") or "")
+            if self._lang == "eng":
+                title, source = name_o, "tvdb"
+            elif name_t and name_t != name_o:
+                title, source = name_t, "tvdb"
+            else:                                 # sin traducción: nombre original
+                title, source = name_o or name_t, "tvdb-en"
+            out.append(EpisodeInfo(season, n, title, date, source=source,
+                                   provisional=bool(title) and is_placeholder(title)))
+        return out
+
+
 class TVmazeClient:
     BASE = "https://api.tvmaze.com"
 
@@ -462,6 +647,16 @@ class TVmazeClient:
         return SearchResult("tvmaze", ResultKind.SERIES, int(show["id"]), show.get("name") or "",
                             _year(show.get("premiered")), show.get("name") or "",
                             show.get("summary") or "", float(show.get("weight") or 0))
+
+    def external_ids(self, ident: int) -> dict:
+        try:
+            show = self._get(f"/shows/{int(ident)}")
+        except NotFound:
+            return {}
+        ext = show.get("externals") if isinstance(show, dict) else None
+        if not isinstance(ext, dict):
+            return {}
+        return {"imdb_id": ext.get("imdb"), "tvdb_id": ext.get("thetvdb")}
 
     def get_by_id(self, ident: int) -> SearchResult | None:
         try:

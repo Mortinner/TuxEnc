@@ -145,22 +145,51 @@ STRINGS: dict[str, tuple[str, str]] = {
     "post_warning": ("Terminado con avisos: {w}", "Done with warnings: {w}"),
 
     # preferencias: renombrado
-    "tab_general": ("General", "General"),
-    "tab_rename": ("Renombrado", "Renaming"),
-    "rp_keys": ("Claves de los buscadores", "Search service keys"),
-    "rp_keys_hint": ("TVmaze no necesita clave (solo series, títulos en inglés). TMDB es gratis y "
-                     "hace falta para películas y títulos en español. IMDb (OMDb) es opcional.",
-                     "TVmaze needs no key (shows only, English titles). TMDB is free and needed "
-                     "for movies and localized titles. IMDb (OMDb) is optional."),
-    "rp_key_placeholder": ("Pega aquí la clave", "Paste the key here"),
+    "tab_general": ("🔧 Preferencias", "🔧 Preferences"),
+    "tab_rename": ("🏷 Renombrado y buscadores", "🏷 Renaming and search services"),
+    "settings_tip": ("Conversión, renombrado y buscadores, y preferencias de TuxEnc",
+                     "Conversion, renaming and search services, and TuxEnc preferences"),
+    "menu_conversion": ("Conversión (vídeo, audio y subtítulos)", "Conversion (video, audio and subtitles)"),
+    "menu_rename": ("Renombrado y buscadores…", "Renaming and search services…"),
+    "menu_prefs": ("Preferencias (idioma, integración, registros, acerca de)…",
+                   "Preferences (language, integration, logs, about)…"),
+    "bar_engines": ("Buscadores listos, sin configurar nada: {ready}.",
+                    "Search services ready, nothing to set up: {ready}."),
+    "bar_engines_missing": ("{missing} necesita tu propia clave (gratuita y opcional).",
+                            "{missing} needs your own key (free and optional)."),
+    "bar_engines_missing_n": ("{missing} necesitan tu propia clave (gratuita y opcional).",
+                              "{missing} need your own key (free and optional)."),
+    "bar_see_engines": ("Ver buscadores", "See services"),
+    "rp_keys": ("Buscadores", "Search services"),
+    "rp_keys_hint": ("TuxEnc trae sus propias claves de TMDB y TheTVDB, así que funcionan sin hacer nada. "
+                     "TVmaze no necesita clave. IMDb (OMDb) necesita la tuya: es gratuita, pero tiene un "
+                     "límite diario que, compartido, se agotaría enseguida. Si lo prefieres, en cualquiera "
+                     "puedes poner tu propia clave.",
+                     "TuxEnc includes its own TMDB and TheTVDB keys, so they work out of the box. TVmaze needs "
+                     "no key. IMDb (OMDb) needs yours: it's free, but its daily limit would run out quickly if "
+                     "shared. You can use your own key for any of them if you prefer."),
+    "rp_keys_hint_nobuiltin": ("Esta copia de TuxEnc se compiló sin claves integradas. TVmaze no necesita clave "
+                               "(solo series, títulos en inglés). TMDB y TheTVDB son gratuitas y dan títulos en "
+                               "español; TMDB hace falta para películas. IMDb (OMDb) es opcional.",
+                               "This TuxEnc build has no built-in keys. TVmaze needs no key (TV shows only, English "
+                               "titles). TMDB and TheTVDB are free and give localized titles; TMDB is needed for "
+                               "movies. IMDb (OMDb) is optional."),
+    "rp_key_placeholder": ("Tu propia clave (opcional)", "Your own key (optional)"),
+    "rp_pin_placeholder": ("PIN de suscriptor (solo si tu clave lo pide)", "Subscriber PIN (only if your key needs it)"),
+    "rp_key_builtin": ("✓ Funcionando con la clave integrada de TuxEnc.", "✓ Working with TuxEnc's built-in key."),
+    "rp_key_free": ("✓ Funciona sin clave (series, títulos en inglés).", "✓ Works without a key (TV shows, English titles)."),
+    "rp_key_none_omdb": ("✗ Sin clave: IMDb no se usa. Consigue la tuya gratis y pégala aquí.",
+                         "✗ No key: IMDb is not used. Get yours for free and paste it here."),
+    "rp_key_clear_mine": ("Quitar la mía", "Remove mine"),
     "rp_key_save": ("Guardar", "Save"),
     "rp_key_clear": ("Borrar", "Remove"),
     "rp_key_get": ("Conseguir…", "Get one…"),
-    "rp_key_env": ("✓ Definida por variable de entorno.", "✓ Set by an environment variable."),
-    "rp_key_keyring": ("✓ Guardada en el llavero del sistema.", "✓ Saved in the system keyring."),
-    "rp_key_file": ("✓ Guardada en ~/.config/tuxenc/renombrado/secrets.json (solo tu usuario puede leerla).",
-                    "✓ Saved in ~/.config/tuxenc/renombrado/secrets.json (readable only by you)."),
-    "rp_key_none": ("Sin clave.", "No key."),
+    "rp_key_env": ("✓ Funcionando con tu clave (variable de entorno).", "✓ Working with your key (environment variable)."),
+    "rp_key_keyring": ("✓ Funcionando con tu clave (guardada en el llavero del sistema).",
+                       "✓ Working with your key (saved in the system keyring)."),
+    "rp_key_file": ("✓ Funcionando con tu clave (en ~/.config/tuxenc/renombrado/secrets.json, solo legible por ti).",
+                    "✓ Working with your key (in ~/.config/tuxenc/renombrado/secrets.json, readable only by you)."),
+    "rp_key_none": ("✗ Sin clave: este buscador no se usa.", "✗ No key: this service is not used."),
     "rp_key_invalid": ("El servicio dice que esa clave no es válida; no se ha guardado.",
                        "The service says that key is not valid; it was not saved."),
     "rp_key_unchecked": ("guardada sin comprobar ({err})", "saved without checking ({err})"),
@@ -482,6 +511,20 @@ STRINGS: dict[str, tuple[str, str]] = {
     "logs": ("Registros", "Logs"),
     "open_logs": ("Abrir carpeta de registros", "Open logs folder"),
     "about": ("Acerca de", "About"),
+    "match_credits": ("Datos: TMDB · TheTVDB · TVmaze · IMDb (OMDb)", "Data: TMDB · TheTVDB · TVmaze · IMDb (OMDb)"),
+    "credits_text": (
+        "<b>Datos de series y películas</b><br>"
+        "Este producto usa la API de TMDB, pero no está avalado ni certificado por TMDB · "
+        "<a href='https://www.themoviedb.org/'>themoviedb.org</a><br>"
+        "Metadatos de TheTVDB · <a href='https://thetvdb.com/'>thetvdb.com</a><br>"
+        "Datos de TVmaze (CC BY-SA) · <a href='https://www.tvmaze.com/'>tvmaze.com</a><br>"
+        "IMDb a través de OMDb · <a href='https://www.omdbapi.com/'>omdbapi.com</a>",
+        "<b>TV and movie data</b><br>"
+        "This product uses the TMDB API but is not endorsed or certified by TMDB · "
+        "<a href='https://www.themoviedb.org/'>themoviedb.org</a><br>"
+        "Metadata provided by TheTVDB · <a href='https://thetvdb.com/'>thetvdb.com</a><br>"
+        "Data from TVmaze (CC BY-SA) · <a href='https://www.tvmaze.com/'>tvmaze.com</a><br>"
+        "IMDb via OMDb · <a href='https://www.omdbapi.com/'>omdbapi.com</a>"),
     "about_text": ("<b>TuxEnc {v}</b><br>Transcodificador de vídeo para Linux con cola paralela.<br><br>"
                    "Software libre bajo licencia <b>GNU GPL v3</b>.<br>"
                    "Usa <b>FFmpeg</b> (x264, x265, SVT-AV1, libvpx, Opus…) y <b>Qt</b>.",

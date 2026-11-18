@@ -16,8 +16,8 @@ from .log import log
 from .matching import normalize, score_candidate
 from .parser import MediaKind, ParsedName
 from .providers import (
-    PROVIDER_NAMES, PROVIDER_RANK, EpisodeInfo, InvalidApiKey, JsonCache, OMDbClient, ProviderError, ResultKind,
-    SearchResult, TMDBClient, TVmazeClient,
+    ENGLISH_SOURCES, PROVIDER_NAMES, PROVIDER_RANK, EpisodeInfo, InvalidApiKey, JsonCache, OMDbClient, ProviderError, ResultKind,
+    SearchResult, TMDBClient, TVDBClient, TVmazeClient,
 )
 
 __all__ = ["SearchResponse", "Searcher", "build_searcher", "pick_best", "parse_ref"]
@@ -25,6 +25,7 @@ __all__ = ["SearchResponse", "Searcher", "build_searcher", "pick_best", "parse_r
 _IMDB_REF = re.compile(r"(?<![a-z0-9])(tt\d{6,10})(?!\d)", re.I)
 _TMDB_REF = re.compile(r"themoviedb\.org/(?:[a-z]{2}(?:-[a-z]{2})?/)?(tv|movie)/(\d+)", re.I)
 _TVMAZE_REF = re.compile(r"tvmaze\.com/shows/(\d+)", re.I)
+_TVDB_REF = re.compile(r"thetvdb\.com/(?:[a-z]{2,3}/)?series/([a-z0-9][a-z0-9-]*)", re.I)
 
 
 def parse_ref(text: str) -> tuple[str, ResultKind | None, int | str] | None:
@@ -37,6 +38,9 @@ def parse_ref(text: str) -> tuple[str, ResultKind | None, int | str] | None:
         return "tmdb", ResultKind.SERIES if m.group(1).lower() == "tv" else ResultKind.MOVIE, int(m.group(2))
     if m := _TVMAZE_REF.search(text):
         return "tvmaze", ResultKind.SERIES, int(m.group(1))
+    if m := _TVDB_REF.search(text):
+        slug = m.group(1).lower()
+        return "tvdb", ResultKind.SERIES, int(slug) if slug.isdigit() else slug
     if m := _IMDB_REF.search(text):
         return "imdb", None, m.group(1).lower()
     return None
@@ -91,10 +95,13 @@ def pick_best(results: list[SearchResult], min_score: float = 0.75) -> SearchRes
 
 class Searcher:
     def __init__(self, tmdb: TMDBClient | None = None, tvmaze: TVmazeClient | None = None,
-                 cache: JsonCache | None = None, omdb: OMDbClient | None = None) -> None:
-        self.tmdb, self.tvmaze, self.omdb, self.cache = tmdb, tvmaze, omdb, cache
+                 cache: JsonCache | None = None, omdb: OMDbClient | None = None,
+                 tvdb: TVDBClient | None = None, language: str = "es") -> None:
+        self.tmdb, self.tvmaze, self.omdb, self.tvdb, self.cache = tmdb, tvmaze, omdb, tvdb, cache
+        self.language = language
         # Orden = prioridad al buscar títulos de episodio que faltan.
-        self._clients = {name: c for name, c in (("tmdb", tmdb), ("tvmaze", tvmaze), ("omdb", omdb)) if c is not None}
+        self._clients = {name: c for name, c in (("tmdb", tmdb), ("tvdb", tvdb), ("tvmaze", tvmaze), ("omdb", omdb))
+                         if c is not None}
         self._links: dict[tuple[str, int | str], list[tuple[str, int | str]]] = {}
 
     def clear_cache(self) -> None:
@@ -148,6 +155,8 @@ class Searcher:
         if source == "imdb":
             if self.tmdb:
                 ask("TMDB", self.tmdb.find_imdb, ident)
+            if self.tvdb:
+                ask("TheTVDB", self.tvdb.lookup_imdb, ident)
             if self.tvmaze:
                 ask("TVmaze", self.tvmaze.lookup, ident)
             if self.omdb:
@@ -161,6 +170,11 @@ class Searcher:
                 warnings.append("Para usar un enlace de TMDB hace falta una clave de TMDB (configúrala en Preferencias).")
         elif source == "tvmaze" and self.tvmaze:
             ask("TVmaze", self.tvmaze.get_by_id, ident)
+        elif source == "tvdb":
+            if self.tvdb:
+                ask("TheTVDB", self.tvdb.get_by_id if isinstance(ident, int) else self.tvdb.get_by_slug, ident)
+            else:
+                warnings.append("Para usar un enlace de TheTVDB hace falta su clave (Ajustes → Renombrado y buscadores).")
         if kind is MediaKind.EPISODE:
             found = [r for r in found if r.kind is ResultKind.SERIES] or found
         elif kind is MediaKind.MOVIE:
@@ -214,6 +228,13 @@ class Searcher:
     def _external_ids(self, result: SearchResult) -> dict:
         if result.provider == "omdb":
             return {"imdb_id": str(result.id)}
+        if result.provider == "tvdb":
+            return {"tvdb_id": result.id}
+        if result.provider == "tvmaze" and self.tvmaze:
+            try:
+                return self.tvmaze.external_ids(int(result.id))
+            except ProviderError as exc:
+                log.info("no se pudieron consultar los ids externos de %s: %s", result.label, exc)
         if result.provider == "tmdb" and self.tmdb:
             try:
                 return self.tmdb.external_ids(int(result.id))
@@ -226,6 +247,20 @@ class Searcher:
         imdb = ext.get("imdb_id")
         if name == "omdb" and imdb:
             return imdb
+        if name == "tvdb":
+            if ext.get("tvdb_id"):
+                try:
+                    return int(ext["tvdb_id"])
+                except (TypeError, ValueError):
+                    pass
+            if imdb and self.tvdb:
+                try:
+                    show = self.tvdb.lookup_imdb(imdb)
+                except ProviderError:
+                    show = None
+                if show:
+                    log.info("%s %s ↔ TheTVDB %s (por IMDb)", result.provider, result.id, show.id)
+                    return show.id
         if name == "tvmaze":
             for kwargs in ({"imdb": imdb}, {"tvdb": ext.get("tvdb_id")}):
                 if any(kwargs.values()):
@@ -248,6 +283,14 @@ class Searcher:
         return None
 
     # ------------------------------------------------------------- temporadas y capítulos
+    def _quality(self, e: EpisodeInfo | None) -> int:
+        """0 sin título o provisional · 1 título en otro idioma · 2 título en el idioma pedido."""
+        if e is None or not e.title or e.provisional:
+            return 0
+        if getattr(self, "language", "es") != "en" and e.source in ENGLISH_SOURCES:
+            return 1
+        return 2
+
     def _all_sources(self, result: SearchResult) -> list[tuple[str, int | str]]:
         return [(result.provider, result.id)] + list(self._linked(result))
 
@@ -283,7 +326,7 @@ class Searcher:
                 continue
             for e in eps:
                 cur = by_number.get(e.number)
-                if cur is None or ((not cur.title or cur.provisional) and e.title and not e.provisional):
+                if cur is None or self._quality(e) > self._quality(cur):
                     by_number[e.number] = e
         if not by_number and errors:
             raise errors[0]
@@ -298,7 +341,8 @@ class Searcher:
         if result.kind is not ResultKind.SERIES:
             raise ValueError("Solo las series tienen episodios")
         by_number = {e.number: e for e in self._clients[result.provider].get_season(result.id, season)}
-        missing = [n for n in episodes if n not in by_number or not by_number[n].title or by_number[n].provisional]
+        # Se completan con los otros motores los que faltan, son provisionales o no están en el idioma pedido
+        missing = [n for n in episodes if self._quality(by_number.get(n)) < 2]
         if missing:
             for provider, ident in self._linked(result):
                 try:
@@ -308,9 +352,10 @@ class Searcher:
                     continue
                 for n in list(missing):
                     alt = other.get(n)
-                    if alt and alt.title and not alt.provisional:
+                    if self._quality(alt) > self._quality(by_number.get(n)):
                         log.info("%s S%02dE%02d: título de %s: %r", result.label, season, n, provider, alt.title)
                         by_number[n] = alt
+                    if self._quality(by_number.get(n)) >= 2:
                         missing.remove(n)
                 if not missing:
                     break
@@ -331,9 +376,12 @@ def build_searcher(settings: Settings | None = None, keystore: KeyStore | None =
     settings = settings or Settings.load()
     keystore = keystore or KeyStore()
     tmdb_key, omdb_key = keystore.for_service("tmdb").get(), keystore.for_service("omdb").get()
+    tvdb_key, tvdb_pin = keystore.for_service("tvdb").get(), keystore.for_service("tvdbpin").get()
     cache = cache or JsonCache(cache_dir() / "http")
     return Searcher(
         TMDBClient(tmdb_key, settings.language, cache=cache) if tmdb_key else None,
         TVmazeClient(cache=cache), cache,
         OMDbClient(omdb_key, cache=cache) if omdb_key else None,
+        TVDBClient(tvdb_key, settings.language, pin=tvdb_pin or "", cache=cache) if tvdb_key else None,
+        language=settings.language,
     )

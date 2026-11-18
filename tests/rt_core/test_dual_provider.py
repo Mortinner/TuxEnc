@@ -192,7 +192,8 @@ def test_secondary_provider_failure_keeps_primary_titles():
 def test_tvmaze_result_completes_titles_from_tmdb_by_name():
     s = searcher()
     show = SearchResult("tvmaze", ResultKind.SERIES, 900, "MobLand", 2025, "MobLand")
-    s.tvmaze = TVmazeClient(fetch=routes(**{"/shows/900/episodes": [{"season": 2, "number": 9, "name": "Episode 9"}]}))
+    s.tvmaze = TVmazeClient(fetch=routes(**{"/shows/900/episodes": [{"season": 2, "number": 9, "name": "Episode 9"}],
+                                            "/shows/900": {"id": 900, "externals": {}}}))
     s._clients["tvmaze"] = s.tvmaze
     [e9] = s.episode_titles_detailed(show, 2, (9,))
     assert e9.provisional and e9.title == "Episode 9"                       # nadie tiene el título real: provisional

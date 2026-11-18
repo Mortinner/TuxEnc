@@ -36,6 +36,24 @@ KEYRING_VERSION = "25.7.0"      # llavero del sistema para las claves de TMDB / 
 sys.path.insert(0, str(ROOT))
 from tuxenc import VERSION  # noqa: E402
 
+KEYS_FILE = ROOT / "packaging" / "keys.env"     # NO se sube al repositorio (.gitignore)
+
+
+def builtin_keys_from_env() -> dict[str, str]:
+    """Claves de los buscadores para el AppImage oficial: de packaging/keys.env o de las variables
+    TUXENC_KEY_TMDB / TUXENC_KEY_TVDB / TUXENC_KEY_OMDB (p. ej. secretos del CI)."""
+    keys: dict[str, str] = {}
+    if KEYS_FILE.exists():
+        for line in KEYS_FILE.read_text(encoding="utf-8").splitlines():
+            name, sep, value = line.strip().partition("=")
+            if sep and not name.startswith("#") and value.strip():
+                keys[name.strip().lower().removeprefix("tuxenc_key_")] = value.strip().strip('"\'')
+    for name in ("tmdb", "tvdb", "omdb"):
+        env = os.environ.get(f"TUXENC_KEY_{name.upper()}", "").strip()
+        if env:
+            keys[name] = env
+    return {k: v for k, v in keys.items() if k in ("tmdb", "tvdb", "omdb")}
+
 PY_STRIP = [
     "lib/python3.12/test", "lib/python3.12/idlelib", "lib/python3.12/tkinter",
     "lib/python3.12/turtledemo", "lib/python3.12/ensurepip", "lib/python3.12/lib2to3",
@@ -161,7 +179,12 @@ def build():
     app.mkdir()
     shutil.copy2(ROOT / "run.py", app / "run.py")
     for pkg in ("tuxenc", "retitler"):
-        shutil.copytree(ROOT / pkg, app / pkg, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+        shutil.copytree(ROOT / pkg, app / pkg, ignore=shutil.ignore_patterns("__pycache__", "*.pyc",
+                                                                              "_builtin_keys.py"))
+    keys = builtin_keys_from_env()
+    from tuxenc.builtin_keys import render_module
+    (app / "tuxenc" / "_builtin_keys.py").write_text(render_module(keys))
+    print("claves integradas:", ", ".join(sorted(keys)) or "ninguna (cada usuario pondrá las suyas)")
 
     # FFmpeg (binarios + bibliotecas compartidas, RPATH=$ORIGIN/../lib)
     ff = usr / "ffmpeg"

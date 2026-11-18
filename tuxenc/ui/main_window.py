@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Qt, QTimer, QUrl, Signal
-from PySide6.QtGui import QDesktopServices, QIcon, QPixmap
+from PySide6.QtGui import QAction, QDesktopServices, QIcon, QPixmap
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QFileDialog, QFrame, QHBoxLayout,
                                QInputDialog, QLabel, QMainWindow, QMenu, QMessageBox,
                                QProgressBar, QPushButton, QSizePolicy, QSplitter, QStackedWidget,
@@ -50,6 +50,13 @@ def _open_path(path: str) -> None:
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except OSError:
         QDesktopServices.openUrl(QUrl.fromLocalFile(path))
+
+
+def _join(names: list[str]) -> str:
+    """«A, B y C» / «A, B and C»."""
+    if len(names) < 2:
+        return "".join(names)
+    return ", ".join(names[:-1]) + (" y " if ui_lang() == "es" else " and ") + names[-1]
 
 
 class MainWindow(QMainWindow):
@@ -171,16 +178,20 @@ class MainWindow(QMainWindow):
         self.preset_menu_btn.setMenu(pm)
         hl.addWidget(self.preset_menu_btn)
 
-        self.adv_btn = QToolButton()
-        self.adv_btn.setText("⚙ " + tr("settings"))
+        # Un solo «⚙ Ajustes ▾»: conversión (panel lateral), renombrado y buscadores, preferencias
+        self.settings_btn = QToolButton()
+        self.settings_btn.setText("⚙ " + tr("settings") + "  ▾")
+        self.settings_btn.setToolTip(tr("settings_tip"))
+        self.settings_btn.setPopupMode(QToolButton.InstantPopup)
+        sm = QMenu(self.settings_btn)
+        self.adv_btn = QAction("🎞  " + tr("menu_conversion"), sm)     # abre/cierra el panel lateral
         self.adv_btn.setCheckable(True)
         self.adv_btn.toggled.connect(self.set_advanced_visible)
-        hl.addWidget(self.adv_btn)
-        prefs = QToolButton()
-        prefs.setText("☰")
-        prefs.setToolTip(tr("preferences"))
-        prefs.clicked.connect(self._open_prefs)
-        hl.addWidget(prefs)
+        sm.addAction(self.adv_btn)
+        sm.addAction("🏷  " + tr("menu_rename"), lambda: self._open_prefs(tab="rename"))
+        sm.addAction("🔧  " + tr("menu_prefs"), lambda: self._open_prefs(tab="general"))
+        self.settings_btn.setMenu(sm)
+        hl.addWidget(self.settings_btn)
         root.addWidget(header)
 
         # ---- resumen de ajustes (clic = abrir panel)
@@ -1014,6 +1025,17 @@ class MainWindow(QMainWindow):
                 kind, text, btn = "library", tr("bar_library"), tr("bar_configure")
             elif not has_tmdb:
                 kind, text, btn = "tmdb", tr("bar_tmdb"), tr("bar_configure")
+        if not kind and (not self.cfg.engines_notice_shown or self._bar_kind == "engines"):
+            engines = self._engines_status()
+            ready = [n for n, st in engines if st in ("builtin", "user", "free")]
+            if ready:
+                missing = [n for n, st in engines if st == "none"]
+                kind, btn = "engines", tr("bar_see_engines")
+                text = tr("bar_engines", ready=_join(ready))
+                if missing:
+                    key = "bar_engines_missing" if len(missing) == 1 else "bar_engines_missing_n"
+                    text += " " + tr(key, missing=_join(missing))
+                self.cfg.engines_notice_shown = True
         if kind and kind not in self._bar_dismissed:
             self._bar_kind = kind
             self.bar_lbl.setText("💡 " + text)
@@ -1022,11 +1044,26 @@ class MainWindow(QMainWindow):
         else:
             self.bar.setVisible(False)
 
+    def _engines_status(self) -> list[tuple[str, str]]:
+        """(nombre, estado) de cada buscador: builtin · user · free (no necesita clave) · none."""
+        out = []
+        for service, name in (("tmdb", "TMDB"), ("tvdb", "TheTVDB"), ("tvmaze", "TVmaze"), ("omdb", "IMDb")):
+            if service == "tvmaze":
+                out.append((name, "free"))
+                continue
+            try:
+                src = self.rename.lib.keys.for_service(service).source()
+            except Exception:  # noqa: BLE001
+                src = None
+            out.append((name, "builtin" if src == "builtin" else "user" if src else "none"))
+        return out
+
     def _on_bar_action(self) -> None:
         self._open_prefs(tab="rename")
 
     def _dismiss_bar(self) -> None:
         self._bar_dismissed.add(self._bar_kind)
+        self._bar_kind = ""
         self.bar.setVisible(False)
 
     def _undo_rename(self) -> None:

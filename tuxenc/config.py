@@ -29,6 +29,7 @@ class Config:
     last_preset: str = "builtin:hevc_quality"
     settings: dict = field(default_factory=dict)
     integration_prompted: bool = False
+    engines_notice_shown: bool = False   # aviso «buscadores listos» del primer arranque
     last_dir: str = ""
     advanced_open: bool = False
     geometry: str = ""

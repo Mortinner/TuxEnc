@@ -11,8 +11,10 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QFileDialog, QFormLayout, Q
 
 from retitler.formatter import (SAMPLE_MOVIE_CONTEXT, SAMPLE_SERIES_CONTEXT, TemplateError,
                                 initial_of, render)
-from retitler.providers import OMDbClient, ProviderError, TMDBClient
+from retitler.config import KeyStore
+from retitler.providers import InvalidApiKey, OMDbClient, ProviderError, TMDBClient, TVDBClient
 
+from . import theme
 from ..i18n import tr
 
 from ..library import LIB_MOVIE, LIB_SERIES
@@ -56,32 +58,45 @@ class RenamePrefs(QWidget):
         lay = QVBoxLayout(self)
         lay.setSpacing(10)
 
-        # ---------------------------------------------------------------- claves
+        # ---------------------------------------------------------------- buscadores
         lay.addWidget(_section(tr("rp_keys")))
-        lay.addWidget(_muted(tr("rp_keys_hint")))
+        lay.addWidget(_muted(tr("rp_keys_hint") if KeyStore.BUILTIN else tr("rp_keys_hint_nobuiltin")))
         form = QFormLayout()
         form.setHorizontalSpacing(12)
+        form.setVerticalSpacing(10)
         self.key_rows = {}
         for service, label, url in (("tmdb", "TMDB", "https://www.themoviedb.org/settings/api"),
+                                    ("tvdb", "TheTVDB", "https://thetvdb.com/api-information"),
+                                    ("tvmaze", "TVmaze", ""),
                                     ("omdb", "IMDb (OMDb)", "https://www.omdbapi.com/apikey.aspx")):
-            row = QHBoxLayout()
-            edit = QLineEdit()
-            edit.setEchoMode(QLineEdit.Password)
-            edit.setPlaceholderText(tr("rp_key_placeholder"))
-            save = QPushButton(tr("rp_key_save"))
-            clear = QPushButton(tr("rp_key_clear"))
-            get = QPushButton(tr("rp_key_get"))
-            get.clicked.connect(lambda _=False, u=url: QDesktopServices.openUrl(QUrl(u)))
-            save.clicked.connect(lambda _=False, s=service: self._save_key(s))
-            clear.clicked.connect(lambda _=False, s=service: self._clear_key(s))
-            for w in (edit, save, clear, get):
-                row.addWidget(w, 1 if w is edit else 0)
-            status = _muted("")
+            status = QLabel()
+            status.setWordWrap(True)
             box = QVBoxLayout()
-            box.addLayout(row)
+            box.setSpacing(4)
             box.addWidget(status)
+            edit = pin = clear = None
+            if service != "tvmaze":
+                row = QHBoxLayout()
+                edit = QLineEdit()
+                edit.setEchoMode(QLineEdit.Password)
+                edit.setPlaceholderText(tr("rp_key_placeholder"))
+                save = QPushButton(tr("rp_key_save"))
+                clear = QPushButton(tr("rp_key_clear_mine"))
+                get = QPushButton(tr("rp_key_get"))
+                get.clicked.connect(lambda _=False, u=url: QDesktopServices.openUrl(QUrl(u)))
+                save.clicked.connect(lambda _=False, s=service: self._save_key(s))
+                clear.clicked.connect(lambda _=False, s=service: self._clear_key(s))
+                edit.returnPressed.connect(lambda s=service: self._save_key(s))
+                for w in (edit, save, clear, get):
+                    row.addWidget(w, 1 if w is edit else 0)
+                box.addLayout(row)
+                if service == "tvdb":
+                    pin = QLineEdit()
+                    pin.setEchoMode(QLineEdit.Password)
+                    pin.setPlaceholderText(tr("rp_pin_placeholder"))
+                    box.addWidget(pin)
             form.addRow(label, box)
-            self.key_rows[service] = (edit, status)
+            self.key_rows[service] = (edit, status, clear, pin)
         lay.addLayout(form)
         self.import_btn = QPushButton(tr("rp_import_retitler"))
         self.import_btn.clicked.connect(self._import)
@@ -142,11 +157,21 @@ class RenamePrefs(QWidget):
 
     # ------------------------------------------------------------------ claves
     def _refresh_keys(self) -> None:
-        for service, (edit, status) in self.key_rows.items():
-            src = self.lib.keys.for_service(service).source()
-            status.setText({"env": tr("rp_key_env"), "keyring": tr("rp_key_keyring"),
-                            "file": tr("rp_key_file")}.get(src, tr("rp_key_none")))
-            edit.clear()
+        for service, (edit, status, clear, pin) in self.key_rows.items():
+            if service == "tvmaze":
+                text, ok = tr("rp_key_free"), True
+            else:
+                src = self.lib.keys.for_service(service).source()
+                ok = src is not None
+                text = {"env": tr("rp_key_env"), "keyring": tr("rp_key_keyring"), "file": tr("rp_key_file"),
+                        "builtin": tr("rp_key_builtin")}.get(
+                    src, tr("rp_key_none_omdb") if service == "omdb" else tr("rp_key_none"))
+                clear.setVisible(src in ("keyring", "file"))
+                edit.clear()
+                if pin is not None:
+                    pin.clear()
+            status.setText(text)
+            status.setStyleSheet(f"color: {theme.OK if ok else theme.AMBER};")
         try:
             from retitler.config import legacy_retitler_keys
             legacy = legacy_retitler_keys()
@@ -155,23 +180,36 @@ class RenamePrefs(QWidget):
         self.import_btn.setVisible(any(not self.lib.has_key(s) for s in legacy))
 
     def _save_key(self, service: str) -> None:
-        edit, status = self.key_rows[service]
+        edit, status, _clear, pin = self.key_rows[service]
         key = edit.text().strip()
+        pin_value = pin.text().strip() if pin is not None else ""
         if not key:
             return
-        client = TMDBClient(key) if service == "tmdb" else OMDbClient(key)
         QGuiApplication.setOverrideCursor(Qt.WaitCursor)
         try:
-            ok = client.validate_key()
             note = ""
+            if service == "tvdb":
+                try:
+                    TVDBClient(key, pin=pin_value)._login()
+                    ok = True
+                except InvalidApiKey:
+                    ok = False
+            else:
+                ok = (TMDBClient(key) if service == "tmdb" else OMDbClient(key)).validate_key()
         except ProviderError as exc:
             ok, note = True, tr("rp_key_unchecked", err=str(exc))
         finally:
             QGuiApplication.restoreOverrideCursor()
         if not ok:
             status.setText("⚠ " + tr("rp_key_invalid"))
+            status.setStyleSheet(f"color: {theme.BAD};")
             return
         self.lib.keys.for_service(service).set(key)
+        if service == "tvdb":
+            if pin_value:
+                self.lib.keys.for_service("tvdbpin").set(pin_value)
+            else:
+                self.lib.keys.for_service("tvdbpin").clear()
         self.search_changed = True
         self._refresh_keys()
         if note:
@@ -179,6 +217,8 @@ class RenamePrefs(QWidget):
 
     def _clear_key(self, service: str) -> None:
         self.lib.keys.for_service(service).clear()
+        if service == "tvdb":
+            self.lib.keys.for_service("tvdbpin").clear()
         self.search_changed = True
         self._refresh_keys()
 

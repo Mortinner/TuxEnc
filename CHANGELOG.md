@@ -6,6 +6,25 @@ All notable changes to TuxEnc are listed here (Spanish first, English below each
 
 ## [Sin publicar] · Unreleased
 
+## [1.1.0] - 2026-11-18
+
+### Añadido
+- **TheTVDB como cuarto buscador.** Suele ser el único con los títulos de capítulo traducidos de muchas series (por ejemplo, *Foyle's War*). Se usa para buscar series y, sobre todo, para completar en tu idioma los títulos que TMDB solo tiene en inglés. Admite también enlaces de TheTVDB en «Identificar…».
+- **Buscadores sin configurar nada:** el AppImage trae sus propias claves de TMDB y TheTVDB. IMDb (OMDb) sigue siendo opcional con tu propia clave gratuita.
+- Aviso en el primer arranque con los buscadores que ya funcionan.
+- Créditos de los datos (TMDB, TheTVDB, TVmaze, OMDb) en Preferencias → Acerca de, en «Identificar…» y en el README.
+
+### Cambiado
+- **Un único botón «⚙ Ajustes ▾»** sustituye a «⚙ Ajustes» y «☰». Su menú tiene tres entradas: 🎞 Conversión (el panel lateral de siempre), 🏷 Renombrado y buscadores, y 🔧 Preferencias.
+- **Sección «Buscadores»:** muestra el estado de cada buscador (clave integrada, tu clave o sin clave) y permite poner tus propias claves y, en TheTVDB, un PIN de suscriptor. Tu clave siempre manda sobre la integrada.
+
+### Added / Changed (English)
+- **TheTVDB** as a fourth search service, mainly to get localized episode titles; TheTVDB links accepted in «Identify…».
+- Built-in TMDB and TheTVDB keys: nothing to set up. IMDb (OMDb) stays optional with your own free key.
+- First-run notice, and data credits (TMDB, TheTVDB, TVmaze, OMDb).
+- Single **⚙ Settings ▾** menu (Conversion · Renaming and search services · Preferences), replacing ⚙ and ☰.
+- **Search services** section showing each service's status, with optional own keys (and a TheTVDB subscriber PIN).
+
 ## [1.0.2] - 2026-11-18
 
 ### Mejorado
@@ -82,6 +101,7 @@ First public release.
   - Spanish and English UI.
 
 [Sin publicar]: #
+[1.1.0]: #
 [1.0.2]: #
 [1.0.1]: #
 [1.0.0]: #

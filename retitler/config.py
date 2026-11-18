@@ -140,6 +140,8 @@ class KeyStore:
     """
 
     SERVICE = "tuxenc"
+    # Claves que trae el programa (las pone TuxEnc al arrancar); la del usuario manda sobre estas.
+    BUILTIN: dict[str, str] = {}
 
     def __init__(self, secrets_path: str | Path | None = None, keyring_backend: object = _UNSET,
                  name: str = "tmdb") -> None:
@@ -178,18 +180,24 @@ class KeyStore:
     def _file_get(self) -> str | None:
         return str(self._read_file().get(self.ACCOUNT, "")).strip() or None
 
-    def get(self) -> str | None:
+    def user_key(self) -> str | None:
+        """La clave que ha puesto el usuario (variable de entorno, llavero o archivo)."""
         env = os.environ.get(self.ENV, "").strip()
         return env or self._keyring_get() or self._file_get()
 
+    def get(self) -> str | None:
+        return self.user_key() or (self.BUILTIN.get(self.name) or "").strip() or None
+
     def source(self) -> str | None:
-        """De dónde sale la clave ahora mismo: 'env', 'keyring', 'file' o None."""
+        """De dónde sale la clave ahora mismo: 'env', 'keyring', 'file', 'builtin' o None."""
         if os.environ.get(self.ENV, "").strip():
             return "env"
         if self._keyring_get():
             return "keyring"
         if self._file_get():
             return "file"
+        if (self.BUILTIN.get(self.name) or "").strip():
+            return "builtin"
         return None
 
     # -- escritura -------------------------------------------------------- #

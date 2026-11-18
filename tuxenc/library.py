@@ -25,9 +25,12 @@ from retitler.providers import ResultKind, SearchResult
 from retitler.renamer import History, PlanItem, build_plan, execute
 from retitler.search import SearchResponse, Searcher, build_searcher
 
+from . import builtin_keys
 from .catalog import CONTAINERS, resolution_label
 from .paths import clean_env
 from .probe import probe
+
+KeyStore.BUILTIN = builtin_keys.load()
 
 # Formatos por defecto de TuxEnc (biblioteca con resolución, como la de Marcos)
 LIB_SERIES = ("{series} ({year})/Season {season:02}/{series} ({year}) - S{season:02}E{episode:02}"

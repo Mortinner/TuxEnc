@@ -350,6 +350,10 @@ class MatchDialog(QDialog):
         self.status.setObjectName("Muted")
         self.status.setWordWrap(True)
         ll.addWidget(self.status)
+        credit = QLabel(tr("match_credits"))
+        credit.setObjectName("Muted")
+        credit.setStyleSheet("font-size: 11px;")
+        ll.addWidget(credit)
         split.addWidget(left)
 
         # ------------------------------------------------ derecha: ¿qué capítulo?
