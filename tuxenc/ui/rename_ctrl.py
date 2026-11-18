@@ -20,7 +20,7 @@ from ..catalog import CONTAINERS
 from ..engine import FINISHED, WAITING, Job
 from .. import i18n
 from ..i18n import tr
-from retitler.providers import ENGLISH_SOURCES
+from retitler.providers import ENGLISH_SOURCES, PROVIDER_NAMES
 from ..library import (AMBIGUOUS, EPISODE, ERROR, NONE, OK, PENDING, Destination, Library,
                        predicted_resolution)
 
@@ -36,10 +36,14 @@ def describe_match(res) -> str:
         titles = " & ".join(t for t in res.titles if t)
         if titles:
             srcs = set(res.title_sources or ())
+            provs = {x.split("-")[0] for x in srcs if x}
             if "archivo" in srcs:
                 titles += f" ({tr('title_from_file')})"
             elif srcs and srcs <= ENGLISH_SOURCES and i18n.current() == "es":
                 titles += f" ({tr('title_english')})"
+            elif res.chosen is not None and provs and provs != {res.chosen.provider}:
+                # el título viene de otro buscador que el de la serie (p. ej. TheTVDB)
+                titles += " (" + tr("title_from", src=", ".join(PROVIDER_NAMES.get(p, p) for p in sorted(provs))) + ")"
             parts.append(titles)
     else:
         parts.append(tr("kind_movie"))

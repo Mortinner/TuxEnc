@@ -185,6 +185,10 @@ def main() -> int:
     cfg = Config.load()
     i18n.set_language(cfg.ui_lang)
     ensure_dirs()
+    # Registro del renombrado (qué se buscó, en qué buscador y de dónde sale cada título)
+    from retitler.log import setup_logging
+    from .paths import LOG_DIR
+    setup_logging(path=LOG_DIR / "renombrado.log")
 
     if "--uninstall" in args:
         app = _make_app()

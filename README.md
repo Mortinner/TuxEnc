@@ -92,7 +92,7 @@ Todo está en el menú **☰** (arriba a la derecha), en una sola ventana con pe
 
 ## Autor
 
-Desarrollado por **Mortinner** · contacto: [mortinner@gmail.com](mailto:mortinner@gmail.com) · con la ayuda de Claude, de Anthropic.
+Desarrollado por **Mortinner** · contacto: [mortinner@gmail.com](mailto:mortinner@gmail.com) · Built with Claude, Anthropic.
 
 ## Datos de series y películas
 
@@ -169,7 +169,7 @@ Everything is in the **☰** menu (top right), in a single window with tabs: **C
 
 ## Author
 
-Developed by **Mortinner** · contact: [mortinner@gmail.com](mailto:mortinner@gmail.com) · with the help of Claude, by Anthropic.
+Developed by **Mortinner** · contact: [mortinner@gmail.com](mailto:mortinner@gmail.com) · Built with Claude, Anthropic.
 
 ## TV and movie data
 

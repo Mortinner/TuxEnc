@@ -564,38 +564,62 @@ class TVDBClient:
         return self.get_by_id(int(row["id"])) if isinstance(row, dict) and row.get("id") else None
 
     # -- temporadas y capítulos -------------------------------------------- #
-    def _episodes(self, series_id: int, season: int | None, lang: str | None) -> list[dict]:
+    def _episodes(self, series_id: int, lang: str | None) -> list[dict]:
+        """Todos los capítulos de la serie (orden de emisión), página a página.
+
+        OJO: la variante con idioma (/episodes/default/{lang}) NO filtra por temporada aunque se le
+        pida; devuelve la serie entera. Por eso no se confía en el filtro del servidor: se piden
+        todos y se filtra aquí por seasonNumber (antes, el E01 de cada temporada pisaba al de las
+        demás y todas salían con los títulos de la última).
+        """
         path = f"/series/{series_id}/episodes/default" + (f"/{lang}" if lang else "")
         out: list[dict] = []
         for page in range(50):
-            params: dict[str, Any] = {"page": page}
-            if season is not None:
-                params["season"] = season
-            data = self._get(path, **params)
+            data = self._get(path, page=page)
             eps = _items(data, "episodes") if isinstance(data, dict) else []
             out += eps
             if len(eps) < 500:                   # TheTVDB pagina de 500 en 500
                 break
         return out
 
+    @staticmethod
+    def _by_number(eps: list[dict], season: int) -> dict[int, dict]:
+        out: dict[int, dict] = {}
+        for e in eps:
+            try:
+                s, n = int(e.get("seasonNumber")), int(e.get("number"))
+            except (TypeError, ValueError):
+                continue
+            if s == season:
+                out[n] = e
+        return out
+
     def list_seasons(self, series_id: int) -> list[int]:
-        nums = {int(e["seasonNumber"]) for e in self._episodes(series_id, None, None)
-                if str(e.get("seasonNumber", "")).lstrip("-").isdigit()}
+        nums = set()
+        for e in self._episodes(series_id, None):
+            try:
+                nums.add(int(e.get("seasonNumber")))
+            except (TypeError, ValueError):
+                continue
         return sorted(nums)
 
     def get_season(self, series_id: int, season: int) -> list[EpisodeInfo]:
-        orig = {int(e["number"]): e for e in self._episodes(series_id, season, None)
-                if str(e.get("number", "")).isdigit()}
+        """Capítulos de una temporada con el título en el idioma pedido.
+
+        Las traducciones se emparejan por el **id del capítulo**, no por temporada/número: la lista
+        traducida de TheTVDB puede numerar distinto que la normal (caso real: Foyle's War).
+        """
+        orig = self._by_number(self._episodes(series_id, None), season)
         local: dict[int, dict] = {}
         if self._lang != "eng":
             try:
-                local = {int(e["number"]): e for e in self._episodes(series_id, season, self._lang)
-                         if str(e.get("number", "")).isdigit()}
+                local = {e["id"]: e for e in self._episodes(series_id, self._lang) if e.get("id") is not None}
             except NotFound:
                 local = {}
         out = []
-        for n in sorted(set(orig) | set(local)):
-            o, t = orig.get(n, {}), local.get(n, {})
+        for n in sorted(orig):
+            o = orig[n]
+            t = local.get(o.get("id"), {})
             name_o, name_t = str(o.get("name") or "").strip(), str(t.get("name") or "").strip()
             date = str(o.get("aired") or t.get("aired") or "")
             if self._lang == "eng":
@@ -603,7 +627,7 @@ class TVDBClient:
             elif name_t and name_t != name_o:
                 title, source = name_t, "tvdb"
             else:                                 # sin traducción: nombre original
-                title, source = name_o or name_t, "tvdb-en"
+                title, source = name_o, "tvdb-en"
             out.append(EpisodeInfo(season, n, title, date, source=source,
                                    provisional=bool(title) and is_placeholder(title)))
         return out

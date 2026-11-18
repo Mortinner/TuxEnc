@@ -25,20 +25,23 @@ class FakePost:
         return {"status": "success", "data": {"token": self.tokens.pop(0) if len(self.tokens) > 1 else self.tokens[0]}}
 
 
-def _eps(names, season=1):
+EN2 = ["Fifty Ships", "Among the Few"]
+ES2 = ["Cincuenta naves", "Uno de los pocos"]
+
+
+def _eps(by_season):
+    """Como el servidor real: la serie ENTERA (todas las temporadas), pida lo que se pida."""
     return {"series": {"id": 78874}, "episodes": [
-        {"id": 1000 + i, "seasonNumber": season, "number": i + 1, "name": n or None, "aired": f"2002-10-{27 + i}"}
-        for i, n in enumerate(names)]}
+        {"id": 1000 * s + i, "seasonNumber": s, "number": i + 1, "name": n or None, "aired": f"200{s}-10-{10 + i}"}
+        for s, names in by_season.items() for i, n in enumerate(names)] + [
+        {"id": 1, "seasonNumber": 0, "number": 1, "name": "Especial", "aired": "2010-01-01"}]}
 
 
 ROUTES = {
     f"{B}/search": {"data": [{"tvdb_id": "78874", "name": "Foyle's War", "year": "2002", "type": "series",
                               "translations": {"eng": "Foyle's War", "spa": "La guerra de Foyle"}}]},
-    f"{B}/series/78874/episodes/default": lambda q: {"data": _eps(EN) if q.get("season") == "1" else
-                                                     {"episodes": [{"seasonNumber": 1, "number": 1, "name": "x"},
-                                                                   {"seasonNumber": 2, "number": 1, "name": "y"},
-                                                                   {"seasonNumber": 0, "number": 1, "name": "z"}]}},
-    f"{B}/series/78874/episodes/default/spa": lambda q: {"data": _eps([e or en for e, en in zip(ES, EN)])},
+    f"{B}/series/78874/episodes/default": {"data": _eps({1: EN, 2: EN2})},
+    f"{B}/series/78874/episodes/default/spa": {"data": _eps({1: [e or en for e, en in zip(ES, EN)], 2: ES2})},
     f"{B}/search/remoteid/tt0310455": {"data": [{"series": {"id": 78874, "name": "Foyle's War"}}]},
     f"{B}/series/78874": {"data": {"id": 78874, "name": "Foyle's War", "year": "2002"}},
     f"{B}/series/78874/translations/spa": {"data": {"name": "La guerra de Foyle", "language": "spa"}},
@@ -97,6 +100,28 @@ def test_season_spanish_titles_and_untranslated_marked():
         ("La mujer alemana", "tvdb"), ("La pluma blanca", "tvdb"), ("Una lección de asesinato", "tvdb"),
         ("Eagle Day", "tvdb-en")]
     assert c.list_seasons(78874) == [0, 1, 2]
+
+
+def test_each_season_gets_its_own_titles():
+    """Regresión 1.2.0: todas las temporadas salían con los títulos de la última."""
+    c, f = tvdb()
+    s1, s2 = c.get_season(78874, 1), c.get_season(78874, 2)
+    assert [e.title for e in s1][:2] == ["La mujer alemana", "La pluma blanca"]
+    assert [(e.season, e.number, e.title) for e in s2] == [(2, 1, "Cincuenta naves"), (2, 2, "Uno de los pocos")]
+    assert [e.title for e in c.get_season(78874, 0)] == ["Especial"]
+    assert c.get_season(78874, 9) == []
+
+
+def test_translations_matched_by_episode_id_not_number():
+    """La lista traducida de TheTVDB puede numerar distinto: se empareja por id (caso Foyle's War)."""
+    norm = {"episodes": [{"id": 501, "seasonNumber": 5, "number": 1, "name": "Plan of Attack"},
+                         {"id": 601, "seasonNumber": 6, "number": 1, "name": "The Russian House"}]}
+    spa = {"episodes": [{"id": 601, "seasonNumber": 7, "number": 1, "name": "La casa rusa"},       # otra numeración
+                        {"id": 999, "seasonNumber": 6, "number": 1, "name": "Plan de ataque"}]}    # id que no existe
+    c, _ = tvdb({f"{B}/series/78874/episodes/default": {"data": norm},
+                 f"{B}/series/78874/episodes/default/spa": {"data": spa}})
+    assert [(e.title, e.source) for e in c.get_season(78874, 6)] == [("La casa rusa", "tvdb")]
+    assert [(e.title, e.source) for e in c.get_season(78874, 5)] == [("Plan of Attack", "tvdb-en")]
 
 
 def test_lookup_imdb_and_slug():

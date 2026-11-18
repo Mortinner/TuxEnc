@@ -230,6 +230,7 @@ STRINGS: dict[str, tuple[str, str]] = {
                                "“La mujer alemana” even if TMDB only has “The German Woman”."),
     "title_from_file": ("título de tu archivo", "title from your file"),
     "title_english": ("en inglés", "in English"),
+    "title_from": ("título de {src}", "title from {src}"),
     "rp_skip_articles": ("{initial}: ignorar artículos (The Batman → B, El Padrino → P)",
                          "{initial}: ignore articles (The Batman → B, El Padrino → P)"),
     "rp_library": ("Biblioteca", "Library"),
@@ -551,10 +552,10 @@ STRINGS: dict[str, tuple[str, str]] = {
                    "Uses <b>FFmpeg</b> (x264, x265, SVT-AV1, libvpx, Opus…) and <b>Qt</b>."),
     "about_author": ("<b>Desarrollado por {author}</b><br>"
                      "Contacto: <a href='mailto:{mail}'>{mail}</a><br>"
-                     "<span style='color:#8d97b5'>Con la ayuda de Claude, de Anthropic.</span>",
+                     "<span style='color:#8d97b5'>Built with Claude, Anthropic</span>",
                      "<b>Developed by {author}</b><br>"
                      "Contact: <a href='mailto:{mail}'>{mail}</a><br>"
-                     "<span style='color:#8d97b5'>With the help of Claude, by Anthropic.</span>"),
+                     "<span style='color:#8d97b5'>Built with Claude, Anthropic</span>"),
     "about_license": ("Software libre bajo licencia <b>GNU GPL v3</b>: puedes usarlo, estudiarlo, "
                       "compartirlo y modificarlo · <a href='https://www.gnu.org/licenses/gpl-3.0.html'>"
                       "gnu.org/licenses/gpl-3.0</a>",

@@ -22,15 +22,18 @@ def log_path() -> Path:
     return state_dir() / "retitler.log"
 
 
-def setup_logging(verbose: bool = False) -> Path | None:
+_path: Path | None = None
+
+
+def setup_logging(verbose: bool = False, path: Path | None = None) -> Path | None:
     """Activa el registro en archivo (y en la terminal si ``verbose``). Devuelve la ruta del archivo."""
-    global _configured
+    global _configured, _path
     if _configured:
-        return log_path()
+        return _path
     _configured = True
     log.setLevel(logging.DEBUG)
     fmt = logging.Formatter("%(asctime)s %(levelname)-7s %(message)s", "%Y-%m-%d %H:%M:%S")
-    path: Path | None = log_path()
+    path = path or log_path()
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         handler = logging.handlers.RotatingFileHandler(path, maxBytes=1_000_000, backupCount=2, encoding="utf-8")
@@ -39,6 +42,7 @@ def setup_logging(verbose: bool = False) -> Path | None:
         log.addHandler(handler)
     except OSError:
         path = None  # sin registro en archivo; la aplicación sigue funcionando
+    _path = path
     if verbose:
         console = logging.StreamHandler(sys.stderr)
         console.setFormatter(fmt)

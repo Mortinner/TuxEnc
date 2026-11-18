@@ -6,6 +6,21 @@ All notable changes to TuxEnc are listed here (Spanish first, English below each
 
 ## [Sin publicar] · Unreleased
 
+## [1.2.1] - 2026-11-18
+
+### Corregido
+- **TheTVDB: todas las temporadas salían con los títulos de capítulo de la última** (por ejemplo, el S01E01 y el S02E01 de *Foyle's War* con el mismo título). La consulta de títulos traducidos de TheTVDB devuelve la serie entera, aunque se le pida una temporada, y los capítulos se mezclaban por número. Ahora se filtra cada temporada en TuxEnc y las traducciones se emparejan por el identificador del capítulo, porque la lista traducida de TheTVDB puede numerar las temporadas de otra forma. También desaparecen los capítulos fantasma («sin título todavía») que salían de los especiales.
+- **El registro del renombrado no se escribía nunca.** Ahora se guarda en `~/.cache/tuxenc/logs/renombrado.log`, junto a los demás registros (☰ → Preferencias → Registros), y anota qué se buscó y de qué buscador sale cada título.
+
+### Cambiado
+- La fila indica de qué buscador sale el título del capítulo cuando no es el de la serie (por ejemplo, «Cincuenta naves (título de TheTVDB)»).
+- «Acerca de» y README: «Built with Claude, Anthropic».
+
+### English
+- Fixed: with TheTVDB every season got the episode titles of the last season; translations are now matched by episode id.
+- Fixed: the renaming log was never written; it is now `~/.cache/tuxenc/logs/renombrado.log`.
+- The row shows which service the episode title came from when it differs; About: «Built with Claude, Anthropic».
+
 ## [1.2.0] - 2026-11-18
 
 ### Cambiado
@@ -120,6 +135,7 @@ First public release.
   - Spanish and English UI.
 
 [Sin publicar]: #
+[1.2.1]: #
 [1.2.0]: #
 [1.1.0]: #
 [1.0.2]: #
