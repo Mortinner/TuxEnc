@@ -3,14 +3,16 @@
 FFmpeg 8 informa out_time de la pista más atrasada; con un subtítulo solo al principio se queda
 en 0:02 aunque el vídeo avance. TuxEnc usa también los fotogramas escritos."""
 import os, sys, time, subprocess
-sys.path.insert(0, "/home/claude/tuxenc")
-FF = "/home/claude/dl/rel-8.1/ffmpeg-n8.1-latest-linux64-gpl-shared-8.1/bin"
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
+import tempfile
+from tests.media import FF, M, MEDIA  # noqa: E402,F401  (FFmpeg y vídeos de prueba)
 os.environ["TUXENC_FFMPEG_DIR"] = FF
 from tuxenc.probe import probe
 from tuxenc.catalog import EncodeSettings
 from tuxenc.engine import QueueEngine, Job, DONE
 
-src = "/tmp/prog/src.mkv"
+src = M + "subs-escasos.mkv"
+out = os.path.join(tempfile.mkdtemp(prefix="tx-avance-"), "salida.mkv")
 info = probe(src)
 print("pistas de subtítulos:", len(info.subtitles), "| duración:", round(info.duration), "s | fps:", info.main_video.fps)
 samples = []
@@ -18,8 +20,9 @@ eng = QueueEngine(on_update=lambda j: samples.append((round(time.monotonic() - t
 st = EncodeSettings(video_encoder="libx264", speed_preset="slow", quality=22)
 st.sub_mode = "all"; st.languages = []
 st.validate()
-j = Job(input=src, info=info); j.settings = st; j.output = "/tmp/prog/engine-out.mkv"
+j = Job(input=src, info=info); j.settings = st; j.output = out
 t0 = time.monotonic()
+eng.output_resolver = lambda job, st: out
 eng.set_parallel(1); eng.add(j); eng.start()
 while j.status != DONE and time.monotonic() - t0 < 120:
     time.sleep(0.2)

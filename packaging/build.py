@@ -2,8 +2,9 @@
 """Construye TuxEnc-<versión>-x86_64.AppImage y el zip de distribución.
 
 Uso:  python3 packaging/build.py
-Requiere en ../dl (ver README de desarrollo): Python portable, FFmpeg compartido (BtbN),
-runtime de AppImage, appimagetool y libxcb-cursor de Ubuntu 22.04.
+Requiere en $TUXENC_DEPS (por defecto ../dl): Python portable, FFmpeg compartido (BtbN),
+runtime de AppImage, appimagetool y libxcb-cursor de Ubuntu 22.04. Los descarga
+packaging/fetch_deps.sh. pip: $TUXENC_PIP o, si no, el del Python que ejecuta este script.
 """
 
 from __future__ import annotations
@@ -18,7 +19,7 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DL = ROOT.parent / "dl"
+DL = Path(os.environ.get("TUXENC_DEPS") or ROOT.parent / "dl").resolve()
 BUILD = ROOT / "build"
 APPDIR = BUILD / "AppDir"
 DIST = ROOT / "dist"
@@ -29,7 +30,7 @@ RUNTIME = DL / "runtime-x86_64"
 APPIMAGETOOL = DL / "appimagetool"
 XCB_CURSOR = DL / "debs" / "j" / "usr" / "lib" / "x86_64-linux-gnu"
 SYS_LIBDIR = Path("/lib/x86_64-linux-gnu")
-PIP = Path("/home/claude/venv/bin/pip")
+PIP = os.environ.get("TUXENC_PIP", "").split() or [sys.executable, "-m", "pip"]
 PYSIDE_VERSION = "6.12.0"
 KEYRING_VERSION = "25.7.0"      # llavero del sistema para las claves de TMDB / OMDb (como Retitler)
 
@@ -109,7 +110,7 @@ def build_python(usr: Path) -> Path:
     for p in py.rglob("__pycache__"):
         rm(p)
     site = py / "lib/python3.12/site-packages"
-    run([PIP, "install", "--quiet", "--no-compile", "--target", site,
+    run([*PIP, "install", "--quiet", "--no-compile", "--target", site,
          f"PySide6-Essentials=={PYSIDE_VERSION}", f"keyring=={KEYRING_VERSION}"])
     trim_pyside(site / "PySide6")
     for p in site.glob("*.dist-info"):
@@ -182,6 +183,10 @@ def build():
         shutil.copytree(ROOT / pkg, app / pkg, ignore=shutil.ignore_patterns("__pycache__", "*.pyc",
                                                                               "_builtin_keys.py"))
     keys = builtin_keys_from_env()
+    # Compilación oficial (CI): sin las claves de TMDB y TheTVDB, mejor fallar que publicar sin ellas
+    required = {k.strip() for k in os.environ.get("TUXENC_REQUIRE_KEYS", "").split(",") if k.strip()}
+    if required - keys.keys():
+        sys.exit(f"Faltan claves integradas: {', '.join(sorted(required - keys.keys()))}")
     from tuxenc.builtin_keys import render_module
     (app / "tuxenc" / "_builtin_keys.py").write_text(render_module(keys))
     print("claves integradas:", ", ".join(sorted(keys)) or "ninguna (cada usuario pondrá las suyas)")

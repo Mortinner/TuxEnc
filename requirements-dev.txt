@@ -1,0 +1,4 @@
+# Para ejecutar TuxEnc desde el código y pasar las pruebas (el AppImage lleva las mismas versiones).
+PySide6-Essentials==6.12.0
+keyring==25.7.0
+pytest==9.2.0

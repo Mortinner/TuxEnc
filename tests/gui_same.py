@@ -3,9 +3,10 @@ que no han empezado, también a los ya identificados (caso de Marcos: había que
 Se respetan los capítulos elegidos a mano uno a uno."""
 import os, shutil, sys, time
 from pathlib import Path
-sys.path.insert(0, "/home/claude/tuxenc")
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
+from tests.media import FF, M, MEDIA  # noqa: E402,F401  (FFmpeg y vídeos de prueba)
 T = Path("/tmp/tx-same"); shutil.rmtree(T, ignore_errors=True); T.mkdir()
-os.environ.update(TUXENC_FFMPEG_DIR="/home/claude/dl/rel-8.1/ffmpeg-n8.1-latest-linux64-gpl-shared-8.1/bin",
+os.environ.update(TUXENC_FFMPEG_DIR=FF,
                   XDG_CONFIG_HOME=str(T/"c"), XDG_CACHE_HOME=str(T/"k"), XDG_STATE_HOME=str(T/"s"),
                   QT_QPA_PLATFORM="offscreen", PYTHON_KEYRING_BACKEND="keyring.backends.null.Keyring")
 from tuxenc.app import _make_app
@@ -22,7 +23,7 @@ def wait(c, to=30):
     return c()
 src = T / "arrow"; src.mkdir()
 for e in (1, 2, 3, 4):
-    os.link("/home/claude/testmedia/hd720.mkv", src / f"Arrow.S01E{e:02}.720p.mkv")
+    os.link(M + "hd720.mkv", src / f"Arrow.S01E{e:02}.720p.mkv")
 cfg = Config(); cfg.engines_notice_shown = True; cfg.convert_on = False; cfg.rename_on = True
 w = mw.MainWindow(cfg); w.show()
 w.rename.lib.searcher = FakeSearcher()

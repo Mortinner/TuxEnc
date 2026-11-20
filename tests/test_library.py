@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-FF = "/home/claude/dl/rel-8.1/ffmpeg-n8.1-latest-linux64-gpl-shared-8.1/bin"
-SRC = Path("/home/claude/testmedia/lib")
+from tests.media import FF, M, MEDIA  # noqa: E402,F401
+SRC = MEDIA / "lib"
 SERIES_T = "{series} ({year})/Season {season:02}/{series} ({year}) - S{season:02}E{episode:02} - {title} - [{resolution}]"
 MOVIE_T = "{initial}/{title} ({year}) - [{resolution}]"
 

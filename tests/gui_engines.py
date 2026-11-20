@@ -1,9 +1,10 @@
 """Menú «⚙ Ajustes», aviso de buscadores del primer arranque y sección «Buscadores» con claves integradas."""
 import os, shutil, sys, time
 from pathlib import Path
-sys.path.insert(0, "/home/claude/tuxenc")
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
+from tests.media import FF, M, MEDIA  # noqa: E402,F401  (FFmpeg y vídeos de prueba)
 T = Path("/tmp/tx-engines"); shutil.rmtree(T, ignore_errors=True); T.mkdir()
-os.environ.update(TUXENC_FFMPEG_DIR="/home/claude/dl/rel-8.1/ffmpeg-n8.1-latest-linux64-gpl-shared-8.1/bin",
+os.environ.update(TUXENC_FFMPEG_DIR=FF,
                   XDG_CONFIG_HOME=str(T/"c"), XDG_CACHE_HOME=str(T/"k"), XDG_STATE_HOME=str(T/"s"),
                   QT_QPA_PLATFORM="offscreen", PYTHON_KEYRING_BACKEND="keyring.backends.null.Keyring")
 lang = sys.argv[1] if len(sys.argv) > 1 else "es"

@@ -4,8 +4,16 @@
 
 TuxEnc convierte vídeos a **H.264, H.265, AV1 y VP9**, igual que HandBrake, pero **transcodificando varios vídeos a la vez** y con una interfaz sencilla. Además **identifica y renombra** tus series y películas (TMDB, TheTVDB, TVmaze, IMDb) y las coloca ordenadas en tu biblioteca. Todo se hace desde la ventana: no hace falta abrir ninguna terminal.
 
+<p align="center">
+  <img src="docs/capturas/es-cola.png" width="49%" alt="Cola con la identificación y el nombre nuevo de cada vídeo">
+  <img src="docs/capturas/es-convirtiendo.png" width="49%" alt="Convirtiendo dos vídeos a la vez">
+  <img src="docs/capturas/es-identificar.png" width="49%" alt="Identificar una serie y elegir el capítulo">
+  <img src="docs/capturas/es-ajustes.png" width="38%" alt="Ajustes de conversión">
+</p>
+
 ## Cómo empezar
 
+0. Descarga el zip de la **[última versión](https://github.com/Mortinner/TuxEnc/releases/latest)** (`TuxEnc-…-linux-x86_64.zip`). Si quieres, comprueba la descarga con `sha256sum -c SHA256SUMS`.
 1. Descomprime este zip donde quieras.
 2. Haz doble clic en **`TuxEnc-…-x86_64.AppImage`**.
 3. La primera vez, TuxEnc te pregunta si quieres **integrarlo en el sistema**. Si dices que sí, aparecerá en el menú de aplicaciones y en el escritorio. Después puedes borrar la carpeta que descargaste.
@@ -103,7 +111,15 @@ Este producto usa la API de TMDB, pero no está avalado ni certificado por [TMDB
 
 ## Novedades
 
-Los cambios de cada versión están en **`CHANGELOG.md`**.
+Los cambios de cada versión están en **`CHANGELOG.md`** y en las [Releases](https://github.com/Mortinner/TuxEnc/releases).
+
+## Problemas y sugerencias
+
+Si algo falla o echas algo en falta, abre una [incidencia](https://github.com/Mortinner/TuxEnc/issues/new/choose). Ayuda mucho adjuntar los registros: **☰ → Preferencias → Abrir carpeta de registros** (el de la conversión que falló, `renombrado.log` si es del renombrado o `gpu-detect.log` si es de la GPU). Para fallos de seguridad, mira [`SECURITY.md`](https://github.com/Mortinner/TuxEnc/blob/main/SECURITY.md).
+
+## Desarrollo
+
+Para ejecutarlo desde el código: Python 3.12, `pip install -r requirements-dev.txt` y FFmpeg 8 (`python3 run.py`). Las pruebas se lanzan con `bash tests/run_all.sh`; los vídeos de prueba se generan solos. El AppImage se compila con `bash packaging/fetch_deps.sh` y `python3 packaging/build.py`. Cada cambio en `main` pasa las pruebas en GitHub Actions y, si sube la versión, se publica solo con su Release, su `SHA256SUMS` y una atestación de procedencia.
 
 ## Licencia
 
@@ -116,8 +132,16 @@ TuxEnc es **software libre** bajo la licencia **GNU GPL v3** (ver `LICENSE.txt`)
 
 TuxEnc converts videos to **H.264, H.265, AV1 and VP9**, just like HandBrake, but **transcodes several videos at the same time** and has a simple interface. It also **identifies and renames** your shows and movies (TMDB, TheTVDB, TVmaze, IMDb) and files them neatly in your library. Everything happens in the window: you never need a terminal.
 
+<p align="center">
+  <img src="docs/capturas/en-cola.png" width="49%" alt="Queue with each video's identification and new name">
+  <img src="docs/capturas/en-convirtiendo.png" width="49%" alt="Converting two videos at once">
+  <img src="docs/capturas/en-identificar.png" width="49%" alt="Identifying a show and picking the episode">
+  <img src="docs/capturas/en-ajustes.png" width="38%" alt="Conversion settings">
+</p>
+
 ## Getting started
 
+0. Download the zip of the **[latest release](https://github.com/Mortinner/TuxEnc/releases/latest)** (`TuxEnc-…-linux-x86_64.zip`). Optionally verify it with `sha256sum -c SHA256SUMS`.
 1. Unzip this file anywhere.
 2. Double-click **`TuxEnc-…-x86_64.AppImage`**.
 3. The first time, TuxEnc asks whether to **integrate it into the system**. If you accept, it appears in the applications menu and on the desktop. You can then delete the folder you downloaded.
@@ -183,7 +207,15 @@ This product uses the TMDB API but is not endorsed or certified by [TMDB](https:
 
 ## What's new
 
-The changes in each version are listed in **`CHANGELOG.md`**.
+The changes in each version are listed in **`CHANGELOG.md`** and in the [Releases](https://github.com/Mortinner/TuxEnc/releases).
+
+## Issues and suggestions
+
+If something breaks or you miss a feature, open an [issue](https://github.com/Mortinner/TuxEnc/issues/new/choose). Attaching the logs helps a lot: **☰ → Preferences → Open logs folder** (the failed conversion's log, `renombrado.log` for renaming, `gpu-detect.log` for GPU problems). For security issues, see [`SECURITY.md`](https://github.com/Mortinner/TuxEnc/blob/main/SECURITY.md).
+
+## Development
+
+To run from source: Python 3.12, `pip install -r requirements-dev.txt` and FFmpeg 8 (`python3 run.py`). Run the tests with `bash tests/run_all.sh` (test videos are generated automatically). Build the AppImage with `bash packaging/fetch_deps.sh` and `python3 packaging/build.py`. Every change on `main` is tested in GitHub Actions and, when the version goes up, published automatically with its Release, `SHA256SUMS` and a build provenance attestation.
 
 ## License
 

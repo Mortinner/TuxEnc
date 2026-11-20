@@ -1,6 +1,7 @@
 import os, sys, time, json, subprocess
-sys.path.insert(0, "/home/claude/tuxenc")
-os.environ["TUXENC_FFMPEG_DIR"] = "/home/claude/dl/rel-8.1/ffmpeg-n8.1-latest-linux64-gpl-shared-8.1/bin"
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
+from tests.media import FF, M, MEDIA  # noqa: E402,F401  (FFmpeg y vídeos de prueba)
+os.environ["TUXENC_FFMPEG_DIR"] = FF
 os.environ["XDG_CACHE_HOME"] = "/tmp/tuxenc-test-cache"
 from tuxenc.probe import probe
 from tuxenc.catalog import EncodeSettings
@@ -8,7 +9,6 @@ from tuxenc.command import select_audio, select_subtitles, detect_crop, build_pl
 from tuxenc.engine import QueueEngine, Job, default_output
 from tuxenc.hw import detect_available
 
-M = "/home/claude/testmedia/"
 info = probe(M + "Película de prueba [2024].mkv")
 print("summary:", info.summary())
 print("audio:", [(s.index, s.codec, s.lang, s.channels, s.layout) for s in info.audio])
@@ -22,7 +22,7 @@ st = EncodeSettings(); st.sub_burn = "forced"; c, b = select_subtitles(info, st)
 print("crop:", detect_crop(info))
 print("available encoders:", detect_available())
 
-out_dir = "/tmp/tuxenc-out"; os.makedirs(out_dir, exist_ok=True)
+import tempfile; out_dir = tempfile.mkdtemp(prefix="tx-engine-")
 for f in os.listdir(out_dir): os.remove(os.path.join(out_dir, f))
 
 cases = [
@@ -69,3 +69,6 @@ for j in eng.jobs:
         pf = subprocess.run([os.environ["TUXENC_FFMPEG_DIR"]+"/ffprobe","-v","error","-select_streams","v:0","-show_entries","stream=pix_fmt,codec_tag_string","-of","csv=p=0",j.output],capture_output=True,text=True).stdout.strip()
         line += f" | {pf}"
     print(line)
+bad = [f"{j.tag}: {j.error}" for j in eng.jobs if j.status != "done"]
+assert not bad, "fallaron: " + "; ".join(bad)
+print("OK")

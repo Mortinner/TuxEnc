@@ -1,9 +1,10 @@
 """Menú «Limpiar»: terminados, sin empezar y vaciar la cola con conversiones en marcha."""
 import os, shutil, sys, time
 from pathlib import Path
-sys.path.insert(0, "/home/claude/tuxenc")
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
+from tests.media import FF, M, MEDIA  # noqa: E402,F401  (FFmpeg y vídeos de prueba)
 T = Path("/tmp/tx-clear"); shutil.rmtree(T, ignore_errors=True); T.mkdir()
-os.environ.update(TUXENC_FFMPEG_DIR="/home/claude/dl/rel-8.1/ffmpeg-n8.1-latest-linux64-gpl-shared-8.1/bin",
+os.environ.update(TUXENC_FFMPEG_DIR=FF,
                   XDG_CONFIG_HOME=str(T/"c"), XDG_CACHE_HOME=str(T/"k"), XDG_STATE_HOME=str(T/"s"), QT_QPA_PLATFORM="offscreen")
 lang = sys.argv[1] if len(sys.argv) > 1 else "es"
 from tuxenc import i18n; i18n.set_language(lang)
@@ -16,7 +17,7 @@ QMessageBox.question = staticmethod(lambda *a, **k: QMessageBox.Yes)
 def pump(sec):
     t = time.time()
     while time.time() - t < sec: app.processEvents(); time.sleep(0.03)
-src = Path("/home/claude/testmedia/chosen-remux.mkv")
+src = (MEDIA / "chosen-remux.mkv")
 files = []
 for i in range(1, 13):
     f = T / f"Serie equivocada S01E{i:02}.mkv"; shutil.copy(src, f); files.append(str(f))

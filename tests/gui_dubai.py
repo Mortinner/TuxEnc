@@ -2,9 +2,10 @@
 y la serie se aplica a todos los capítulos. Buscador REAL con respuestas simuladas de TMDB y TVmaze."""
 import os, shutil, sys, time
 from pathlib import Path
-sys.path.insert(0, "/home/claude/tuxenc")
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
+from tests.media import FF, M, MEDIA  # noqa: E402,F401  (FFmpeg y vídeos de prueba)
 T = Path("/tmp/tx-dubai"); shutil.rmtree(T, ignore_errors=True); T.mkdir()
-os.environ.update(TUXENC_FFMPEG_DIR="/home/claude/dl/rel-8.1/ffmpeg-n8.1-latest-linux64-gpl-shared-8.1/bin",
+os.environ.update(TUXENC_FFMPEG_DIR=FF,
                   XDG_CONFIG_HOME=str(T/"c"), XDG_CACHE_HOME=str(T/"k"), XDG_STATE_HOME=str(T/"s"), QT_QPA_PLATFORM="offscreen")
 lang = sys.argv[1] if len(sys.argv) > 1 else "es"
 from tuxenc import i18n; i18n.set_language(lang)
@@ -43,7 +44,7 @@ def wait(c, to=60):
     return c()
 
 down = T / "D"; down.mkdir()
-src = "/home/claude/testmedia/lib/Arrow.S01E02.1080p.WEB-DL.mkv"
+src = M + "lib/Arrow.S01E02.1080p.WEB-DL.mkv"
 for i in (1, 2, 3):
     shutil.copy(src, down / f"Aeropuerto de Dubai (2013) - S01E0{i} - Episodio {i}.mkv")
 cfg = Config(); cfg.rename_on = True; cfg.convert_on = False

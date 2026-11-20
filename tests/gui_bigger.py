@@ -1,8 +1,9 @@
 import os, shutil, sys, time
 from pathlib import Path
-sys.path.insert(0, "/home/claude/tuxenc")
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
+from tests.media import FF, M, MEDIA  # noqa: E402,F401  (FFmpeg y vídeos de prueba)
 T = Path("/tmp/tx-big"); shutil.rmtree(T, ignore_errors=True); T.mkdir()
-os.environ.update(TUXENC_FFMPEG_DIR="/home/claude/dl/rel-8.1/ffmpeg-n8.1-latest-linux64-gpl-shared-8.1/bin",
+os.environ.update(TUXENC_FFMPEG_DIR=FF,
                   XDG_CONFIG_HOME=str(T/"c"), XDG_CACHE_HOME=str(T/"k"), XDG_STATE_HOME=str(T/"s"), QT_QPA_PLATFORM="offscreen")
 lang = sys.argv[1] if len(sys.argv) > 1 else "es"
 from tuxenc import i18n; i18n.set_language(lang)
@@ -26,7 +27,7 @@ def wait(c, to=120):
     return c()
 down = T/"Descargas"; down.mkdir()
 for f in ("Babel.2006.BluRay.mkv", "Babel.2006.BluRay.spa.forced.srt"):
-    shutil.copy(f"/home/claude/testmedia/lib/{f}", down/f)
+    shutil.copy(M + f"lib/{f}", down/f)
 cfg = Config(); cfg.rename_on = True; cfg.convert_on = True; cfg.output_mode = "library"
 cfg.series_root, cfg.movie_root = str(T/"Series"), str(T/"Peliculas"); cfg.original_after = "trash"
 cfg.settings = {"video_encoder": "libx264", "speed_preset": "ultrafast", "rate_mode": "cbr", "bitrate": 30000, "audio_codec": "aac", "copy_if_lower": False}
@@ -45,7 +46,7 @@ pump(0.3)
 print("estado:", row.state.text(), "| pregunta visible:", row.decide.isVisible())
 lib_files = sorted(str(p.relative_to(T)) for p in (T/"Peliculas").rglob("*") if p.is_file())
 print("en la biblioteca:", lib_files)
-print("es el original:", (T/"Peliculas/B/Babel (2006) - [1080p].mkv").read_bytes() == Path("/home/claude/testmedia/lib/Babel.2006.BluRay.mkv").read_bytes())
+print("es el original:", (T/"Peliculas/B/Babel (2006) - [1080p].mkv").read_bytes() == (MEDIA / "lib/Babel.2006.BluRay.mkv").read_bytes())
 print("en la papelera:", sorted(p.name for p in binp.iterdir()), "| Descargas:", sorted(p.name for p in down.iterdir()))
 w.grab().save(f"/tmp/shots-merge/{lang}-10-original.png")
 w.engine.shutdown(); w.rename.shutdown()
