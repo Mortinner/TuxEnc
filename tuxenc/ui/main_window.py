@@ -686,7 +686,7 @@ class MainWindow(QMainWindow):
         else:
             job = Job(input=path, info=info, order=order, staged=True)
             self.engine.add(job)
-            self.queue.sync(self.engine.jobs)
+            self.queue.sync(self.engine.jobs, refresh=False)
             if self.cfg.rename_on:
                 self.rename.identify([job])
         if self.pending_probes == 0 and self.failed_probes:

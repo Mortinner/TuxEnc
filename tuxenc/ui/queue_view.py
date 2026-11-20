@@ -52,6 +52,13 @@ class ElidedLabel(QLabel):
 MODE = {"convert": True, "rename": False, "active": False}
 
 
+def _css(widget, css: str) -> None:
+    """setStyleSheet es caro en Qt (y gasta memoria): solo se aplica si el estilo cambia."""
+    if widget.property("_css") != css:
+        widget.setProperty("_css", css)
+        widget.setStyleSheet(css)
+
+
 class JobRow(QFrame):
     action = Signal(str, int)        # (acción, job_id)
 
@@ -157,9 +164,9 @@ class JobRow(QFrame):
         key = "task_both" if conv and ren else "task_conv" if conv else "task_ren" if ren else "task_none"
         color = {"task_both": theme.ACCENT, "task_conv": theme.WARM, "task_ren": theme.AMBER}.get(key, theme.MUTED)
         self.task.setText(tr(key))
-        self.task.setStyleSheet(f"font-size: 11px; font-weight: 600; color: {color}; border: 1px solid {color};"
+        _css(self.task, f"font-size: 11px; font-weight: 600; color: {color}; border: 1px solid {color};"
                                 " border-radius: 8px; padding: 1px 8px;")
-        self.dot.setStyleSheet(f"background: {_DOT[st]}; border-radius: 5px;")
+        _css(self.dot, f"background: {_DOT[st]}; border-radius: 5px;")
         detail = job.info.summary()
         if job.output and st not in (WAITING,) and not job.rename:
             detail += "  →  " + job.output.rsplit("/", 1)[-1]
@@ -172,7 +179,7 @@ class JobRow(QFrame):
         self.ident.setVisible(renaming)
         if renaming:
             color = {"ok": theme.OK, "pending": theme.MUTED}.get(job.ident, theme.AMBER)
-            self.ident.setStyleSheet(f"color: {color};")
+            _css(self.ident, f"color: {color};")
             self.ident.setText(job.note)
         final = job.renamed_to or (job.output if job.rename and st in (DONE,) else "")
         target = ("→ " + final) if final else (("→ " + job.preview) if job.preview else "")
@@ -197,7 +204,7 @@ class JobRow(QFrame):
             self.bar.setObjectName("Bad")
         else:
             self.bar.setValue(int(job.progress * 1000))
-        self.bar.setStyleSheet("max-height: 5px; min-height: 5px;")
+        _css(self.bar, "max-height: 5px; min-height: 5px;")
         self.bar.style().unpolish(self.bar)
         self.bar.style().polish(self.bar)
 
@@ -233,7 +240,7 @@ class JobRow(QFrame):
         self.state.setText(text)
         color = {DONE: theme.OK, FAILED: theme.BAD}.get(st, theme.TEXT if st in ACTIVE
                                                        else theme.MUTED)
-        self.state.setStyleSheet(f"color: {color};")
+        _css(self.state, f"color: {color};")
 
         vis = {
             "match": renaming and st == WAITING and job.ident != "pending",
@@ -302,31 +309,39 @@ class QueueList(QListWidget):
         self.setSpacing(0)
         self.rows: dict[int, tuple[QListWidgetItem, JobRow]] = {}
 
-    def sync(self, jobs: list[Job]) -> None:
+    def sync(self, jobs: list[Job], refresh: bool = True) -> None:
+        """Pone la lista igual que `jobs`. Con refresh=False solo añade y quita filas
+        (al añadir cientos de vídeos, repintar todas las filas cada vez era lo que más costaba)."""
         ids = [j.id for j in jobs]
+        wanted = set(ids)
         # quitar los que ya no están
         for jid in list(self.rows):
-            if jid not in ids:
+            if jid not in wanted:
                 item, _row = self.rows.pop(jid)
                 self.takeItem(self.row(item))
-        # orden actual
         current = [self.item(i).data(Qt.UserRole) for i in range(self.count())]
-        if current != [i for i in ids if i in self.rows] or any(i not in self.rows for i in ids):
+        if current != [i for i in ids if i in self.rows]:
+            # el orden ha cambiado (p. ej. el usuario reordenó): se rehace la lista
             for jid in list(self.rows):
                 item, _ = self.rows.pop(jid)
                 self.takeItem(self.row(item))
-            for j in jobs:
-                self._add(j)
-        for j in jobs:
-            self.update_job(j)
+        # los que faltan se insertan en su sitio; rehacerlo todo con cada vídeo nuevo era O(n²)
+        for pos, j in enumerate(jobs):
+            if j.id not in self.rows:
+                self._add(j, pos)
+            elif refresh:
+                self.update_job(j)
 
-    def _add(self, job: Job) -> None:
+    def _add(self, job: Job, pos: int | None = None) -> None:
         row = JobRow(job)
         row.action.connect(self.row_action)
         item = QListWidgetItem()
         item.setData(Qt.UserRole, job.id)
         item.setSizeHint(QSize(100, row.sizeHint().height() + 6))
-        self.addItem(item)
+        if pos is None or pos >= self.count():
+            self.addItem(item)
+        else:
+            self.insertItem(pos, item)
         self.setItemWidget(item, row)
         self.rows[job.id] = (item, row)
 

@@ -51,6 +51,29 @@ def describe_match(res) -> str:
     return " · ".join(parts)
 
 
+def same_series_targets(job: Job, prev, jobs: list[Job]) -> list[Job]:
+    """Capítulos a los que se aplica «Usar esta misma serie para los demás capítulos».
+
+    Todos los que aún no han empezado y son de la misma serie, estén identificados o no
+    (antes solo los no identificados, y corregir una serie mal elegida obligaba a ir uno a uno).
+    Es de la misma serie si su archivo trae el mismo nombre de serie o si se identificó con la
+    misma serie que tenía este capítulo antes de corregirlo. Se respetan los capítulos que el
+    usuario eligió a mano uno a uno.
+    """
+    key = normalize(job.rt.parsed.title)
+    prev_id = (prev.provider, prev.id) if prev is not None else None
+    out = []
+    for other in jobs:
+        if other is job or other.status != WAITING or other.rt is None or other.hand_pick:
+            continue
+        chosen = other.rt.chosen
+        same_name = bool(key) and normalize(other.rt.parsed.title) == key
+        same_show = prev_id is not None and chosen is not None and (chosen.provider, chosen.id) == prev_id
+        if same_name or same_show:
+            out.append(other)
+    return out
+
+
 class RenameController(QObject):
     identified = Signal(int, object)     # job_id, (estado, Resolution, subtítulos) | Exception
     chosen = Signal(int, object)         # job_id, (estado, Resolution) | Exception
@@ -104,7 +127,7 @@ class RenameController(QObject):
                 continue
             job.ident, job.note = PENDING, tr("id_pending")
             self._submit(self._identify_task, job.id, job.input)
-        self.w.queue.sync(self.w.engine.jobs)
+            self.w.queue.update_job(job)
 
     def _identify_task(self, job_id: int, path: str) -> None:
         try:
@@ -199,15 +222,11 @@ class RenameController(QObject):
             return
         # Este vídeo: serie + capítulo elegido. Los demás de la misma serie: solo la serie
         # (cada uno conserva el capítulo de su nombre).
+        prev = job.rt.chosen                       # la serie que tenía antes de corregirla
+        job.hand_pick = bool(season is not None and episodes)
         job.ident, job.note = PENDING, tr("id_pending")
         self._submit(self._choose_task, job.id, job.rt, match, season, episodes)
-        targets = []
-        if same:
-            key = normalize(job.rt.parsed.title)
-            for other in self.w.engine.jobs:
-                if (other is not job and other.status == WAITING and other.rt is not None
-                        and other.ident != OK and normalize(other.rt.parsed.title) == key):
-                    targets.append(other)
+        targets = [] if not same else same_series_targets(job, prev, self.w.engine.jobs)
         for t in targets:
             t.ident, t.note = PENDING, tr("id_pending")
             self._submit(self._choose_task, t.id, t.rt, match, None, None)

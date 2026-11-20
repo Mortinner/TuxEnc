@@ -6,6 +6,16 @@ All notable changes to TuxEnc are listed here (Spanish first, English below each
 
 ## [Sin publicar] · Unreleased
 
+## [1.2.4] - 2026-11-20
+
+### Corregido
+- **Al añadir muchos vídeos de golpe (por ejemplo, una serie entera de 229 capítulos), TuxEnc se quedaba bloqueado durante mucho tiempo** y gastaba varios GB de memoria. Con cada vídeo añadido se rehacía la lista entera y se volvían a aplicar los estilos de todas las filas, un trabajo que crece con el cuadrado del número de vídeos y que va por un único hilo. Ahora las filas nuevas se insertan en su sitio y los estilos solo se aplican si cambian. Con 229 vídeos, la lista está lista en unos segundos y usa unos 200 MB, cuando antes agotaba la memoria.
+- **«Usar esta misma serie para los demás capítulos» solo cambiaba los capítulos sin identificar.** Si los demás ya se habían identificado solos (con la serie o el proveedor equivocados), seguían igual y había que corregirlos uno a uno. Ahora se aplica a todos los capítulos de esa serie que no han empezado, estén identificados o no, y cada uno conserva su número de capítulo. Cuentan los que tienen el mismo nombre de serie en el archivo y los que se identificaron con la serie que tenía ese capítulo antes de corregirlo. Solo se respetan los capítulos a los que se eligió un episodio a mano.
+
+### English
+- Fixed: adding many videos at once (e.g. a 229-episode show) froze TuxEnc for a long time and used several GB of RAM. The list was rebuilt and restyled on every added video (quadratic work on the GUI thread). New rows are now inserted in place and styles are only applied when they change: 229 videos load in seconds using about 200 MB.
+- Fixed: «Use this same show for the other episodes» only changed unidentified episodes. It now applies to every not-started episode of that show, identified or not (same show name in the file, or identified as the show this episode had before the correction). Episodes picked by hand are kept.
+
 ## [1.2.3] - 2026-11-19
 
 ### Corregido

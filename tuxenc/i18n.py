@@ -131,7 +131,7 @@ STRINGS: dict[str, tuple[str, str]] = {
                    "página en IMDb, TMDB o TVmaze.",
                    "No results. Try the original title or paste the link to its IMDb, TMDB or TVmaze page."),
     "match_searching": ("Buscando…", "Searching…"),
-    "match_same": ('Usar esta misma serie para los demás capítulos sin identificar (cada uno conserva su número de capítulo)', 'Use this same show for the other unidentified episodes (each keeps its own episode number)'),
+    "match_same": ('Usar esta misma serie para los demás capítulos (cada uno conserva su número de capítulo; no cambia los que elegiste a mano)', 'Use this same show for the other episodes (each keeps its own episode number; the ones you picked by hand are kept)'),
     "kind_series": ("Serie", "Show"),
     "kind_movie": ("Película", "Movie"),
     "renamed_ok": ("✓ Renombrado", "✓ Renamed"),
