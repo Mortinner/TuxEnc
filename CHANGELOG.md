@@ -6,6 +6,21 @@ All notable changes to TuxEnc are listed here (Spanish first, English below each
 
 ## [Sin publicar] · Unreleased
 
+## [1.2.7] - 2026-11-20
+
+### Añadido
+- **TuxEnc se actualiza desde la propia app.** Al abrirse (como mucho una vez al día y sin retrasar nada) mira si hay una versión nueva publicada en GitHub. Si la hay, lo avisa en la barra de avisos con **«Ver novedades»**: ahí están las novedades de cada versión nueva y los botones **Actualizar**, **Saltar esta versión** y **Ahora no**.
+- **La descarga se comprueba antes de instalar nada:** solo se descarga de GitHub y por HTTPS, el zip tiene que coincidir con la suma SHA-256 publicada en su Release (`SHA256SUMS`) y dentro tiene que estar el AppImage de esa versión. Si algo no cuadra, no se toca nada y se explica qué ha pasado.
+- **Se instala sin cortar lo que estás haciendo:** la versión nueva se pone en su sitio y se usa al reiniciar. Puedes reiniciar ahora, **al terminar la cola** o más tarde, y los vídeos en espera vuelven a la cola solos. Al abrirse por primera vez, la versión nueva actualiza el menú y los iconos.
+- **Volver a la versión anterior:** la versión que se sustituye se guarda, y en **☰ → Preferencias → Actualizaciones** hay un botón para volver a ella. La que se deja ya no se vuelve a ofrecer; las siguientes, sí.
+- **☰ → Preferencias → Actualizaciones:** activar o desactivar la comprobación al arrancar, **«Buscar ahora»** y el estado de la última comprobación. Todo queda anotado en `actualizaciones.log`.
+- La actualización automática funciona en la copia integrada en el sistema (la que abre el menú de aplicaciones). Un AppImage suelto, sin integrar, solo avisa y abre la página de descarga.
+
+### English
+- Added: TuxEnc updates itself. At startup (at most once a day) it checks GitHub for a new release and shows it in the notice bar with «What's new», Update, Skip this version and Not now.
+- The download is verified before anything is installed: GitHub over HTTPS only, the zip must match the SHA-256 published in the release's `SHA256SUMS`, and it must contain that version's AppImage. Otherwise nothing is touched.
+- The new version is put in place and used after a restart (now, when the queue finishes, or later); waiting videos are re-queued. The previous version is kept and you can go back to it from ☰ → Preferences → Updates, where you can also turn off the startup check or check now. Everything is logged to `actualizaciones.log`.
+
 ## [1.2.6] - 2026-11-20
 
 ### Corregido

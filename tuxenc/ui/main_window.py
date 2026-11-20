@@ -33,6 +33,7 @@ from .dialogs import (CountdownDialog, LogDialog,
                       TracksDialog)
 from .queue_view import DropZone, QueueList, job_menu
 from .rename_ctrl import RenameController
+from .update_ctrl import UpdateController
 from .settings_panel import SettingsPanel
 from ..library import OK as ID_OK, free_name, predicted_resolution
 
@@ -94,6 +95,7 @@ class MainWindow(QMainWindow):
         self.rename = RenameController(self)
         self.rename.renamed.connect(self._on_renamed)
         self.rename.undone.connect(self._on_undone)
+        self.updater = UpdateController(self)
         self.bridge.job_updated.connect(self._on_job_updated)
         self.bridge.queue_done.connect(self._on_queue_done)
         self.bridge.probed.connect(self._on_probed)
@@ -117,6 +119,7 @@ class MainWindow(QMainWindow):
                 pass
         self._apply_modes()
         self._start_hw_detection()
+        QTimer.singleShot(5000, self.updater.auto_check)     # versión nueva en GitHub (una vez al día)
 
     # ================================================================== construcción
     def _build(self) -> None:
@@ -1045,6 +1048,9 @@ class MainWindow(QMainWindow):
                 kind, text, btn = "library", tr("bar_library"), tr("bar_configure")
             elif not has_tmdb:
                 kind, text, btn = "tmdb", tr("bar_tmdb"), tr("bar_configure")
+        upd = self.updater.bar_state() if getattr(self, "updater", None) else None
+        if not kind and upd and upd[0] not in self._bar_dismissed:
+            kind, text, btn = upd
         if not kind and (not self.cfg.engines_notice_shown or self._bar_kind == "engines"):
             engines = self._engines_status()
             ready = [n for n, st in engines if st in ("builtin", "user", "free")]
@@ -1058,7 +1064,7 @@ class MainWindow(QMainWindow):
                 self.cfg.engines_notice_shown = True
         if kind and kind not in self._bar_dismissed:
             self._bar_kind = kind
-            self.bar_lbl.setText("💡 " + text)
+            self.bar_lbl.setText(("🆕 " if kind.startswith("update") else "💡 ") + text)
             self.bar_btn.setText(btn)
             self.bar.setVisible(True)
         else:
@@ -1079,6 +1085,9 @@ class MainWindow(QMainWindow):
         return out
 
     def _on_bar_action(self) -> None:
+        if self._bar_kind.startswith("update"):
+            self.updater.bar_action(self._bar_kind)
+            return
         self.open_settings("rename" if self._bar_kind == "library" else "engines")
 
     def _dismiss_bar(self) -> None:
@@ -1185,6 +1194,12 @@ class MainWindow(QMainWindow):
         if dlg.integrated_now:
             self._after_integrate(dlg.integrated_update, dlg.integrated_old)
             return
+        if dlg.rolled_back:
+            self.request_restart(integration.INSTALLED_APPIMAGE)
+            return
+        if dlg.update_requested:
+            self.updater.open_dialog()
+            return
         if lang_changed:
             waiting = any(j.status == WAITING for j in self.engine.jobs)
             text = tr_in(new_lang, "lang_restart_q") + (tr_in(new_lang, "lang_restart_queue") if waiting else "")
@@ -1226,6 +1241,12 @@ class MainWindow(QMainWindow):
         """Aviso en la versión recién instalada (la abre el proceso que integró o actualizó)."""
         if old == "first":
             text = tr("just_integrated")
+        elif old.startswith("self:"):              # instalada desde la propia app
+            prev = old[5:]
+            if integration.version_key(prev) > integration.version_key(VERSION):
+                text = tr("just_rolled_back", v=VERSION, old=prev)
+            else:
+                text = tr("just_self_updated", v=VERSION, old=tr("update_from", v=prev))
         else:
             text = tr("just_updated", v=VERSION,
                       old=tr("update_from", v=old) if old not in ("", "?", VERSION) else "")

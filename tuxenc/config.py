@@ -33,6 +33,9 @@ class Config:
     last_dir: str = ""
     advanced_open: bool = False
     geometry: str = ""
+    update_check: bool = True           # buscar versiones nuevas al arrancar (como mucho una vez al día)
+    update_last_check: float = 0.0      # última comprobación correcta (epoch)
+    update_skip: str = ""               # versión que el usuario pidió saltar
 
     def encode_settings(self) -> EncodeSettings:
         return EncodeSettings.from_dict(self.settings) if self.settings else EncodeSettings()

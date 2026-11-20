@@ -194,6 +194,30 @@ def integrate(desktop_shortcut: bool = True) -> list[str]:
     return created
 
 
+def had_desktop_shortcut() -> bool:
+    """Si la integración actual creó el acceso directo del escritorio (para respetarlo al refrescar)."""
+    try:
+        files = json.loads(MANIFEST.read_text(encoding="utf-8")).get("files", [])
+    except (OSError, ValueError, AttributeError):
+        return False
+    return any(Path(f).name == f"{APP_ID}.desktop" and Path(f).parent != APPS_DIR for f in files)
+
+
+def finish_self_update() -> str:
+    """Primera apertura de una versión que se instaló sola (actualización o vuelta atrás desde la app).
+
+    La copia integrada ya es la nueva, pero el menú, los iconos y el manifiesto son de la anterior:
+    se rehacen con los de esta versión. Devuelve la versión anterior ("" si no había nada que hacer).
+    """
+    if not running_installed_copy():
+        return ""
+    old = installed_version()
+    if not old or old == VERSION:
+        return ""
+    integrate(desktop_shortcut=had_desktop_shortcut())
+    return old
+
+
 def uninstall() -> list[str]:
     """Elimina absolutamente todo lo que TuxEnc ha creado. Los vídeos del usuario no se tocan."""
     removed: list[str] = []

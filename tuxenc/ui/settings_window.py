@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import (QComboBox, QDialog, QDialogButtonBox, QFrame, QHBoxLayout, QLabel,
+from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFrame, QHBoxLayout, QLabel,
                                QListWidget, QListWidgetItem, QMessageBox, QPushButton, QTabWidget,
                                QVBoxLayout, QWidget)
 
@@ -39,6 +39,9 @@ def _row(*widgets) -> QHBoxLayout:
 
 
 class SettingsWindow(QDialog):
+    rolled_back = False             # se volvió a la versión anterior: la ventana principal reinicia
+    update_requested = False        # «Ver novedades» de una versión nueva: lo abre la ventana principal
+
     def __init__(self, main) -> None:
         super().__init__(main)
         self.main = main
@@ -83,6 +86,7 @@ class SettingsWindow(QDialog):
         outer.addWidget(bb)
         self.integrated_now = self.integrated_update = False
         self.integrated_old = ""
+        self.rolled_back = self.update_requested = False
 
     # ------------------------------------------------------------------ abrir
     def open_tab(self, tab: str = "conversion") -> None:
@@ -94,6 +98,7 @@ class SettingsWindow(QDialog):
         self._refresh_conv_info()
         self._refresh_presets()
         self._refresh_integration()
+        self._refresh_updates()
         self._refresh_encoders()
         self.lang.blockSignals(True)
         self.lang.setCurrentIndex(max(0, self.lang.findData(self.cfg.ui_lang)))
@@ -229,6 +234,21 @@ class SettingsWindow(QDialog):
         self.shortcut_btn.clicked.connect(self._integrate)
         lay.addLayout(_row(self.int_btn, self.shortcut_btn))
 
+        lay.addWidget(_section(tr("upd_section")))
+        self.upd_auto = QCheckBox(tr("upd_auto"))
+        self.upd_auto.toggled.connect(self._set_update_check)
+        lay.addWidget(self.upd_auto)
+        self.upd_label = _muted("")
+        lay.addWidget(self.upd_label)
+        self.upd_check_btn = QPushButton(tr("upd_check_now"))
+        self.upd_check_btn.clicked.connect(lambda: self.main.updater.check(manual=True))
+        self.upd_view_btn = QPushButton(tr("bar_update_btn"))
+        self.upd_view_btn.clicked.connect(self._view_update)
+        self.upd_back_btn = QPushButton()
+        self.upd_back_btn.clicked.connect(self._rollback)
+        lay.addLayout(_row(self.upd_check_btn, self.upd_view_btn, self.upd_back_btn))
+        self.main.updater.listeners.append(self._refresh_updates)
+
         lay.addWidget(_section(tr("encoders_found")))
         self.enc_label = _muted("")
         lay.addWidget(self.enc_label)
@@ -282,6 +302,70 @@ class SettingsWindow(QDialog):
             return
         # La ventana principal avisa y reinicia desde la copia instalada al cerrar los ajustes
         self.integrated_now, self.integrated_update, self.integrated_old = True, update, old
+        self.accept()
+
+    # ------------------------------------------------------------------ actualizaciones
+    def _set_update_check(self, on: bool) -> None:
+        self.cfg.update_check = bool(on)
+        self.cfg.save()
+
+    def _refresh_updates(self) -> None:
+        import time as _time
+        from .. import updater as api
+        from .update_ctrl import error_text
+        upd = self.main.updater
+        self.upd_auto.blockSignals(True)
+        self.upd_auto.setChecked(bool(self.cfg.update_check))
+        self.upd_auto.blockSignals(False)
+        if upd.checking:
+            text = tr("upd_checking")
+        elif upd.ready_version:
+            text = tr("bar_update_ready", v=upd.ready_version)
+        elif upd.info:
+            text = tr("upd_found_short", v=upd.info.latest.version)
+        elif upd.last_error is not None:
+            text = error_text(upd.last_error)
+        elif self.cfg.update_last_check:
+            when = _time.strftime("%d/%m/%Y %H:%M", _time.localtime(self.cfg.update_last_check))
+            text = tr("upd_uptodate", v=VERSION) + " " + tr("upd_last_check", when=when)
+        else:
+            text = tr("upd_never")
+        if not api.can_self_update():
+            text += "\n" + tr("upd_dev_note")
+        self.upd_label.setText(text)
+        self.upd_check_btn.setEnabled(not upd.checking and not upd.downloading)
+        self.upd_view_btn.setVisible(bool(upd.info) and not upd.ready_version)
+        prev = api.previous_version() if api.can_self_update() else ""
+        self.upd_back_btn.setVisible(bool(prev) and prev != VERSION and not upd.ready_version)
+        self.upd_back_btn.setText(tr("upd_rollback", v=prev))
+
+    def _view_update(self) -> None:
+        self.update_requested = True
+        self.accept()
+
+    def _rollback(self) -> None:
+        from .. import updater as api
+        from ..integration import version_key
+        from .update_ctrl import error_text
+        prev = api.previous_version()
+        box = QMessageBox(QMessageBox.Question, APP_NAME, tr("upd_rollback_q", prev=prev, cur=VERSION),
+                          parent=self)
+        box.setTextFormat(Qt.RichText)
+        yes = box.addButton(tr("upd_rollback", v=prev), QMessageBox.AcceptRole)
+        box.addButton(tr("cancel"), QMessageBox.RejectRole)
+        box.exec()
+        if box.clickedButton() is not yes:
+            return
+        try:
+            api.rollback()
+        except api.UpdateError as exc:
+            QMessageBox.warning(self, APP_NAME, error_text(exc))
+            self._refresh_updates()
+            return
+        if version_key(VERSION) > version_key(prev):
+            self.cfg.update_skip = VERSION        # que no vuelva a ofrecer justo la que se deja
+            self.cfg.save()
+        self.rolled_back = True
         self.accept()
 
     # ------------------------------------------------------------------ acerca de
