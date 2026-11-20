@@ -1,10 +1,11 @@
 name: Pruebas
 
+# Se ejecuta en el push de cada rama (las de Claude y las de Dependabot incluidas) y su
+# resultado sale en el PR. Sin disparador pull_request: en los PR que abre el bot generaba
+# una segunda ejecución que pedía aprobación y no aportaba nada.
 on:
   push:
-    branches: [main, "claude/**"]
-  pull_request:
-    branches: [main]
+    branches: [main, "claude/**", "dependabot/**"]
   workflow_dispatch:
 
 permissions:

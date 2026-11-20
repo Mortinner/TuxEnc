@@ -136,7 +136,7 @@ jobs:
           cd dist
           zip="TuxEnc-$VERSION-linux-x86_64.zip"
           contenido="$(python3 -c 'import sys,zipfile; print("\n".join(sorted(zipfile.ZipFile(sys.argv[1]).namelist())))' "$zip")"
-          esperado="$(printf '%s\n' CHANGELOG.md LICENSE.txt README.md "TuxEnc-$VERSION-x86_64.AppImage" | sort)"
+          esperado="$(printf "TuxEnc-$VERSION/%s\n" CHANGELOG.md LICENSE.txt README.md "TuxEnc-$VERSION-x86_64.AppImage" | sort)"
           [ "$contenido" = "$esperado" ] || { echo "Contenido inesperado en $zip:"; echo "$contenido"; exit 1; }
           sha256sum "$zip" > SHA256SUMS
           cat SHA256SUMS
