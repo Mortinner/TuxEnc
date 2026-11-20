@@ -1,4 +1,4 @@
-"""Las filas no cambian de alto al identificarse (1.3.0).
+"""Las filas no cambian de alto al identificarse, y el botón principal espera (1.3.0).
 
 Antes, al terminar de identificarse, la fila crecía (aparecían la identificación y el nombre nuevo)
 y Qt la pintaba un instante con el alto viejo: el contenido salía aplastado y la etiqueta
@@ -46,7 +46,7 @@ w.show()
 w.rename.lib.searcher = Slow()
 w.add_paths([str(src)])
 
-squeezed, heights = [], set()
+squeezed, heights, btn_states = [], set(), set()
 t0 = time.time()
 while time.time() - t0 < 20 and not (len(w.engine.jobs) == 8 and all(j.ident == "ok" for j in w.engine.jobs)):
     app.processEvents()
@@ -55,11 +55,20 @@ while time.time() - t0 < 20 and not (len(w.engine.jobs) == 8 and all(j.ident == 
             if row.height() + 1 < row.sizeHint().height():
                 squeezed.append(row.job_id)
             heights.add(row.sizeHint().height())
+    if w.pending_probes or any(j.ident == "pending" for j in w.engine.jobs):
+        btn_states.add((w.start_btn.isEnabled(), w.start_btn.toolTip().split(":")[0]))
     time.sleep(0.01)
 assert all(j.ident == "ok" for j in w.engine.jobs), [j.ident for j in w.engine.jobs]
 print("altos de fila vistos:", sorted(heights), "| filas aplastadas:", len(squeezed))
 assert not squeezed, f"filas pintadas aplastadas: {squeezed[:10]}"
 assert len(heights) == 1, f"las filas cambian de alto al identificarse: {sorted(heights)}"
+# Mientras se analiza o identifica, «Iniciar» está desactivado y explica por qué
+print("botón mientras espera:", btn_states)
+assert btn_states and all(not en and tip.startswith("Espera") for en, tip in btn_states), btn_states
+app.processEvents()
+w._refresh_controls()
+assert w.start_btn.isEnabled() and not w.start_btn.toolTip(), (w.start_btn.isEnabled(), w.start_btn.toolTip())
+assert "Identificando" not in w.status_lbl.text()
 w.engine.shutdown()
 w.rename.shutdown()
 print("OK")

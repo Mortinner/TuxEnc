@@ -867,6 +867,12 @@ class MainWindow(QMainWindow):
             self.queue.sync(self.engine.jobs)
         pending = c["staged"]
         rename_only = self.cfg.rename_on and not self.cfg.convert_on
+        # El botón principal espera a que acabe el análisis y, si se renombra, la identificación:
+        # pulsarlo antes solo confirmaba los que ya estaban listos y dejaba el resto para otra vez.
+        identifying = sum(1 for j in jobs if j.ident == "pending" and j.status == WAITING) \
+            if self.cfg.rename_on else 0
+        wait_tip = (tr("wait_analyzing", n=self.pending_probes) if self.pending_probes
+                    else tr("wait_identifying", n=identifying) if identifying else "")
         if self.engine.active and pending:
             if rename_only:
                 n = sum(1 for j in self.pending_jobs() if j.ident == ID_OK and j.rt is not None)
@@ -881,6 +887,9 @@ class MainWindow(QMainWindow):
             self.start_btn.setToolTip("")
             self.start_btn.setEnabled((waiting + pending) > 0 and not self.engine.active and modes_ok
                                       and c["running"] == 0)
+        if wait_tip and (pending or not self.engine.active):
+            self.start_btn.setEnabled(False)
+            self.start_btn.setToolTip(wait_tip)
         self.undo_btn.setVisible(self.cfg.rename_on and not self.cfg.convert_on
                                  and self.rename.can_undo())
         self.pause_btn.setEnabled(busy)
@@ -895,6 +904,8 @@ class MainWindow(QMainWindow):
         rn = self.rename
         if self.pending_probes:
             self.status_lbl.setText(tr("analyzing", n=self.pending_probes))
+        elif identifying and not busy:
+            self.status_lbl.setText(tr("identifying", n=identifying))
         elif rn.batch_total and not self.engine.running:
             self.status_lbl.setText(tr("rn_status", done=rn.batch_done, total=rn.batch_total)
                                     + (tr("rn_status_copy") if rn.batch_copying else ""))
