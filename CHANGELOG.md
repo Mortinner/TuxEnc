@@ -6,6 +6,16 @@ All notable changes to TuxEnc are listed here (Spanish first, English below each
 
 ## [Sin publicar] · Unreleased
 
+## [1.2.5] - 2026-11-20
+
+### Corregido
+- **Identificar muchos capítulos de una misma carpeta seguía tardando minutos** (unos 5 minutos con 229 capítulos de un NAS). Para buscar los subtítulos de cada vídeo se recorría la carpeta entera preguntando al disco por cada archivo: con 229 capítulos eran unas 52.000 consultas, cada una con la latencia de la red. Ahora cada carpeta se lista una sola vez (se reutiliza 30 s) y solo se mira el tipo de los archivos que son subtítulos. En la simulación, de 273 s a 0,03 s, con los mismos subtítulos encontrados.
+- **Al añadir vídeos ya no se lee el principio de cada archivo.** En los MKV que no declaran el bitrate del audio, se leían los dos primeros minutos para medirlo nada más añadirlos, aunque solo se fueran a renombrar. Ahora al añadir solo se lee la cabecera y esa medida se hace al empezar a convertir cada vídeo (sigue sirviendo para decidir si copiar audio y vídeo sin recomprimir).
+
+### English
+- Fixed: identifying many episodes in one folder still took minutes (about 5 minutes for 229 episodes on a NAS). The subtitle search listed the whole folder and queried the disk for every file, for every video (~52,000 network round trips). Each folder is now listed once (reused for 30 s) and only subtitle files are checked.
+- Adding videos no longer reads the start of each file: the audio bitrate of MKVs without BPS tags is now measured when the video starts converting, not when it is added.
+
 ## [1.2.4] - 2026-11-20
 
 ### Corregido

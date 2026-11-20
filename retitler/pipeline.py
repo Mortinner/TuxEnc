@@ -6,6 +6,10 @@ aparte con ``new_name(settings)``, así que cambiar las plantillas no obliga a b
 """
 from __future__ import annotations
 
+import os
+import threading
+import time
+
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Iterable
@@ -145,22 +149,54 @@ def _is_video(p: Path) -> bool:
     return split_extension(p.name)[1].lower() in VIDEO_EXTS
 
 
+_SUBS_CACHE: dict[str, tuple[float, list[Path]]] = {}
+_SUBS_TTL = 30.0
+_SUBS_LOCK = threading.Lock()
+
+
+def _subtitles_in(folder: Path) -> list[Path]:
+    """Los subtítulos de una carpeta, listándola **una sola vez** cada 30 s.
+
+    Antes, para cada vídeo se recorría la carpeta entera preguntando al disco por cada archivo:
+    con 229 capítulos en un NAS eran ~52.000 consultas (minutos). Ahora se lista con scandir
+    (el tipo viene en el propio listado, sin consulta extra) y solo se miran los subtítulos.
+    """
+    key = str(folder)
+    now = time.monotonic()
+    with _SUBS_LOCK:
+        hit = _SUBS_CACHE.get(key)
+        if hit and now - hit[0] < _SUBS_TTL:
+            return hit[1]
+    subs: list[Path] = []
+    try:
+        with os.scandir(folder) as it:
+            for entry in it:
+                ext = split_extension(entry.name)[1]
+                if "." + ext.rsplit(".", 1)[-1].lower() not in SUBTITLE_EXTS:
+                    continue
+                try:
+                    if entry.is_file():
+                        subs.append(Path(entry.path))
+                except OSError:
+                    continue
+    except OSError:
+        return []
+    subs.sort(key=lambda c: c.name.casefold())
+    with _SUBS_LOCK:
+        _SUBS_CACHE[key] = (now, subs)
+    return subs
+
+
 def companions(video: Path) -> list[Path]:
     """Subtítulos que acompañan a un vídeo en su carpeta: mismo nombre base («Serie.S01E01.es.srt»)
     o el mismo episodio de la misma serie («Serie S01E01 Spanish.srt» junto a «Serie.S01E01.1080p.mkv»)."""
     stem = split_extension(video.name)[0]
     me = parse_path(video)
     out = []
-    try:
-        siblings = sorted(video.parent.iterdir(), key=lambda c: c.name.casefold())
-    except OSError:
-        return []
-    for sib in siblings:
-        if sib == video or not sib.is_file():
+    for sib in _subtitles_in(video.parent):
+        if sib == video:
             continue
-        sub_stem, ext = split_extension(sib.name)
-        if "." + ext.rsplit(".", 1)[-1].lower() not in SUBTITLE_EXTS:
-            continue
+        sub_stem = split_extension(sib.name)[0]
         if sub_stem == stem:
             out.append(sib)
             continue

@@ -671,7 +671,7 @@ class MainWindow(QMainWindow):
 
     def _probe_task(self, path: str, order: float) -> None:
         try:
-            info = probe(path)
+            info = probe(path, measure_audio=False)
         except ProbeError as exc:
             info = exc
         except Exception as exc:  # noqa: BLE001

@@ -116,7 +116,11 @@ def _kbps(value) -> int:
         return 0
 
 
-def probe(path: str, timeout: float = 60) -> MediaInfo:
+def probe(path: str, timeout: float = 60, measure_audio: bool = True) -> MediaInfo:
+    """Analiza un vídeo (solo la cabecera). Con measure_audio=False no mide el bitrate del audio
+    que no lo declara: eso lee los 2 primeros minutos del archivo y se deja para cuando se
+    vaya a convertir (ensure_audio_measured). Al añadir cientos de vídeos de un NAS, leerlos
+    enteros de entrada sobraba, sobre todo si solo se van a renombrar."""
     cmd = [ffprobe_bin(), "-v", "error", "-hide_banner", "-print_format", "json",
            "-show_format", "-show_streams", path]
     try:
@@ -185,9 +189,21 @@ def probe(path: str, timeout: float = 60) -> MediaInfo:
 
     if not info.video:
         raise ProbeError("no_video")
+    if measure_audio:
+        ensure_audio_measured(info)
+    return info
+
+
+def ensure_audio_measured(info: MediaInfo) -> None:
+    """Mide (una sola vez) el bitrate de las pistas de audio que no lo declaran."""
+    if getattr(info, "_audio_measured", False):
+        return
     if any(not a.bitrate for a in info.audio):
         _measure_audio(info)
-    return info
+    try:
+        info._audio_measured = True
+    except AttributeError:
+        pass
 
 
 def _measure_audio(info: MediaInfo, seconds: int = 120, timeout: float = 20) -> None:

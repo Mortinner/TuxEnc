@@ -17,7 +17,7 @@ from typing import Callable
 from .catalog import CONTAINERS, EncodeSettings
 from .command import Plan, build_plan, detect_crop
 from .paths import CACHE_DIR, LOG_DIR, clean_env
-from .probe import MediaInfo
+from .probe import MediaInfo, ensure_audio_measured
 
 WAITING, PREPARING, RUNNING, PAUSED, DONE, FAILED, CANCELLED = (
     "waiting", "preparing", "running", "paused", "done", "failed", "cancelled")
@@ -191,6 +191,7 @@ class _Runner(threading.Thread):
         LOG_DIR.mkdir(parents=True, exist_ok=True)
         job.status = PREPARING
         self.engine._notify(job)
+        ensure_audio_measured(job.info)        # se dejó para ahora: al añadir solo se lee la cabecera
 
         crop = detect_crop(job.info) if st.autocrop else None
         if self._cancel.is_set():
