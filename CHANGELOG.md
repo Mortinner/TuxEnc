@@ -6,8 +6,28 @@ All notable changes to TuxEnc are listed here (Spanish first, English below each
 
 ## [Sin publicar] · Unreleased
 
+## [1.3.0] - 2026-11-20
+
+### Corregido
+- **Capítulos numerados solo con un número** («Dinosaucers 01.mp4» … «Dinosaucers 71.mp4»): antes solo se identificaba el primero y «Usar esta misma serie» no se aplicaba a ninguno, porque cada archivo parecía una serie distinta («Dinosaucers 02», «Dinosaucers 03»…). Ahora se reconocen como capítulos cuando está claro que es una serie: números con cero delante («01») o que pasan de una cifra a dos, con varios archivos del mismo título en la carpeta o una carpeta con su nombre. Las películas con número («Rocky 2», «Ocean's 11», «2012») siguen siendo películas.
+- **Numeración absoluta:** si el número pasa de los capítulos de la primera temporada, se convierte a su temporada y capítulo con la lista del buscador (en una serie de 65 + 6 capítulos, el «66» es el S02E01).
+- **El botón principal espera a que termine el análisis y la identificación.** Antes se podía pulsar en cuanto había un vídeo listo y solo se llevaba esos; ahora espera, y al pasar el ratón explica por qué («Espera un momento: aún se están identificando 12 vídeo(s)»). La barra de estado dice también «Identificando…».
+- **La etiqueta «Solo renombrar» ya no se descoloca** mientras se identifican los vídeos. Salía un instante como un rectángulo encima del título, fila tras fila, porque cada fila crecía al identificarse. Ahora la fila tiene desde el principio el alto que tendrá.
+
+### Mejorado
+- **Renombrar en el NAS es mucho más rápido.** Antes se preguntaba al disco unas 6 veces por archivo, cada vez con la espera de la red; ahora se lista cada carpeta una vez, las carpetas de destino se crean una sola vez y los archivos se mueven varios a la vez. En la prueba con 10 ms de latencia por consulta, 240 capítulos pasan de 15 s a 1 s. Se mantiene todo lo demás: si algo falla no se cambia nada, nunca se pisa un archivo y se puede deshacer. Las copias entre discos siguen yendo de una en una.
+- **«Usar esta misma serie»** dice a cuántos capítulos se aplicará («para los otros 70 capítulos de «Dinosaucers»»).
+- **`renombrado.log` anota también el análisis y la identificación de cada tanda:** cuántos archivos, cuántos no se pudieron leer, cuánto tardó cada fase y cuántos quedaron identificados, dudosos o sin encontrar.
+
 ### Añadido
+- **«Acerca de» muestra de dónde sale esta versión:** «Compilado por GitHub Actions» con el commit y la compilación enlazados, la Release con su `SHA256SUMS` y su certificado de procedencia, y cómo comprobar una descarga. Una compilación local lo dice («Compilación local, no oficial»).
 - **El título de la ventana muestra la versión** («TuxEnc 1.3.0»), también mientras convierte («45% · TuxEnc 1.3.0»).
+
+### English
+- Fixed: episodes numbered with just a number («Dinosaucers 01.mp4») are now recognized as episodes when the folder makes it clear it is a show; numbered movies («Rocky 2», «Ocean's 11», «2012») stay movies. Absolute numbers beyond season 1 are converted to season and episode.
+- Fixed: the main button waits until analysis and identification finish, with a tooltip explaining why. The «Rename only» tag no longer flickers as a rectangle while videos are identified.
+- Improved: renaming on a NAS is much faster (one listing per folder, folders created once, several moves at a time; 240 episodes from 15 s to 1 s with 10 ms simulated latency), still all-or-nothing and undoable. «Use this same show» shows how many episodes it applies to. `renombrado.log` also records the analysis and identification of each batch.
+- Added: About shows where this build comes from (GitHub Actions commit and run, the release with its `SHA256SUMS` and provenance attestation, how to verify a download) or says it is a local build. The window title shows the version.
 
 ## [1.2.7] - 2026-11-20
 
