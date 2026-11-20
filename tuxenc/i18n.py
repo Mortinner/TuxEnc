@@ -582,6 +582,28 @@ STRINGS: dict[str, tuple[str, str]] = {
                      "<b>Developed by {author}</b><br>"
                      "Contact: <a href='mailto:{mail}'>{mail}</a><br>"
                      "<span style='color:#8d97b5'>Built with Claude, Anthropic</span>"),
+    "prov_title": ("<b>Procedencia</b>", "<b>Provenance</b>"),
+    "prov_official": ("Compilado por <b>GitHub Actions</b> a partir del commit <a href='{commit_url}'>{short}</a> "
+                      "de {repo} (<a href='{run_url}'>ver la compilación</a>, {built}). La descarga, su "
+                      "<code>SHA256SUMS</code> y el certificado de procedencia están en la "
+                      "<a href='{release_url}'>Release {v}</a>.",
+                      "Built by <b>GitHub Actions</b> from commit <a href='{commit_url}'>{short}</a> of {repo} "
+                      "(<a href='{run_url}'>see the build</a>, {built}). The download, its <code>SHA256SUMS</code> "
+                      "and the provenance attestation are in <a href='{release_url}'>release {v}</a>."),
+    "prov_verify": ("Para comprobar una descarga: <code>sha256sum -c SHA256SUMS</code> o "
+                    "<code>gh attestation verify {zip} --repo {repo}</code>. Las actualizaciones desde la "
+                    "app hacen la comprobación del SHA-256 solas.",
+                    "To verify a download: <code>sha256sum -c SHA256SUMS</code> or "
+                    "<code>gh attestation verify {zip} --repo {repo}</code>. In-app updates check the "
+                    "SHA-256 by themselves."),
+    "prov_local": ("<b>Compilación local, no oficial</b> ({built}): no la ha compilado GitHub. Las versiones "
+                   "oficiales están en <a href='{releases}'>github.com/Mortinner/TuxEnc/releases</a>.",
+                   "<b>Local build, not official</b> ({built}): it was not built by GitHub. Official "
+                   "versions are at <a href='{releases}'>github.com/Mortinner/TuxEnc/releases</a>."),
+    "prov_source": ("Ejecutando desde el código fuente (desarrollo). Las versiones oficiales están en "
+                    "<a href='{releases}'>github.com/Mortinner/TuxEnc/releases</a>.",
+                    "Running from source (development). Official versions are at "
+                    "<a href='{releases}'>github.com/Mortinner/TuxEnc/releases</a>."),
     "about_license": ("Software libre bajo licencia <b>GNU GPL v3</b>: puedes usarlo, estudiarlo, "
                       "compartirlo y modificarlo · <a href='https://www.gnu.org/licenses/gpl-3.0.html'>"
                       "gnu.org/licenses/gpl-3.0</a>",

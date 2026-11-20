@@ -181,7 +181,8 @@ def build():
     shutil.copy2(ROOT / "run.py", app / "run.py")
     for pkg in ("tuxenc", "retitler"):
         shutil.copytree(ROOT / pkg, app / pkg, ignore=shutil.ignore_patterns("__pycache__", "*.pyc",
-                                                                              "_builtin_keys.py"))
+                                                                              "_builtin_keys.py",
+                                                                              "_build_info.py"))
     keys = builtin_keys_from_env()
     # Compilación oficial (CI): sin las claves de TMDB y TheTVDB, mejor fallar que publicar sin ellas
     required = {k.strip() for k in os.environ.get("TUXENC_REQUIRE_KEYS", "").split(",") if k.strip()}
@@ -190,6 +191,12 @@ def build():
     from tuxenc.builtin_keys import render_module
     (app / "tuxenc" / "_builtin_keys.py").write_text(render_module(keys))
     print("claves integradas:", ", ".join(sorted(keys)) or "ninguna (cada usuario pondrá las suyas)")
+    # De dónde sale esta compilación («Acerca de»): GitHub Actions (oficial) o local
+    import time as _time
+    from tuxenc.build_info import render_module as render_info
+    built = _time.strftime("%Y-%m-%d %H:%M UTC", _time.gmtime())
+    (app / "tuxenc" / "_build_info.py").write_text(render_info(dict(os.environ), built))
+    print("compilación:", "GitHub Actions" if os.environ.get("GITHUB_ACTIONS") == "true" else "local")
 
     # FFmpeg (binarios + bibliotecas compartidas, RPATH=$ORIGIN/../lib)
     ff = usr / "ffmpeg"
