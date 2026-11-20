@@ -85,7 +85,7 @@ class MainWindow(QMainWindow):
         self.presets: list[Preset] = []
         self.current_key = cfg.last_preset
 
-        self.setWindowTitle(APP_NAME)
+        self.setWindowTitle(f"{APP_NAME} {VERSION}")
         self.setWindowIcon(QIcon(str(ASSETS_DIR / "tuxenc-256.png")))
         self.setAcceptDrops(True)
         self.resize(1180, 720)
@@ -921,9 +921,9 @@ class MainWindow(QMainWindow):
                                     else 0)
         if busy:
             pct = self.engine.overall_progress() * 100
-            self.setWindowTitle(f"{pct:.0f}% · {APP_NAME}")
+            self.setWindowTitle(f"{pct:.0f}% · {APP_NAME} {VERSION}")
         else:
-            self.setWindowTitle(APP_NAME)
+            self.setWindowTitle(f"{APP_NAME} {VERSION}")
 
     # ================================================================== fin de la cola
     def _on_queue_done(self, jobs: list[Job]) -> None:

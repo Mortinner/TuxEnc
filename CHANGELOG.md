@@ -6,6 +6,9 @@ All notable changes to TuxEnc are listed here (Spanish first, English below each
 
 ## [Sin publicar] · Unreleased
 
+### Añadido
+- **El título de la ventana muestra la versión** («TuxEnc 1.3.0»), también mientras convierte («45% · TuxEnc 1.3.0»).
+
 ## [1.2.7] - 2026-11-20
 
 ### Añadido
