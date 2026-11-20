@@ -4,6 +4,8 @@ name: Publicar versión
 # pruebas → AppImage con las claves integradas → prueba de humo → etiqueta vX.Y.Z →
 # Release con el zip, SHA256SUMS y las notas del CHANGELOG, y atestación de procedencia.
 # Las versiones «-dev» no se publican. Si la etiqueta ya existe, no hace nada.
+# A mano (Actions → Publicar versión → Run workflow) con «ensayo» marcado: compila y prueba
+# el AppImage con las claves y lo deja como artefacto del run, sin etiqueta ni Release.
 #
 # Secretos (Settings → Environments → publicacion): TUXENC_KEY_TMDB y TUXENC_KEY_TVDB.
 
@@ -11,6 +13,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      ensayo:
+        description: "Ensayo: compilar y probar sin etiquetar ni publicar"
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -27,6 +34,7 @@ jobs:
     outputs:
       version: ${{ steps.v.outputs.version }}
       publicar: ${{ steps.v.outputs.publicar }}
+      ensayo: ${{ steps.v.outputs.ensayo }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -36,11 +44,16 @@ jobs:
         name: Leer VERSION y buscar su etiqueta
         env:
           GH_TOKEN: ${{ github.token }}
+          ENSAYO: ${{ github.event_name == 'workflow_dispatch' && inputs.ensayo }}
         run: |
           set -euo pipefail
+          echo "ensayo=$ENSAYO" >> "$GITHUB_OUTPUT"
           version="$(python3 -c 'import re,pathlib; print(re.search(r"^VERSION = \"([^\"]+)\"", pathlib.Path("tuxenc/__init__.py").read_text(), re.M).group(1))')"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          if [[ "$version" == *-dev* ]]; then
+          if [ "$ENSAYO" = true ]; then
+            echo "publicar=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Ensayo de $version: se compila y se prueba, sin publicar."
+          elif [[ "$version" == *-dev* ]]; then
             echo "publicar=false" >> "$GITHUB_OUTPUT"
             echo "::notice::$version es de pruebas: no se publica."
           elif gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$version" >/dev/null 2>&1; then
@@ -52,7 +65,7 @@ jobs:
           fi
 
   publicar:
-    name: Compilar y publicar v${{ needs.version.outputs.version }}
+    name: ${{ needs.version.outputs.ensayo == 'true' && 'Ensayo' || 'Compilar y publicar' }} v${{ needs.version.outputs.version }}
     needs: version
     if: needs.version.outputs.publicar == 'true'
     runs-on: ubuntu-24.04
@@ -128,7 +141,18 @@ jobs:
           sha256sum "$zip" > SHA256SUMS
           cat SHA256SUMS
 
+      - name: Guardar el zip del ensayo
+        if: needs.version.outputs.ensayo == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: TuxEnc-${{ needs.version.outputs.version }}-ensayo
+          path: |
+            dist/TuxEnc-${{ needs.version.outputs.version }}-linux-x86_64.zip
+            dist/SHA256SUMS
+          retention-days: 7
+
       - name: Atestación de procedencia
+        if: needs.version.outputs.ensayo != 'true'
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: |
@@ -136,6 +160,7 @@ jobs:
             dist/TuxEnc-${{ needs.version.outputs.version }}-x86_64.AppImage
 
       - name: Etiqueta v${{ needs.version.outputs.version }}
+        if: needs.version.outputs.ensayo != 'true'
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -144,6 +169,7 @@ jobs:
           git push origin "v$VERSION"
 
       - name: Release
+        if: needs.version.outputs.ensayo != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
