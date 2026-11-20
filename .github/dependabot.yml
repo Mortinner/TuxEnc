@@ -1,10 +1,10 @@
-# Mantiene al día las versiones de las acciones de los workflows (un PR semanal agrupado).
+# Mantiene al día las versiones de las acciones de los workflows (un PR mensual agrupado).
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
       acciones:
         patterns: ["*"]
