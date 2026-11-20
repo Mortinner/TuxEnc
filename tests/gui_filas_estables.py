@@ -20,6 +20,8 @@ from tests.media import MEDIA  # noqa: E402
 from tuxenc import i18n  # noqa: E402
 i18n.set_language("es")
 from tuxenc.app import _make_app  # noqa: E402
+from retitler.log import setup_logging  # noqa: E402
+setup_logging(path=T / "renombrado.log")
 app = _make_app()
 import tuxenc.ui.main_window as mw  # noqa: E402
 from tuxenc.config import Config  # noqa: E402
@@ -69,6 +71,11 @@ app.processEvents()
 w._refresh_controls()
 assert w.start_btn.isEnabled() and not w.start_btn.toolTip(), (w.start_btn.isEnabled(), w.start_btn.toolTip())
 assert "Identificando" not in w.status_lbl.text()
+# La tanda queda en renombrado.log con sus tiempos
+log = (T / "renombrado.log").read_text(encoding="utf-8")
+print([ln.split("] ", 1)[-1][:110] for ln in log.splitlines() if "Análisis:" in ln or "Identificación:" in ln])
+assert "Análisis: 8 archivo(s) en" in log and "(0 no se pudieron leer como vídeo)" in log, log[-800:]
+assert "Identificación:" in log and "8 identificados" in log, log[-800:]
 w.engine.shutdown()
 w.rename.shutdown()
 print("OK")

@@ -34,6 +34,7 @@ from .dialogs import (CountdownDialog, LogDialog,
 from .queue_view import DropZone, QueueList, job_menu
 from .rename_ctrl import RenameController
 from .update_ctrl import UpdateController
+from retitler.log import log as rlog
 from .settings_panel import SettingsPanel
 from ..library import OK as ID_OK, free_name, predicted_resolution
 
@@ -79,6 +80,7 @@ class MainWindow(QMainWindow):
         self.engine.low_priority = cfg.low_priority
         self.prober = ThreadPoolExecutor(max_workers=4, thread_name_prefix="tuxenc-probe")
         self.pending_probes = 0
+        self._load: dict | None = None        # tanda que se está analizando / identificando (registro)
         self._order_seq = 1e9
         self.failed_probes: list[str] = []
         self.user_stopped = False
@@ -667,6 +669,7 @@ class MainWindow(QMainWindow):
                 QMessageBox.information(self, APP_NAME, tr("no_videos_found"))
             return
         self.pending_probes += len(files)
+        self._load_started(len(files))
         for f in files:
             self._order_seq += 1
             self.prober.submit(self._probe_task, f, self._order_seq)
@@ -686,12 +689,16 @@ class MainWindow(QMainWindow):
         self.pending_probes = max(0, self.pending_probes - 1)
         if isinstance(info, Exception):
             self.failed_probes.append(os.path.basename(path))
+            if self._load:
+                self._load["failed"] += 1
         else:
             job = Job(input=path, info=info, order=order, staged=True)
             self.engine.add(job)
             self.queue.sync(self.engine.jobs, refresh=False)
             if self.cfg.rename_on:
                 self.rename.identify([job])
+        if self.pending_probes == 0:
+            self._load_probed()
         if self.pending_probes == 0 and self.failed_probes:
             names = "\n".join(self.failed_probes[:15])
             if len(self.failed_probes) > 15:
@@ -699,6 +706,43 @@ class MainWindow(QMainWindow):
             self.failed_probes = []
             QMessageBox.warning(self, APP_NAME, tr("not_video", names=names))
         self._refresh_controls()
+
+    # ---- registro de la carga (renombrado.log): cuánto tarda analizar e identificar cada tanda
+    def _load_started(self, n: int) -> None:
+        import time as _time
+        if self._load is None or self._load.get("probed_at"):
+            if self._load is not None:          # una tanda anterior aún identificando: se cierra así
+                self._load_identified(force=True)
+            self._load = {"t0": _time.monotonic(), "files": 0, "failed": 0, "probed_at": None}
+            rlog.info("Análisis: empieza una tanda")
+        self._load["files"] += n
+
+    def _load_probed(self) -> None:
+        import time as _time
+        ld = self._load
+        if ld is None or ld["probed_at"]:
+            return
+        ld["probed_at"] = _time.monotonic()
+        rlog.info("Análisis: %d archivo(s) en %.1f s (%d no se pudieron leer como vídeo)",
+                  ld["files"], ld["probed_at"] - ld["t0"], ld["failed"])
+        if not self.cfg.rename_on:
+            self._load = None
+
+    def _load_identified(self, force: bool = False) -> None:
+        """Cierra la tanda cuando ya no queda nada identificándose (si se renombra)."""
+        import time as _time
+        ld = self._load
+        if ld is None or not ld["probed_at"]:
+            return
+        if not force and any(j.ident == "pending" for j in self.engine.jobs):
+            return
+        self._load = None
+        jobs = [j for j in self.engine.jobs if j.status == WAITING and j.ident != "off"]
+        count = {k: sum(1 for j in jobs if j.ident == k) for k in ("ok", "ambiguous", "episode", "none", "error")}
+        rlog.info("Identificación: %.1f s tras el análisis (%.1f s en total). En la cola: %d identificados, "
+                  "%d dudosos, %d sin capítulo, %d no encontrados, %d con error",
+                  _time.monotonic() - ld["probed_at"], _time.monotonic() - ld["t0"], count["ok"],
+                  count["ambiguous"], count["episode"], count["none"], count["error"])
 
     # ================================================================== cola
     def _job(self, jid: int) -> Job | None:
@@ -871,6 +915,8 @@ class MainWindow(QMainWindow):
         # pulsarlo antes solo confirmaba los que ya estaban listos y dejaba el resto para otra vez.
         identifying = sum(1 for j in jobs if j.ident == "pending" and j.status == WAITING) \
             if self.cfg.rename_on else 0
+        if self._load is not None and not identifying and not self.pending_probes:
+            self._load_identified()
         wait_tip = (tr("wait_analyzing", n=self.pending_probes) if self.pending_probes
                     else tr("wait_identifying", n=identifying) if identifying else "")
         if self.engine.active and pending:
