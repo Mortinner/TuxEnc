@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Iterable
 from enum import Enum
 from pathlib import PurePath
 
@@ -38,6 +39,7 @@ class ParsedName:
     episodes: tuple[int, ...] = ()
     extension: str = ""
     episode_title: str = ""      # el que trae el nombre: «Serie - S01E01 - La mujer alemana»
+    absolute: bool = False       # «Serie 37»: capítulo 37 contando desde el primero (sin temporada)
 
     @property
     def is_multi_episode(self) -> bool:
@@ -308,6 +310,83 @@ def parse_path(path: str | PurePath) -> ParsedName:
                 extension=parsed.extension,
             )
     return parsed
+
+
+# --------------------------------------------------------------------------- #
+# Capítulos numerados solo con un número: «Dinosaucers 01.mp4»
+# --------------------------------------------------------------------------- #
+# Título, separador, marca opcional (Ep, Episodio, Cap, E, #) y 1-3 cifras al final del nombre
+_TRAILING_NUM = re.compile(
+    r"^(?P<title>.*?[^\W\d_].*?)(?:[ ._]*[-–—][ ._]*|[ ._]+)"
+    r"(?:(?:ep(?:isodio|isode)?|cap(?:[ií]tulo)?|e|#)[ ._]?)?(?P<num>\d{1,3})$", re.I)
+
+
+def _norm(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip().casefold()
+
+
+def trailing_number(name: str) -> tuple[str, str] | None:
+    """(título, número tal cual) si el nombre acaba en un número suelto: «Dinosaucers 01» → («Dinosaucers», «01»).
+
+    Se quitan antes las [etiquetas] y las marcas de calidad del final. No reconoce años (4 cifras)
+    ni números pegados al título («Room101»).
+    """
+    stem, _ = split_extension(name.replace("\\", "/").rsplit("/", 1)[-1])
+    stem = re.sub(r"(?:\s*\[[^\]]*\])+\s*$", "", stem)
+    junk = _JUNK.search(stem)
+    if junk and junk.start() > 0:
+        stem = stem[: junk.start()]
+    m = _TRAILING_NUM.match(stem.strip(" ._-"))
+    if not m:
+        return None
+    title = clean_title(m.group("title"))
+    return (title, m.group("num")) if title else None
+
+
+def numbered_episode(path: str | PurePath, sibling_names: Iterable[str]) -> ParsedName | None:
+    """«Serie 01.mp4» como capítulo, solo si hay indicios claros de que es una serie.
+
+    Indicios (para no confundir películas como «Rocky 2», «Ocean's 11» o «2012»):
+      * números con cero delante («01»), o que pasan de una cifra a dos («1»…«12»), y
+      * al menos otro archivo en la misma carpeta con el mismo título y otro número, o la carpeta
+        se llama como el título (``Dinosaucers/Dinosaucers 05.mp4``).
+    Una saga de películas («Rocky 2», «Rocky 3»…) no cumple lo de las cifras.
+    Con tres cifras («Serie 101», «Serie 214») es temporada + capítulo si todo el grupo encaja así
+    (como «Cap.102»); si no, el número se cuenta desde el primer capítulo (numeración absoluta).
+    """
+    p = PurePath(str(path).replace("\\", "/"))
+    mine = trailing_number(p.name)
+    if mine is None:
+        return None
+    key = _norm(mine[0])
+    numbers = {mine[1]}
+    for name in sibling_names:
+        if name == p.name or split_extension(name)[1].lower() not in VIDEO_EXTS:
+            continue
+        other = trailing_number(name)
+        if other and _norm(other[0]) == key:
+            numbers.add(other[1])
+    values = {int(n) for n in numbers}
+    # «01» con cero delante, o una serie sin ceros que pasa de un dígito a dos («1»…«12»).
+    # Así no cuentan «Rocky 2, 3, 4» ni «Ocean's 11, 12, 13».
+    three = all(len(x) == 3 for x in numbers) and all(1 <= v % 100 <= 99 for v in values)
+    padded = any(len(n) >= 2 and n.startswith("0") for n in numbers) or (
+        min(values) < 10 <= max(values)) or (three and len(values) >= 2)
+    folder_title = _title_from_dirname(p.parent.name)[0] if p.parent.name else ""
+    same_folder = bool(folder_title) and _norm(folder_title) == key
+    if not padded or not (len(values) >= 2 or same_folder):
+        return None
+    title, year = _split_trailing_year(mine[0])
+    n = int(mine[1])
+    if three:
+        season, episodes, absolute = n // 100, (n % 100,), False
+    else:
+        season, episodes, absolute = 1, (n,), True
+    if not episodes[0]:
+        return None
+    _, ext = split_extension(p.name)
+    return ParsedName(original=p.name, kind=MediaKind.EPISODE, title=title, year=year, season=season,
+                      episodes=episodes, extension=ext, absolute=absolute)
 
 
 def _replace(parsed: ParsedName, **changes: object) -> ParsedName:

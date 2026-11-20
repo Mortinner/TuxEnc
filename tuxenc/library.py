@@ -112,7 +112,7 @@ class Library:
 
     def choose(self, res: Resolution, match: SearchResult, season: int | None = None,
                episodes: tuple[int, ...] | None = None) -> tuple[str, Resolution]:
-        res = choose(res, match, self.searcher, season, episodes)
+        res = choose(res, match, self.searcher, season, episodes, self.memo)
         # Si el usuario ha elegido el capítulo en la lista, manda su elección (con el título que vio).
         # El título del archivo solo se conserva cuando no eligió capítulo (p. ej. «misma serie»).
         if not (season is not None and episodes):
