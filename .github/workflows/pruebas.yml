@@ -24,11 +24,11 @@ jobs:
       TUXENC_DEPS: ${{ github.workspace }}/../deps
       TUXENC_TESTMEDIA: ${{ github.workspace }}/tests/.media
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -49,7 +49,7 @@ jobs:
           echo "TUXENC_FFMPEG_DIR=$TUXENC_DEPS/rel-8.1/ffmpeg-n8.1-latest-linux64-gpl-shared-8.1/bin" >> "$GITHUB_ENV"
 
       - name: Vídeos de prueba (caché)
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: tests/.media
           key: media-${{ hashFiles('tests/media.py') }}
