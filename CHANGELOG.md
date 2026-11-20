@@ -14,12 +14,14 @@ All notable changes to TuxEnc are listed here (Spanish first, English below each
 - **Se instala sin cortar lo que estás haciendo:** la versión nueva se pone en su sitio y se usa al reiniciar. Puedes reiniciar ahora, **al terminar la cola** o más tarde, y los vídeos en espera vuelven a la cola solos. Al abrirse por primera vez, la versión nueva actualiza el menú y los iconos.
 - **Volver a la versión anterior:** la versión que se sustituye se guarda, y en **☰ → Preferencias → Actualizaciones** hay un botón para volver a ella. La que se deja ya no se vuelve a ofrecer; las siguientes, sí.
 - **☰ → Preferencias → Actualizaciones:** activar o desactivar la comprobación al arrancar, **«Buscar ahora»** y el estado de la última comprobación. Todo queda anotado en `actualizaciones.log`.
+- **El título de la ventana muestra la versión** («TuxEnc 1.2.7»), también mientras convierte («45% · TuxEnc 1.2.7»).
 - La actualización automática funciona en la copia integrada en el sistema (la que abre el menú de aplicaciones). Un AppImage suelto, sin integrar, solo avisa y abre la página de descarga.
 
 ### English
 - Added: TuxEnc updates itself. At startup (at most once a day) it checks GitHub for a new release and shows it in the notice bar with «What's new», Update, Skip this version and Not now.
 - The download is verified before anything is installed: GitHub over HTTPS only, the zip must match the SHA-256 published in the release's `SHA256SUMS`, and it must contain that version's AppImage. Otherwise nothing is touched.
 - The new version is put in place and used after a restart (now, when the queue finishes, or later); waiting videos are re-queued. The previous version is kept and you can go back to it from ☰ → Preferences → Updates, where you can also turn off the startup check or check now. Everything is logged to `actualizaciones.log`.
+- The window title now shows the version ("TuxEnc 1.2.7").
 
 ## [1.2.6] - 2026-11-20
 
