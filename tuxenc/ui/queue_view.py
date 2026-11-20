@@ -175,16 +175,19 @@ class JobRow(QFrame):
             detail += f"  · {tr('custom_tracks')}"
         self.detail.setText(detail)
 
-        renaming = job.ident != "off"
+        # Con renombrado, las dos líneas (identificación y nombre nuevo) se reservan desde el principio,
+        # aunque aún estén vacías: si la fila crece al identificarse, Qt la pinta un instante aplastada
+        # (la etiqueta de la tarea salía como un rectángulo encima del título).
+        renaming = job.ident != "off" or bool(MODE["rename"] if job.staged else job.task_rename)
         self.ident.setVisible(renaming)
         if renaming:
             color = {"ok": theme.OK, "pending": theme.MUTED}.get(job.ident, theme.AMBER)
             _css(self.ident, f"color: {color};")
-            self.ident.setText(job.note)
+            self.ident.setText(job.note or "\u00a0")
         final = job.renamed_to or (job.output if job.rename and st in (DONE,) else "")
         target = ("→ " + final) if final else (("→ " + job.preview) if job.preview else "")
-        self.target.setVisible(renaming and bool(target))
-        self.target.setText(target)
+        self.target.setVisible(renaming)
+        self.target.setText(target or "\u00a0")
         copied = job.plan is not None and job.plan.video_copied and st != WAITING
         self.copied.setVisible(copied)
         if copied:
