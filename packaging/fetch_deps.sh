@@ -23,7 +23,7 @@ PY_VERSION="3.12.13"
 FF_URL="https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n8.1-latest-linux64-gpl-shared-8.1.tar.xz"
 RUNTIME_URL="https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64"
 APPIMAGETOOL_URL="https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
-XCB_CURSOR_URL="http://archive.ubuntu.com/ubuntu/pool/main/x/xcb-util-cursor/libxcb-cursor0_0.1.1-4ubuntu1_amd64.deb"
+XCB_CURSOR_URL="http://archive.ubuntu.com/ubuntu/pool/universe/x/xcb-util-cursor/libxcb-cursor0_0.1.1-4ubuntu1_amd64.deb"
 XCB_CURSOR_SHA256="c9b5d1ad4af57397b1bd77e0a92750e34419def134c0282a0836ae9efc07cf64"
 
 info() { printf '▶ %s\n' "$*"; }
