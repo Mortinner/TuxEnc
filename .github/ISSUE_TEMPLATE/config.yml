@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Fallo de seguridad · Security vulnerability
+    url: https://github.com/Mortinner/TuxEnc/security/advisories/new
+    about: Infórmalo en privado, no en una incidencia pública · Please report it privately.

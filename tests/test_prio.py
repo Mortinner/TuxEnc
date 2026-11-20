@@ -1,6 +1,7 @@
 import os, sys, time, subprocess
-sys.path.insert(0, "/home/claude/tuxenc")
-os.environ["TUXENC_FFMPEG_DIR"] = "/home/claude/dl/rel-8.1/ffmpeg-n8.1-latest-linux64-gpl-shared-8.1/bin"
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
+from tests.media import FF, M, MEDIA  # noqa: E402,F401  (FFmpeg y vídeos de prueba)
+os.environ["TUXENC_FFMPEG_DIR"] = FF
 os.environ["XDG_CONFIG_HOME"] = "/tmp/tx-p-cfg"; os.environ["XDG_CACHE_HOME"] = "/tmp/tx-p-cache"
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 from tuxenc import i18n; i18n.set_language("es")
@@ -20,13 +21,14 @@ pump(3)
 print("opciones simultáneos:", [w.par_combo.itemText(i) for i in range(w.par_combo.count())])
 w.par_combo.setCurrentIndex(w.par_combo.findData(1)); pump(0.2)
 print("elegido 1 ->", "engine.max_parallel =", w.engine.max_parallel, "| cfg.parallel =", cfg.parallel)
-M = "/home/claude/testmedia/"
 w.add_paths([M + "clip1.mp4", M + "clip2.mp4"]); pump(2)
 w._start(); pump(3)
 ni = lambda: subprocess.run("ps -o ni=,comm= -C ffmpeg", shell=True, capture_output=True, text=True).stdout.split()
 print("prioridad normal, en marcha:", ni(), "| corriendo:", sum(1 for j in w.engine.jobs if j.status == "running"))
 w.prio_chk.setChecked(True); pump(1)
 print("tras marcar 'Prioridad baja' en caliente:", ni())
+nices = [int(v) for v in ni()[::2]]
+assert nices and min(nices) >= 10, f"«Prioridad baja» no se aplicó en caliente: {nices}"
 tids = subprocess.run("for p in $(pgrep -x ffmpeg); do ps -L -o ni= -p $p; done | sort | uniq -c", shell=True, capture_output=True, text=True).stdout.split()
 print("todos los hilos de ffmpeg (cuenta, nice):", tids)
 w.engine.stop(); pump(2)
@@ -35,6 +37,7 @@ print("nuevo trabajo con prioridad baja desde el inicio:", ni())
 w.engine.stop(); pump(1)
 # aviso con motivo
 from tuxenc.presets import import_handbrake
-w._adapt(import_handbrake("/tmp/1080_pelis.json")[0].settings)
+w._adapt(import_handbrake(str(__import__("pathlib").Path(__file__).resolve().parent / "fixtures" / "handbrake-1080-pelis.json"))[0].settings)
 print("\nAVISO:\n" + msgs[-1])
+assert w.engine.max_parallel == 1 and cfg.parallel == 1
 w.engine.shutdown()

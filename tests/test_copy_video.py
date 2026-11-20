@@ -5,8 +5,7 @@ import time
 
 import pytest
 
-FF = "/home/claude/dl/rel-8.1/ffmpeg-n8.1-latest-linux64-gpl-shared-8.1/bin"
-M = "/home/claude/testmedia/"
+from tests.media import FF, M, MEDIA  # noqa: E402,F401
 
 
 @pytest.fixture(autouse=True)

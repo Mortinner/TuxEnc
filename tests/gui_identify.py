@@ -1,8 +1,9 @@
 import os, shutil, sys, time
 from pathlib import Path
-sys.path.insert(0, "/home/claude/tuxenc")
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
+from tests.media import FF, M, MEDIA  # noqa: E402,F401  (FFmpeg y vídeos de prueba)
 T = Path("/tmp/tx-ident"); shutil.rmtree(T, ignore_errors=True); T.mkdir()
-os.environ.update(TUXENC_FFMPEG_DIR="/home/claude/dl/rel-8.1/ffmpeg-n8.1-latest-linux64-gpl-shared-8.1/bin",
+os.environ.update(TUXENC_FFMPEG_DIR=FF,
                   XDG_CONFIG_HOME=str(T/"c"), XDG_CACHE_HOME=str(T/"k"), XDG_STATE_HOME=str(T/"s"), QT_QPA_PLATFORM="offscreen")
 lang = sys.argv[1] if len(sys.argv) > 1 else "es"
 from tuxenc import i18n; i18n.set_language(lang)
@@ -22,8 +23,8 @@ def wait(c, to=60):
     while not c() and time.time() - t < to: pump(0.1)
     return c()
 down = T/"D"; down.mkdir()
-shutil.copy("/home/claude/testmedia/lib/Arrow.S01E03.1080p.WEB-DL.mkv", down/"Arrow EN DIRECTO.mkv")
-shutil.copy("/home/claude/testmedia/lib/Arrow.S01E02.1080p.WEB-DL.mkv", down/"Arrow.S01E02.mkv")
+shutil.copy(M + "lib/Arrow.S01E03.1080p.WEB-DL.mkv", down/"Arrow EN DIRECTO.mkv")
+shutil.copy(M + "lib/Arrow.S01E02.1080p.WEB-DL.mkv", down/"Arrow.S01E02.mkv")
 cfg = Config(); cfg.rename_on = True; cfg.convert_on = False
 w = mw.MainWindow(cfg); w.resize(1100, 520); w.show(); pump(1); w.rename.lib.searcher = FakeSearcher()
 w._bar_dismissed.add("tmdb"); w._update_bar()

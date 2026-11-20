@@ -7,3 +7,5 @@ dist/
 __pycache__/
 *.pyc
 .pytest_cache/
+# Vídeos de prueba generados (tests/media.py)
+tests/.media/

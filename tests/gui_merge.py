@@ -1,9 +1,10 @@
 """Prueba de punta a punta de la interfaz unificada (offscreen, buscador simulado)."""
 import os, shutil, sys, time
 from pathlib import Path
-sys.path.insert(0, "/home/claude/tuxenc")
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
+from tests.media import FF, M, MEDIA  # noqa: E402,F401  (FFmpeg y vídeos de prueba)
 T = Path("/tmp/tx-merge"); shutil.rmtree(T, ignore_errors=True); T.mkdir()
-os.environ.update(TUXENC_FFMPEG_DIR="/home/claude/dl/rel-8.1/ffmpeg-n8.1-latest-linux64-gpl-shared-8.1/bin",
+os.environ.update(TUXENC_FFMPEG_DIR=FF,
                   XDG_CONFIG_HOME=str(T / "cfg"), XDG_CACHE_HOME=str(T / "cache"), XDG_STATE_HOME=str(T / "state"),
                   QT_QPA_PLATFORM="offscreen")
 lang = sys.argv[1] if len(sys.argv) > 1 else "es"
@@ -30,7 +31,7 @@ def wait(cond, timeout=120):
         pump(0.2)
     return cond()
 
-down = T / "Descargas"; shutil.copytree("/home/claude/testmedia/lib", down)
+down = T / "Descargas"; shutil.copytree(MEDIA / "lib", down)
 lib_series, lib_movies = T / "Multimedia/Series", T / "Multimedia/Peliculas"
 cfg = Config(); cfg.advanced_open = False
 cfg.series_root, cfg.movie_root = str(lib_series), str(lib_movies)

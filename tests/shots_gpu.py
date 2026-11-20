@@ -1,6 +1,7 @@
 import os, sys, time
-sys.path.insert(0, "/home/claude/tuxenc")
-os.environ["TUXENC_FFMPEG_DIR"] = "/home/claude/dl/rel-8.1/ffmpeg-n8.1-latest-linux64-gpl-shared-8.1/bin"
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
+from tests.media import FF, M, MEDIA  # noqa: E402,F401  (FFmpeg y vídeos de prueba)
+os.environ["TUXENC_FFMPEG_DIR"] = FF
 os.environ["XDG_CONFIG_HOME"] = "/tmp/tx-gpu-cfg"; os.environ["XDG_CACHE_HOME"] = "/tmp/tx-gpu-cache"
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 import tuxenc.hw as hw
@@ -25,7 +26,7 @@ w.panel.gpu_btn.click(); pump(0.5)
 print("tras pulsar 'Usar GPU':", w.panel.settings.video_encoder, w.panel.settings.rate_mode, w.panel.settings.bitrate)
 # importar el preset de Marcos por el camino real de la GUI
 from PySide6.QtWidgets import QFileDialog, QMessageBox
-QFileDialog.getOpenFileName = staticmethod(lambda *a, **k: ("/tmp/1080_pelis.json", ""))
+QFileDialog.getOpenFileName = staticmethod(lambda *a, **k: (str(__import__("pathlib").Path(__file__).resolve().parent / "fixtures" / "handbrake-1080-pelis.json"), ""))
 msgs = []; QMessageBox.information = staticmethod(lambda *a, **k: msgs.append(a[2]))
 w._import_handbrake(); pump(0.5)
 print("mensaje:", msgs, "| preset activo:", w.preset_combo.currentText(), "|", w.panel.settings.video_encoder, w.panel.settings.rate_mode, w.panel.settings.bitrate)

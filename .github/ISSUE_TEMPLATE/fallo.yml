@@ -1,0 +1,60 @@
+name: Algo no funciona · Bug report
+description: TuxEnc falla, se cuelga o hace algo distinto de lo esperado.
+labels: [fallo]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Versión de TuxEnc · Version
+      description: ☰ → Acerca de
+      placeholder: "1.2.6"
+    validations:
+      required: true
+  - type: input
+    id: sistema
+    attributes:
+      label: Distribución y escritorio · Distro and desktop
+      placeholder: "CachyOS, KDE Plasma 6 (Wayland), NVIDIA 580"
+    validations:
+      required: true
+  - type: dropdown
+    id: parte
+    attributes:
+      label: ¿En qué parte? · Area
+      options:
+        - Conversión · Conversion
+        - Renombrado / identificación · Renaming / identification
+        - Aceleración por GPU · GPU acceleration
+        - Instalación / actualización · Install / update
+        - Interfaz · Interface
+        - Otra · Other
+    validations:
+      required: true
+  - type: textarea
+    id: que
+    attributes:
+      label: Qué pasa y qué esperabas · What happens and what you expected
+      description: Si puedes, una captura de la ventana · A screenshot helps.
+    validations:
+      required: true
+  - type: textarea
+    id: pasos
+    attributes:
+      label: Pasos para reproducirlo · Steps to reproduce
+      placeholder: |
+        1. Añadir «Serie 01.mp4»…
+        2. …
+  - type: textarea
+    id: registros
+    attributes:
+      label: Registros · Logs
+      description: >
+        ☰ → Preferencias → Abrir carpeta de registros: el de la conversión que falló, `renombrado.log`
+        o `gpu-detect.log`. Arrástralos aquí. Revisa antes que no contengan nada que no quieras publicar
+        (rutas, nombres de archivos).
+  - type: textarea
+    id: video
+    attributes:
+      label: Vídeo de origen · Source video
+      description: Si es de la conversión, la información del vídeo (`ffprobe archivo` o «Ver detalles»).
+      render: text

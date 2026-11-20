@@ -2,9 +2,10 @@
 «Añadir (n)» / «Renombrar (n)». Caso real de Marcos: apagar «Convertir» con la cola en marcha."""
 import os, shutil, sys, time
 from pathlib import Path
-sys.path.insert(0, "/home/claude/tuxenc")
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
+from tests.media import FF, M, MEDIA  # noqa: E402,F401  (FFmpeg y vídeos de prueba)
 T = Path("/tmp/tx-pend"); shutil.rmtree(T, ignore_errors=True); T.mkdir()
-os.environ.update(TUXENC_FFMPEG_DIR="/home/claude/dl/rel-8.1/ffmpeg-n8.1-latest-linux64-gpl-shared-8.1/bin",
+os.environ.update(TUXENC_FFMPEG_DIR=FF,
                   XDG_CONFIG_HOME=str(T/"c"), XDG_CACHE_HOME=str(T/"k"), XDG_STATE_HOME=str(T/"s"),
                   QT_QPA_PLATFORM="offscreen", PYTHON_KEYRING_BACKEND="keyring.backends.null.Keyring")
 lang = sys.argv[1] if len(sys.argv) > 1 else "es"
@@ -27,10 +28,10 @@ def wait(c, to=60):
 O = Path("/tmp/shots-merge")
 src = T / "src"; src.mkdir()
 for i in (1, 2, 3):
-    shutil.copy("/home/claude/testmedia/chosen-remux.mkv", src / f"pelicula{i}.mkv")
+    shutil.copy(M + "chosen-remux.mkv", src / f"pelicula{i}.mkv")
 down = T / "down"; down.mkdir()
 for n in ("Arrow.S01E02.1080p.WEB-DL.mkv", "Arrow.S01E03.1080p.WEB-DL.mkv"):
-    shutil.copy(f"/home/claude/testmedia/lib/{n}", down / n)
+    shutil.copy(M + f"lib/{n}", down / n)
 
 cfg = Config(); cfg.engines_notice_shown = True; cfg.convert_on = True; cfg.rename_on = False; cfg.parallel = 1
 cfg.settings = {"video_encoder": "libx265", "rate_mode": "crf", "quality": 24, "preset": "slow"}

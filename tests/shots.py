@@ -1,6 +1,7 @@
 import os, sys, time
-sys.path.insert(0, "/home/claude/tuxenc")
-os.environ["TUXENC_FFMPEG_DIR"] = "/home/claude/dl/rel-8.1/ffmpeg-n8.1-latest-linux64-gpl-shared-8.1/bin"
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
+from tests.media import FF, M, MEDIA  # noqa: E402,F401  (FFmpeg y vídeos de prueba)
+os.environ["TUXENC_FFMPEG_DIR"] = FF
 os.environ["XDG_CONFIG_HOME"] = "/tmp/tx-shot-cfg"; os.environ["XDG_CACHE_HOME"] = "/tmp/tx-shot-cache"
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 lang = sys.argv[1] if len(sys.argv) > 1 else "es"
@@ -20,7 +21,6 @@ def pump(sec):
     while time.time() - t < sec: app.processEvents(); time.sleep(0.03)
 pump(2.5)
 w.grab().save(f"{out}/{lang}-1-empty.png")
-M = "/home/claude/testmedia/"
 w.add_paths([M + "Película de prueba [2024].mkv", M + "clip1.mp4", M + "clip2.mp4", M + "clip3.mp4", M + "entrelazado.mkv"])
 pump(3)
 pass  # el panel de conversión está ahora en la ventana de ajustes

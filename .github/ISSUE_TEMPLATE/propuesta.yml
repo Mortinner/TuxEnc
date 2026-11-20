@@ -1,0 +1,21 @@
+name: Propuesta · Feature request
+description: Una idea o algo que echas en falta.
+labels: [propuesta]
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: ¿Qué quieres hacer? · What do you want to do?
+      description: El caso real, aunque parezca evidente · The real-world case.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Cómo te lo imaginas · How you picture it
+      description: TuxEnc es solo interfaz gráfica y minimalista; mejor si encaja así · TuxEnc is GUI-only and minimal.
+  - type: input
+    id: version
+    attributes:
+      label: Versión que usas · Version you use
+      placeholder: "1.2.6"

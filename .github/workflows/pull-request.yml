@@ -1,0 +1,56 @@
+name: Pull request automático
+
+# Cada rama «claude/…» (los cambios preparados con Claude) abre su pull request hacia main.
+# Las pruebas salen en el PR porque el workflow «Pruebas» también se ejecuta en esas ramas.
+# Requisito: Settings → Actions → General → «Allow GitHub Actions to create and approve pull requests».
+
+on:
+  push:
+    branches: ["claude/**"]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pr-${{ github.ref }}
+
+jobs:
+  abrir:
+    name: Abrir el pull request hacia main
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Crear el PR si no existe
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RAMA: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          abierto="$(gh pr list --head "$RAMA" --base main --state open --json number --jq '.[0].number // empty')"
+          if [ -n "$abierto" ]; then
+            echo "Ya existe el PR #$abierto: se actualiza solo con este push."
+            exit 0
+          fi
+          git fetch --quiet origin main
+          commits="$(git log --reverse --format='%s' origin/main..HEAD)"
+          [ -n "$commits" ] || { echo "La rama no tiene commits nuevos respecto a main."; exit 0; }
+          titulo="$(printf '%s\n' "$commits" | tail -1)"
+          [ "$(printf '%s\n' "$commits" | wc -l)" -eq 1 ] || titulo="$RAMA"
+          {
+            echo "Cambios preparados con Claude en la rama \`$RAMA\`."
+            echo
+            echo "## Commits"
+            git log --reverse --format='- %s' origin/main..HEAD
+            echo
+            echo "## Antes de fusionar"
+            echo "- [ ] Las pruebas pasan (comprobación «Pruebas» de este PR)."
+            echo "- [ ] He revisado los cambios, sobre todo los de \`.github/\` y \`packaging/\`."
+            echo "- [ ] Si cambia \`VERSION\`, el CHANGELOG tiene su sección: al fusionar se publica la Release."
+          } > cuerpo.md
+          gh pr create --base main --head "$RAMA" --title "$titulo" --body-file cuerpo.md
