@@ -167,7 +167,7 @@ def _copy_across(src: Path, dst: Path) -> None:
     os.unlink(src)
 
 
-def _rename_noclobber(src: Path, dst: Path) -> None:
+def _rename_noclobber(src: Path, dst: Path, on_copy=None) -> None:
     if os.path.lexists(dst):
         raise FileExistsError(f"ya existe {dst}")
     try:
@@ -175,6 +175,8 @@ def _rename_noclobber(src: Path, dst: Path) -> None:
     except OSError as exc:
         if exc.errno != errno.EXDEV:
             raise
+        if on_copy is not None:
+            on_copy(src)              # otro disco u otro montaje: hay que copiar el archivo entero
         _copy_across(src, dst)
 
 
@@ -193,8 +195,11 @@ def _mkdirs(directory: Path) -> list[Path]:
     return created
 
 
-def _apply_moves(moves: list[tuple[Path, Path]]) -> list[Path]:
-    """Aplica todos los movimientos o ninguno. Devuelve las carpetas creadas."""
+def _apply_moves(moves: list[tuple[Path, Path]], progress=None) -> list[Path]:
+    """Aplica todos los movimientos o ninguno. Devuelve las carpetas creadas.
+
+    progress(evento, origen): «copy» antes de copiar un archivo a otro disco y «done» cuando un
+    archivo ya está en su sitio. Sirve para mostrar el avance de lotes grandes."""
     if not moves:
         return []
     keys_src = [_key(s) for s, _ in moves]
@@ -216,9 +221,18 @@ def _apply_moves(moves: list[tuple[Path, Path]]) -> list[Path]:
     done: list[tuple[Path, Path]] = []
     created: list[Path] = []
 
-    def step(a: Path, b: Path) -> None:
-        _rename_noclobber(a, b)
+    def report(event: str, src: Path) -> None:
+        if progress is not None:
+            try:
+                progress(event, src)
+            except Exception:  # noqa: BLE001 — el aviso nunca debe romper el renombrado
+                pass
+
+    def step(a: Path, b: Path, original: Path | None = None) -> None:
+        _rename_noclobber(a, b, on_copy=(lambda _s: report("copy", original)) if original else None)
         done.append((a, b))
+        if original is not None:
+            report("done", original)
 
     try:
         hops: dict[int, Path] = {}
@@ -229,11 +243,11 @@ def _apply_moves(moves: list[tuple[Path, Path]]) -> list[Path]:
         for i, (s, d) in enumerate(moves):
             if i not in temp:
                 created += _mkdirs(d.parent)
-                step(s, d)
+                step(s, d, s)
         for i in sorted(temp):
             d = moves[i][1]
             created += _mkdirs(d.parent)
-            step(hops[i], d)
+            step(hops[i], d, moves[i][0])
     except BaseException as exc:
         failures = []
         for a, b in reversed(done):
@@ -326,10 +340,10 @@ class History:
         return RenameResult(moves=back, entry_id=entry["id"])
 
 
-def execute(plan: list[PlanItem], history: History | None = None) -> RenameResult:
+def execute(plan: list[PlanItem], history: History | None = None, progress=None) -> RenameResult:
     """Aplica el plan (solo los elementos que se renombran) y lo anota en el historial."""
     moves = [(i.source, i.target) for i in plan if i.will_rename and i.target is not None]
-    created = _apply_moves(moves)
+    created = _apply_moves(moves, progress)
     result = RenameResult(moves=moves, created_dirs=created)
     if history is not None and moves:
         result.entry_id = history.record(result)

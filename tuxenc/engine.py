@@ -65,6 +65,7 @@ class Job:
     order: float = 0.0
     # --- renombrado (Retitler) ---
     hold: bool = False             # esperando a que el usuario elija la coincidencia
+    rename_state: str = ""         # durante un lote de renombrado: «copying» / «moved»
     hand_pick: bool = False        # el usuario eligió a mano su capítulo en «Identificar…»
     staged: bool = False           # en «Preparar» (izquierda): aún no está en la cola
     task_convert: bool = True      # tarea fijada al añadirlo a la cola

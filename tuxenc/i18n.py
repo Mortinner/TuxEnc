@@ -24,6 +24,12 @@ STRINGS: dict[str, tuple[str, str]] = {
     "clear_short": ('Quitar terminados', 'Clear finished'),
     "parallel_locked": ("Se puede cambiar cuando la cola esté parada. Lo que añadas ahora espera su turno.",
                         "It can be changed when the queue is stopped. What you add now waits its turn."),
+    "rn_copying": ("Copiando a otro disco…", "Copying to another drive…"),
+    "rn_moved": ("Renombrando…", "Renaming…"),
+    "rn_waiting": ("En espera de renombrar", "Waiting to be renamed"),
+    "rn_status": ("Renombrando {done} de {total}", "Renaming {done} of {total}"),
+    "rn_status_copy": (" · el destino está en otro disco o montaje: cada archivo se copia entero (más lento)",
+                       " · the destination is on another drive or mount: each file is copied in full (slower)"),
     "add_n": ("Añadir ({n})", "Add ({n})"),
     "rename_n": ("Renombrar ({n})", "Rename ({n})"),
     "add_n_tip": ("Los vídeos nuevos se harán con lo que esté elegido ahora (interruptores, preset y "

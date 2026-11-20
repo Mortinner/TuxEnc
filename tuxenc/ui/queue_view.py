@@ -227,6 +227,12 @@ class JobRow(QFrame):
                      if job.info.size else "—")
             text = "✓ " + tr("done_info", size=human_size(job.out_size), ratio=ratio,
                              t=format_duration(job.elapsed))
+        elif st == PREPARING and job.rename_state == "copying":
+            text = "⇢ " + tr("rn_copying")
+        elif st == PREPARING and job.rename_state == "moved":
+            text = tr("rn_moved")
+        elif st == PREPARING and job.task_rename and not job.task_convert:
+            text = tr("rn_waiting")
         elif st == WAITING and job.hold:
             text = "⏳ " + tr("held")
         elif st == WAITING and job.staged and MODE.get("active"):

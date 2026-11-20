@@ -6,6 +6,20 @@ All notable changes to TuxEnc are listed here (Spanish first, English below each
 
 ## [Sin publicar] · Unreleased
 
+## [1.2.6] - 2026-11-20
+
+### Corregido
+- **Renombrar muchos vídeos tardaba minutos sin mostrar nada** (unos 8 minutos con 279 capítulos de un NAS, y todas las filas en «Preparando…» hasta el final). Antes de mover cada archivo se volvía a analizar el vídeo para saber su resolución, uno detrás de otro y leyendo además los primeros minutos de cada MKV. La resolución ya se conocía desde que se añadió: ahora se usa esa y el paso de renombrar es solo mover los archivos (229 capítulos en 0,1 s en la prueba).
+
+### Añadido
+- **Avance del renombrado archivo a archivo:** cada fila pasa a «Renombrando…» en cuanto su archivo está en su sitio, y la barra de estado cuenta «Renombrando 37 de 279».
+- **Aviso cuando el destino está en otro disco o montaje** (por ejemplo, otro recurso compartido del NAS): ahí no se puede renombrar sin más y cada archivo se copia entero. La fila lo indica («⇢ Copiando a otro disco…») y la barra de estado avisa de que irá más lento.
+- **`renombrado.log` anota cada lote:** cuántos vídeos, el destino, cuántos archivos se movieron, cuántos hubo que copiar entre discos y cuánto tardó cada fase.
+
+### English
+- Fixed: renaming many videos took minutes with no feedback (every video was probed again before being moved). The known resolution is now reused: renaming is just moving the files (229 episodes in 0.1 s in testing).
+- Added: per-file progress for rename batches («Renaming…» per row, «Renaming 37 of 279» in the status bar); a notice when the destination is on another drive or mount and files must be copied; `renombrado.log` records each batch with timings.
+
 ## [1.2.5] - 2026-11-20
 
 ### Corregido

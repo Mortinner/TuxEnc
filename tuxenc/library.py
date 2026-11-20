@@ -13,6 +13,7 @@ Sin interfaz gráfica: la GUI llama a estas funciones desde hilos de trabajo.
 from __future__ import annotations
 
 import os
+import time
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -29,6 +30,7 @@ from . import builtin_keys
 from .catalog import CONTAINERS, resolution_label
 from .paths import clean_env
 from .probe import probe
+from retitler.log import log as rlog
 
 KeyStore.BUILTIN = builtin_keys.load()
 
@@ -162,19 +164,25 @@ class Library:
         return {"title": m.title, "date": m.year or ""}
 
     # ---- solo renombrar
-    def rename_batch(self, items: list[tuple[Path, Resolution, list[Path]]],
-                     dest: Destination) -> tuple[list[PlanItem], list[tuple[Path, Path]]]:
+    def rename_batch(self, items: list[tuple], dest: Destination, progress=None
+                     ) -> tuple[list[PlanItem], list[tuple[Path, Path]]]:
         """Renombra (y mueve) vídeos y sus subtítulos. Un único lote en el historial (deshacer).
 
         Devuelve (plan, movimientos hechos). Lanza RenameError si falla (y ya se ha revertido).
         """
+        t0 = time.monotonic()
+        rlog.info("Renombrado: lote de %d vídeo(s), destino «%s»", len(items), dest.mode)
         groups: dict[str | None, list[tuple[Path, str | None]]] = {}
-        for video, res, subs in items:
-            info_res = ""
-            try:
-                info_res = probe(str(video)).std_resolution
-            except Exception:  # noqa: BLE001 — sin resolución el nombre sale sin ella
-                pass
+        for item in items:
+            video, res, subs = item[:3]
+            # La resolución ya se conoce desde que se añadió el vídeo: no se vuelve a analizar
+            # (antes, 279 capítulos de un NAS = ~2 s cada uno, uno detrás de otro).
+            info_res = item[3] if len(item) > 3 and item[3] else ""
+            if not info_res:
+                try:
+                    info_res = probe(str(video), measure_audio=False).std_resolution
+                except Exception:  # noqa: BLE001 — sin resolución el nombre sale sin ella
+                    pass
             name, _note = self.relative_name(res, info_res, res.parsed.extension)
             kind = res.chosen.kind if res.chosen else None
             base = dest.base_for(video, kind)
@@ -187,7 +195,20 @@ class Library:
         plan: list[PlanItem] = []
         for root, entries in groups.items():
             plan += build_plan(entries, root)
-        result = execute(plan, self.history)
+        t1 = time.monotonic()
+        copies = []
+
+        def on_progress(event, src):
+            if event == "copy":
+                copies.append(src)
+                if len(copies) == 1:
+                    rlog.info("Renombrado: el destino está en otro disco o montaje: los archivos se "
+                              "copian enteros (más lento). Primero: %s", src)
+            if progress is not None:
+                progress(event, src)
+        result = execute(plan, self.history, on_progress)
+        rlog.info("Renombrado: %d archivo(s) movidos (%d copiados entre discos). Plan %.1f s, "
+                  "movimientos %.1f s", len(result.moves), len(copies), t1 - t0, time.monotonic() - t1)
         return plan, result.moves
 
     def undo_last(self):

@@ -889,8 +889,12 @@ class MainWindow(QMainWindow):
         self.par_combo.setToolTip(tr("parallel_locked") if busy
                                   else tr("parallel_tip", cores=cpu_count()))
         self.clear_btn.setEnabled(bool(jobs))
+        rn = self.rename
         if self.pending_probes:
             self.status_lbl.setText(tr("analyzing", n=self.pending_probes))
+        elif rn.batch_total and not self.engine.running:
+            self.status_lbl.setText(tr("rn_status", done=rn.batch_done, total=rn.batch_total)
+                                    + (tr("rn_status_copy") if rn.batch_copying else ""))
         elif self.engine.paused:
             self.status_lbl.setText(tr("status_paused"))
         elif busy:
@@ -907,8 +911,11 @@ class MainWindow(QMainWindow):
             self.status_lbl.setText(tr("status_idle", n=waiting + pending))
         else:
             self.status_lbl.setText(tr("status_empty"))
-        self.total_bar.setValue(int(self.engine.overall_progress() * 1000) if (busy or finished)
-                                else 0)
+        if rn.batch_total and not self.engine.running:
+            self.total_bar.setValue(int(rn.batch_done / rn.batch_total * 1000))
+        else:
+            self.total_bar.setValue(int(self.engine.overall_progress() * 1000) if (busy or finished)
+                                    else 0)
         if busy:
             pct = self.engine.overall_progress() * 100
             self.setWindowTitle(f"{pct:.0f}% · {APP_NAME}")
@@ -1084,6 +1091,7 @@ class MainWindow(QMainWindow):
         self.rename.undo()
 
     def _on_renamed(self, ids, payload) -> None:
+        self.rename.batch_finished()
         jobs = [j for j in self.engine.jobs if j.id in ids]
         if isinstance(payload, Exception):
             for j in jobs:

@@ -17,6 +17,7 @@
   </developer>
   <update_contact>mortinner@gmail.com</update_contact>
   <releases>
+    <release version="1.2.6" date="2026-11-20"/>
     <release version="1.2.5" date="2026-11-20"/>
     <release version="1.2.4" date="2026-11-20"/>
     <release version="1.2.3" date="2026-11-19"/>

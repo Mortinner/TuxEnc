@@ -79,6 +79,7 @@ class RenameController(QObject):
     chosen = Signal(int, object)         # job_id, (estado, Resolution) | Exception
     searched = Signal(int, object)       # token, SearchResponse | Exception
     renamed = Signal(object, object)     # job_ids, (plan, moves) | Exception
+    rename_step = Signal(str, str)       # «copy» | «done», ruta original (avance de un lote)
     undone = Signal(object)              # RenameResult | Exception
     loaded = Signal(int, object)         # token, temporadas o capítulos | Exception
 
@@ -92,6 +93,11 @@ class RenameController(QObject):
         self._tokens = itertools.count(1)
         self.busy = 0
         self.identified.connect(self._on_identified)
+        self.rename_step.connect(self._on_rename_step)
+        self.batch_total = 0               # avance del lote de renombrado en curso
+        self.batch_done = 0
+        self.batch_copying = False
+        self._batch_jobs: dict[str, Job] = {}
         self.chosen.connect(self._on_chosen)
 
     # ------------------------------------------------------------------ básicos
@@ -272,19 +278,46 @@ class RenameController(QObject):
     # ------------------------------------------------------------------ solo renombrar
     def rename_jobs(self, jobs: list[Job]) -> None:
         dest = self.destination()
-        items = [(Path(j.input), j.rt, [Path(s) for s in j.companions]) for j in jobs]
+        # La resolución ya se conoce desde que se añadió: no se vuelve a analizar cada vídeo
+        items = [(Path(j.input), j.rt, [Path(s) for s in j.companions], j.info.std_resolution)
+                 for j in jobs]
         ids = [j.id for j in jobs]
         for j in jobs:
             j.status = "preparing"
+            j.rename_state = ""
+        self._batch_jobs = {str(Path(j.input)): j for j in jobs}
+        self.batch_total, self.batch_done, self.batch_copying = len(jobs), 0, False
         self.w.queue.sync(self.w.engine.jobs)
+        self.w._refresh_controls()
 
         def task():
             try:
-                payload = self.lib.rename_batch(items, dest)
+                payload = self.lib.rename_batch(
+                    items, dest, progress=lambda ev, src: self.rename_step.emit(ev, str(src)))
             except Exception as exc:  # noqa: BLE001
                 payload = exc
             self.renamed.emit(ids, payload)
         self._submit(task)
+
+    def _on_rename_step(self, event: str, src: str) -> None:
+        job = self._batch_jobs.get(src)
+        if job is None:                      # un subtítulo acompañante: no tiene fila
+            return
+        if event == "copy":
+            job.rename_state = "copying"
+            self.batch_copying = True
+        elif event == "done":
+            job.rename_state = "moved"
+            self.batch_done += 1
+        self.w.queue.update_job(job)
+        self.w._refresh_controls()
+
+    def batch_finished(self) -> None:
+        for j in self._batch_jobs.values():
+            j.rename_state = ""
+        self._batch_jobs = {}
+        self.batch_total = self.batch_done = 0
+        self.batch_copying = False
 
     def undo(self) -> None:
         def task():
