@@ -5,10 +5,10 @@
 TuxEnc convierte vídeos a **H.264, H.265, AV1 y VP9**, igual que HandBrake, pero **transcodificando varios vídeos a la vez** y con una interfaz sencilla. Además **identifica y renombra** tus series y películas (TMDB, TheTVDB, TVmaze, IMDb) y las coloca ordenadas en tu biblioteca. Todo se hace desde la ventana: no hace falta abrir ninguna terminal.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Mortinner/TuxEnc/main/docs/capturas/es-cola.png" width="49%" alt="Cola con la identificación y el nombre nuevo de cada vídeo">
-  <img src="https://raw.githubusercontent.com/Mortinner/TuxEnc/main/docs/capturas/es-convirtiendo.png" width="49%" alt="Convirtiendo dos vídeos a la vez">
-  <img src="https://raw.githubusercontent.com/Mortinner/TuxEnc/main/docs/capturas/es-identificar.png" width="49%" alt="Identificar una serie y elegir el capítulo">
-  <img src="https://raw.githubusercontent.com/Mortinner/TuxEnc/main/docs/capturas/es-ajustes.png" width="38%" alt="Ajustes de conversión">
+  <img src="docs/capturas/es-cola.png" width="49%" alt="Cola con la identificación y el nombre nuevo de cada vídeo">
+  <img src="docs/capturas/es-convirtiendo.png" width="49%" alt="Convirtiendo dos vídeos a la vez">
+  <img src="docs/capturas/es-identificar.png" width="49%" alt="Identificar una serie y elegir el capítulo">
+  <img src="docs/capturas/es-ajustes.png" width="38%" alt="Ajustes de conversión">
 </p>
 
 ## Cómo empezar
@@ -133,10 +133,10 @@ TuxEnc es **software libre** bajo la licencia **GNU GPL v3** (ver `LICENSE.txt`)
 TuxEnc converts videos to **H.264, H.265, AV1 and VP9**, just like HandBrake, but **transcodes several videos at the same time** and has a simple interface. It also **identifies and renames** your shows and movies (TMDB, TheTVDB, TVmaze, IMDb) and files them neatly in your library. Everything happens in the window: you never need a terminal.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Mortinner/TuxEnc/main/docs/capturas/en-cola.png" width="49%" alt="Queue with each video's identification and new name">
-  <img src="https://raw.githubusercontent.com/Mortinner/TuxEnc/main/docs/capturas/en-convirtiendo.png" width="49%" alt="Converting two videos at once">
-  <img src="https://raw.githubusercontent.com/Mortinner/TuxEnc/main/docs/capturas/en-identificar.png" width="49%" alt="Identifying a show and picking the episode">
-  <img src="https://raw.githubusercontent.com/Mortinner/TuxEnc/main/docs/capturas/en-ajustes.png" width="38%" alt="Conversion settings">
+  <img src="docs/capturas/en-cola.png" width="49%" alt="Queue with each video's identification and new name">
+  <img src="docs/capturas/en-convirtiendo.png" width="49%" alt="Converting two videos at once">
+  <img src="docs/capturas/en-identificar.png" width="49%" alt="Identifying a show and picking the episode">
+  <img src="docs/capturas/en-ajustes.png" width="38%" alt="Conversion settings">
 </p>
 
 ## Getting started
