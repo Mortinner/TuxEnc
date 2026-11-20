@@ -682,6 +682,106 @@ STRINGS: dict[str, tuple[str, str]] = {
     "error_log_title": ("Registro de «{name}»", "Log of “{name}”"),
     "stop_q": ("¿Detener las transcodificaciones en curso? Los vídeos pendientes se quedan en la cola.",
                "Stop the running transcodes? Pending videos stay in the queue."),
+
+    # actualizaciones
+    "bar_update": ("Hay una versión nueva de TuxEnc: la {v} (tienes la {cur}).",
+                   "A new version of TuxEnc is available: {v} (you have {cur})."),
+    "bar_update_btn": ("Ver novedades", "What's new"),
+    "bar_update_ready": ("TuxEnc {v} ya está instalado: se usará al reiniciar.",
+                         "TuxEnc {v} is installed and will be used after a restart."),
+    "bar_restart": ("Reiniciar", "Restart"),
+    "upd_title": ("Actualización de TuxEnc", "TuxEnc update"),
+    "upd_available": ("<b>TuxEnc {v} ya está disponible.</b><br>Tienes la {cur}.",
+                      "<b>TuxEnc {v} is available.</b><br>You have {cur}."),
+    "upd_how": ("Se descarga de GitHub (unos {mb} MB), se comprueba con su suma SHA-256 y se instala "
+                "en su sitio. Lo que tengas en la cola no se pierde, y la versión que usas ahora se "
+                "guarda por si quieres volver a ella.",
+                "It is downloaded from GitHub (about {mb} MB), checked against its SHA-256 sum and "
+                "installed in place. Nothing in your queue is lost, and the version you use now is "
+                "kept in case you want to go back to it."),
+    "upd_manual_note": ("Esta copia de TuxEnc no está integrada en el sistema, así que no puede "
+                        "actualizarse sola. Descarga la versión nueva y ábrela: te preguntará si "
+                        "quieres instalarla.",
+                        "This copy of TuxEnc is not integrated into the system, so it cannot update "
+                        "itself. Download the new version and open it: it will offer to install it."),
+    "upd_show_notes": ("Ver novedades", "Show what's new"),
+    "upd_install": ("Actualizar", "Update"),
+    "upd_skip": ("Saltar esta versión", "Skip this version"),
+    "upd_later": ("Ahora no", "Not now"),
+    "upd_open_page": ("Abrir la página de descarga", "Open the download page"),
+    "upd_downloading": ("Descargando TuxEnc {v}…", "Downloading TuxEnc {v}…"),
+    "upd_mb": ("{done} de {total} MB", "{done} of {total} MB"),
+    "upd_verifying": ("Comprobando la descarga (SHA-256) e instalando…",
+                      "Verifying the download (SHA-256) and installing…"),
+    "upd_installed": ("<b>TuxEnc {v} está instalado.</b><br><br>Se usará al reiniciar TuxEnc. "
+                      "La {cur} se guarda por si quieres volver a ella (☰ → Preferencias).",
+                      "<b>TuxEnc {v} is installed.</b><br><br>It will be used when TuxEnc restarts. "
+                      "Version {cur} is kept in case you want to go back to it (☰ → Preferences)."),
+    "upd_installed_busy": ("<br><br>Ahora hay vídeos en marcha: puedes reiniciar cuando terminen.",
+                           "<br><br>Videos are being processed right now: you can restart when they finish."),
+    "upd_restart_now": ("Reiniciar ahora", "Restart now"),
+    "upd_restart_when_done": ("Reiniciar al terminar", "Restart when done"),
+    "upd_failed_title": ("No se ha podido actualizar", "The update failed"),
+    "upd_err_suffix": ("<br><br>Detalles en ☰ → Preferencias → Abrir carpeta de registros "
+                       "(<i>actualizaciones.log</i>).",
+                       "<br><br>Details in ☰ → Preferences → Open logs folder (<i>actualizaciones.log</i>)."),
+    "upd_err_network": ("No se ha podido conectar con GitHub. Comprueba la conexión a internet.",
+                        "Could not connect to GitHub. Check your internet connection."),
+    "upd_err_http": ("GitHub ha respondido con un error ({detail}). Inténtalo más tarde.",
+                     "GitHub replied with an error ({detail}). Please try again later."),
+    "upd_err_bad_reply": ("La respuesta de GitHub no es válida. Inténtalo más tarde.",
+                          "GitHub's reply is not valid. Please try again later."),
+    "upd_err_untrusted": ("La descarga no viene de GitHub, así que no se ha usado. No se ha instalado nada.",
+                          "The download does not come from GitHub, so it was not used. Nothing was installed."),
+    "upd_err_too_big": ("La descarga es demasiado grande para ser TuxEnc. No se ha instalado nada.",
+                        "The download is too big to be TuxEnc. Nothing was installed."),
+    "upd_err_incomplete": ("La descarga se ha cortado. No se ha instalado nada; inténtalo de nuevo.",
+                           "The download was interrupted. Nothing was installed; please try again."),
+    "upd_err_no_checksum": ("Esta versión no publica la suma SHA-256 de su descarga, así que no se "
+                            "puede comprobar. No se ha instalado nada.",
+                            "This version does not publish the SHA-256 sum of its download, so it cannot "
+                            "be verified. Nothing was installed."),
+    "upd_err_checksum": ("La descarga no coincide con su suma SHA-256: puede estar dañada o alterada. "
+                         "No se ha instalado nada.",
+                         "The download does not match its SHA-256 sum: it may be damaged or tampered "
+                         "with. Nothing was installed."),
+    "upd_err_bad_zip": ("El zip descargado no contiene el AppImage de esa versión. No se ha instalado nada.",
+                        "The downloaded zip does not contain that version's AppImage. Nothing was installed."),
+    "upd_err_not_appimage": ("El archivo descargado no es un AppImage válido. No se ha instalado nada.",
+                             "The downloaded file is not a valid AppImage. Nothing was installed."),
+    "upd_err_no_assets": ("Esta versión todavía no tiene su descarga publicada. Inténtalo dentro de un rato.",
+                          "This version's download is not published yet. Please try again in a while."),
+    "upd_err_no_space": ("No hay espacio suficiente en el disco: hacen falta unos 450 MB libres.",
+                         "There is not enough disk space: about 450 MB free are needed."),
+    "upd_err_install": ("No se ha podido poner la versión nueva en su sitio ({detail}). "
+                        "Sigues teniendo la que usas ahora.",
+                        "The new version could not be put in place ({detail}). "
+                        "You still have the one you are using now."),
+    "upd_err_no_previous": ("No hay ninguna versión anterior guardada.", "No previous version is kept."),
+    "upd_err_pending": ("Hay una versión nueva instalada que todavía no se ha usado: reinicia TuxEnc primero.",
+                        "A new version is installed but not in use yet: restart TuxEnc first."),
+    "upd_section": ("Actualizaciones", "Updates"),
+    "upd_auto": ("Buscar actualizaciones al arrancar (como mucho una vez al día)",
+                 "Check for updates at startup (at most once a day)"),
+    "upd_check_now": ("Buscar ahora", "Check now"),
+    "upd_checking": ("Buscando actualizaciones…", "Checking for updates…"),
+    "upd_uptodate": ("Tienes la última versión ({v}).", "You have the latest version ({v})."),
+    "upd_found_short": ("Hay una versión nueva: la {v}.", "A new version is available: {v}."),
+    "upd_last_check": ("Última comprobación: {when}.", "Last check: {when}."),
+    "upd_never": ("Todavía no se ha comprobado si hay versiones nuevas.", "Not checked for new versions yet."),
+    "upd_dev_note": ("Se actualiza sola la copia integrada en el sistema; esta solo puede avisarte.",
+                     "Only the copy integrated into the system updates itself; this one can only notify you."),
+    "upd_rollback": ("Volver a la {v}", "Go back to {v}"),
+    "upd_rollback_q": ("<b>¿Volver a TuxEnc {prev}?</b><br><br>TuxEnc se reiniciará con la {prev}. "
+                       "La {cur} queda guardada por si quieres recuperarla, y no se te volverá a "
+                       "ofrecer; las versiones siguientes, sí.",
+                       "<b>Go back to TuxEnc {prev}?</b><br><br>TuxEnc will restart with {prev}. "
+                       "Version {cur} is kept in case you want it back, and it will not be offered "
+                       "again; later versions will."),
+    "just_self_updated": ("<b>TuxEnc actualizado a la {v}.</b>{old}",
+                          "<b>TuxEnc updated to {v}.</b>{old}"),
+    "just_rolled_back": ("<b>Has vuelto a TuxEnc {v}.</b><br>(la {old} sigue guardada en ☰ → Preferencias)",
+                         "<b>You are back on TuxEnc {v}.</b><br>({old} is still kept in ☰ → Preferences)"),
 }
 
 

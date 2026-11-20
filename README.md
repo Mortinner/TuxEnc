@@ -85,7 +85,11 @@ TuxEnc detecta tu tarjeta gráfica al arrancar y solo muestra lo que funciona en
 
 ## Actualizar
 
-Descarga la versión nueva y abre su AppImage igual que la primera vez, aunque TuxEnc esté abierto. Te preguntará si quieres actualizar. Si dices que sí, cierra el TuxEnc abierto (los vídeos en espera se conservan), lo sustituye y abre la versión nueva. Después puedes borrar lo que descargaste.
+Desde la 1.2.7, **TuxEnc se actualiza solo.** Al abrirse (como mucho una vez al día) mira si hay una versión nueva y te avisa en la barra de arriba. Con **«Ver novedades»** lees qué cambia y eliges **Actualizar**, **Saltar esta versión** o **Ahora no**. La descarga se comprueba con su suma SHA-256 antes de instalar nada, y la versión nueva se usa al reiniciar: ahora, al terminar la cola o cuando quieras. Los vídeos en espera se conservan.
+
+En **☰ → Preferencias → Actualizaciones** puedes desactivar la comprobación, buscar a mano o **volver a la versión anterior**.
+
+También puedes actualizar a mano, como con las versiones anteriores a la 1.2.7: descarga la versión nueva y abre su AppImage aunque TuxEnc esté abierto. Te preguntará si quieres actualizar; si dices que sí, cierra el TuxEnc abierto (los vídeos en espera se conservan), lo sustituye y abre la versión nueva.
 
 ## Desinstalar
 
@@ -183,7 +187,11 @@ Detected automatically. NVIDIA (NVENC) needs NVIDIA driver **570 or newer**; AMD
 
 ## Update
 
-Download the new version and open its AppImage just like the first time, even if TuxEnc is open. It asks whether to update; if you accept, it closes the running TuxEnc (waiting videos are kept), replaces it and opens the new version. You can then delete the download.
+Since 1.2.7, **TuxEnc updates itself.** At startup (at most once a day) it checks for a new version and shows it in the notice bar. **«What's new»** shows the changes, with **Update**, **Skip this version** and **Not now**. The download is verified against its SHA-256 sum before anything is installed, and the new version is used after a restart (now, when the queue finishes, or later). Waiting videos are kept.
+
+In **☰ → Preferences → Updates** you can turn the check off, check now or **go back to the previous version**.
+
+You can also update by hand, as with versions before 1.2.7: download the new version and open its AppImage, even if TuxEnc is open. It asks whether to update; if you accept, it closes the running TuxEnc (waiting videos are kept), replaces it and opens the new version.
 
 ## Uninstall
 

@@ -200,6 +200,12 @@ def main() -> int:
         return 0
     if _send_to_running(files):
         return 0
+    try:
+        self_updated = integration.finish_self_update()   # actualizada (o vuelta atrás) desde la app
+    except Exception as exc:  # noqa: BLE001
+        self_updated = ""
+        from .updater import log
+        log(f"no se pudo rehacer la integración tras actualizar: {exc}")
 
     QLocalServer.removeServer(SERVER_NAME)
     server = QLocalServer()
@@ -243,7 +249,7 @@ def main() -> int:
     win.show()
     if files:
         QTimer.singleShot(200, lambda: win.add_paths(files))
-    just = os.environ.pop(JUST_INSTALLED, None)
+    just = os.environ.pop(JUST_INSTALLED, None) or (f"self:{self_updated}" if self_updated else None)
     if just:
         QTimer.singleShot(400, lambda: win.show_just_installed(just))
 
