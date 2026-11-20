@@ -1,6 +1,7 @@
 # Claves de los buscadores: solo para compilar el AppImage oficial, nunca en el repositorio
 packaging/keys.env
 tuxenc/_builtin_keys.py
+tuxenc/_build_info.py
 # Compilación y caché
 build/
 dist/

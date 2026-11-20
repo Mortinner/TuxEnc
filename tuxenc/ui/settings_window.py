@@ -369,6 +369,29 @@ class SettingsWindow(QDialog):
         self.accept()
 
     # ------------------------------------------------------------------ acerca de
+    @staticmethod
+    def _provenance_label() -> QLabel:
+        from .. import build_info
+        from ..updater import RELEASES_PAGE, REPO
+        info = build_info.load()
+        releases = RELEASES_PAGE.rsplit("/", 1)[0]
+        if info["kind"] == "official":
+            text = tr("prov_official", commit_url=info["commit_url"], short=info["commit"][:7],
+                      repo=info["repo"], run_url=info["run_url"], built=info["built"],
+                      release_url=info["release_url"], v=VERSION)
+            text += "<br><br>" + tr("prov_verify", zip=f"{APP_NAME}-{VERSION}-linux-x86_64.zip", repo=REPO)
+        elif info["kind"] == "local":
+            text = tr("prov_local", built=info.get("built", ""), releases=releases)
+        else:
+            text = tr("prov_source", releases=releases)
+        lb = QLabel(tr("prov_title") + "<br>" + text)
+        lb.setObjectName("Provenance")
+        lb.setTextFormat(Qt.RichText)
+        lb.setOpenExternalLinks(True)
+        lb.setWordWrap(True)
+        lb.setTextInteractionFlags(Qt.TextBrowserInteraction)
+        return lb
+
     def _build_about(self) -> QWidget:
         w = QWidget()
         lay = QVBoxLayout(w)
@@ -385,6 +408,7 @@ class SettingsWindow(QDialog):
         author.setOpenExternalLinks(True)
         author.setWordWrap(True)
         lay.addWidget(author)
+        lay.addWidget(self._provenance_label())
         lic = QLabel(tr("about_license"))
         lic.setTextFormat(Qt.RichText)
         lic.setOpenExternalLinks(True)

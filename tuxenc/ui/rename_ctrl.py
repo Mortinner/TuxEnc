@@ -217,7 +217,8 @@ class RenameController(QObject):
         if job.rt is None:
             from retitler.pipeline import analyze
             job.rt = analyze(job.input)
-        dlg = MatchDialog(self, job, self.w)
+        others = same_series_targets(job, job.rt.chosen, self.w.engine.jobs)
+        dlg = MatchDialog(self, job, self.w, same_count=len(others))
         accepted = dlg.exec()
         match, same = dlg.result_match, dlg.same.isChecked() and not dlg.same.isHidden()  # ya cerrada: isVisible() sería False
         season, episodes = dlg.result_season, dlg.result_episodes
@@ -342,10 +343,11 @@ class RenameController(QObject):
 class MatchDialog(QDialog):
     """Identificar un vídeo: elegir serie o película y, en las series, el capítulo con un clic."""
 
-    def __init__(self, ctrl: RenameController, job: Job, parent=None):
+    def __init__(self, ctrl: RenameController, job: Job, parent=None, same_count: int | None = None):
         super().__init__(parent)
         self.ctrl = ctrl
         self.job = job
+        self.same_count = same_count
         self.result_match = None
         self.result_season: int | None = None
         self.result_episodes: tuple[int, ...] | None = None
@@ -474,7 +476,12 @@ class MatchDialog(QDialog):
         self.choice.setWordWrap(True)
         self.choice.setStyleSheet("font-weight: 600;")
         lay.addWidget(self.choice)
-        self.same = QCheckBox(tr("match_same"))
+        title = job.rt.parsed.title or (job.rt.chosen.title if job.rt.chosen else "")
+        if same_count is None or not title:
+            same_text = tr("match_same")
+        else:
+            same_text = tr("match_same_1" if same_count == 1 else "match_same_n", n=same_count, title=title)
+        self.same = QCheckBox(same_text)
         self.same.setChecked(True)
         self.same.setVisible(False)
         lay.addWidget(self.same)
@@ -546,7 +553,7 @@ class MatchDialog(QDialog):
         for w in (self.season, self.eps, self.manual, self.m_season, self.m_ep):
             w.setEnabled(series)
         self.movie_note.setVisible(r is not None and not series)
-        self.same.setVisible(series)
+        self.same.setVisible(series and self.same_count != 0)
         self.season.blockSignals(True)
         self.season.clear()
         self.season.blockSignals(False)

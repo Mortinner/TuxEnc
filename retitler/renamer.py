@@ -15,8 +15,10 @@ import errno
 import json
 import os
 import shutil
+import threading
 import unicodedata
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
@@ -195,11 +197,20 @@ def _mkdirs(directory: Path) -> list[Path]:
     return created
 
 
-def _apply_moves(moves: list[tuple[Path, Path]], progress=None) -> list[Path]:
+MOVE_WORKERS = 8          # movimientos a la vez: en un NAS casi todo el tiempo es esperar a la red
+
+
+def _apply_moves(moves: list[tuple[Path, Path]], progress=None, workers: int = MOVE_WORKERS) -> list[Path]:
     """Aplica todos los movimientos o ninguno. Devuelve las carpetas creadas.
 
     progress(evento, origen): «copy» antes de copiar un archivo a otro disco y «done» cuando un
-    archivo ya está en su sitio. Sirve para mostrar el avance de lotes grandes."""
+    archivo ya está en su sitio. Sirve para mostrar el avance de lotes grandes.
+
+    En un NAS cada consulta al disco cuesta lo que tarda la red (unos 10-20 ms). Por eso las
+    comprobaciones previas usan un listado por carpeta (no por archivo), las carpetas de destino se
+    crean una vez antes de empezar y los renombrados se hacen varios a la vez. Las copias entre
+    discos (cuando no se puede renombrar) van de una en una.
+    """
     if not moves:
         return []
     keys_src = [_key(s) for s, _ in moves]
@@ -209,10 +220,17 @@ def _apply_moves(moves: list[tuple[Path, Path]], progress=None) -> list[Path]:
     if len(set(keys_dst)) != len(keys_dst):
         raise RenameError("Dos archivos acabarían con el mismo nombre")
     all_src = set(keys_src)
-    for (s, d), kd in zip(moves, keys_dst):
-        if not os.path.lexists(s):
+    listings: dict[Path, set[str]] = {}
+
+    def listing(directory: Path) -> set[str]:
+        if directory not in listings:
+            listings[directory] = _listing_keys(directory)
+        return listings[directory]
+
+    for (s, d), ks, kd in zip(moves, keys_src, keys_dst):
+        if ks not in listing(s.parent) and not os.path.lexists(s):
             raise RenameError(f"No existe el archivo: {s}")
-        if kd not in all_src and _exists(d):
+        if kd not in all_src and kd in listing(d.parent):
             raise RenameError(f"Ya existe un archivo con el nombre de destino: {d}")
 
     # Los que necesitan paso por nombre temporal: su destino es el nombre de otro archivo
@@ -220,6 +238,8 @@ def _apply_moves(moves: list[tuple[Path, Path]], progress=None) -> list[Path]:
     temp = {i for i, (ks, kd) in enumerate(zip(keys_src, keys_dst)) if kd == ks or kd in all_src}
     done: list[tuple[Path, Path]] = []
     created: list[Path] = []
+    lock = threading.Lock()
+    copy_lock = threading.Lock()          # copiar archivos enteros al NAS: de uno en uno
 
     def report(event: str, src: Path) -> None:
         if progress is not None:
@@ -229,25 +249,52 @@ def _apply_moves(moves: list[tuple[Path, Path]], progress=None) -> list[Path]:
                 pass
 
     def step(a: Path, b: Path, original: Path | None = None) -> None:
-        _rename_noclobber(a, b, on_copy=(lambda _s: report("copy", original)) if original else None)
-        done.append((a, b))
+        if os.path.lexists(b):            # nunca se pisa nada, aunque haya aparecido después del plan
+            raise FileExistsError(f"ya existe {b}")
+        try:
+            os.rename(a, b)
+        except OSError as exc:
+            if exc.errno != errno.EXDEV:
+                raise
+            if original is not None:
+                report("copy", original)  # otro disco u otro montaje: hay que copiar el archivo entero
+            with copy_lock:
+                _copy_across(a, b)
+        with lock:
+            done.append((a, b))
         if original is not None:
             report("done", original)
 
+    def run_parallel(jobs: list[tuple[Path, Path, Path | None]]) -> None:
+        if workers <= 1 or len(jobs) < 2:
+            for a, b, o in jobs:
+                step(a, b, o)
+            return
+        failed = threading.Event()
+
+        def guarded(a, b, o):
+            if failed.is_set():
+                return
+            try:
+                step(a, b, o)
+            except BaseException:
+                failed.set()
+                raise
+
+        with ThreadPoolExecutor(max_workers=min(workers, len(jobs)), thread_name_prefix="retitler-mv") as pool:
+            futures = [pool.submit(guarded, a, b, o) for a, b, o in jobs]
+        errors = [f.exception() for f in futures if f.exception() is not None]
+        if errors:
+            raise errors[0]
+
     try:
-        hops: dict[int, Path] = {}
-        for i in sorted(temp):
-            s = moves[i][0]
-            hops[i] = s.with_name(f".{uuid.uuid4().hex[:8]}.retitler-tmp")
-            step(s, hops[i])
-        for i, (s, d) in enumerate(moves):
-            if i not in temp:
-                created += _mkdirs(d.parent)
-                step(s, d, s)
-        for i in sorted(temp):
-            d = moves[i][1]
-            created += _mkdirs(d.parent)
-            step(hops[i], d, moves[i][0])
+        for directory in sorted({d.parent for _, d in moves}, key=lambda p: len(p.parts)):
+            created += _mkdirs(directory)
+        hops: dict[int, Path] = {i: moves[i][0].with_name(f".{uuid.uuid4().hex[:8]}.retitler-tmp")
+                                 for i in sorted(temp)}
+        run_parallel([(moves[i][0], hops[i], None) for i in sorted(temp)])
+        run_parallel([(s, d, s) for i, (s, d) in enumerate(moves) if i not in temp])
+        run_parallel([(hops[i], moves[i][1], moves[i][0]) for i in sorted(temp)])
     except BaseException as exc:
         failures = []
         for a, b in reversed(done):

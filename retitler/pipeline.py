@@ -17,7 +17,8 @@ from typing import Iterable
 from .config import Settings
 from .formatter import NameContext, TemplateError, initial_of, render
 from .matching import normalize
-from .parser import SUBTITLE_EXTS, VIDEO_EXTS, MediaKind, ParsedName, is_media_file, parse_path, split_extension
+from .parser import (SUBTITLE_EXTS, VIDEO_EXTS, MediaKind, ParsedName, is_media_file, numbered_episode,
+                     parse_path, split_extension, trailing_number)
 from .log import log
 from .providers import ENGLISH_SOURCES, SOURCE_NAMES, ProviderError, ResultKind, SearchResult
 from .search import SearchResponse, Searcher, pick_best
@@ -80,9 +81,72 @@ class Resolution:
 
 
 def analyze(path: str | Path) -> Resolution:
-    """Análisis sin internet (instantáneo)."""
+    """Análisis sin internet (instantáneo; como mucho lista la carpeta una vez cada 30 s)."""
     p = Path(path)
-    return Resolution(p, parse_path(p))
+    parsed = parse_path(p)
+    if parsed.kind is not MediaKind.EPISODE and trailing_number(p.name):
+        # «Dinosaucers 01.mp4»: capítulo solo si la carpeta muestra que es una serie
+        numbered = numbered_episode(p, _names_in(p.parent))
+        if numbered is not None:
+            log.info("%s: capítulo %s por el número del nombre (%s)", p.name,
+                     f"T{numbered.season}E{numbered.episodes[0]:02}" if not numbered.absolute
+                     else f"{numbered.episodes[0]} contando desde el primero", numbered.title)
+            parsed = numbered
+    return Resolution(p, parsed)
+
+
+_NAMES_CACHE: dict[str, tuple[float, list[str]]] = {}
+
+
+def _names_in(folder: Path) -> list[str]:
+    """Nombres de una carpeta, listándola una sola vez cada 30 s (como los subtítulos)."""
+    key = str(folder)
+    now = time.monotonic()
+    with _SUBS_LOCK:
+        hit = _NAMES_CACHE.get(key)
+        if hit and now - hit[0] < _SUBS_TTL:
+            return hit[1]
+    try:
+        with os.scandir(folder) as it:
+            names = [e.name for e in it]
+    except OSError:
+        names = []
+    with _SUBS_LOCK:
+        _NAMES_CACHE[key] = (now, names)
+    return names
+
+
+def _absolute_to_season(res: Resolution, searcher: Searcher, memo: dict | None = None) -> Resolution:
+    """«Serie 37» con numeración absoluta → temporada y capítulo reales, con la lista del buscador.
+
+    Si la temporada 1 tiene al menos 37 capítulos, se queda en T1E37. Si no, se cuentan los de
+    cada temporada (sin especiales) hasta llegar al 37.
+    """
+    p, match = res.parsed, res.chosen
+    if not p.absolute or match is None or match.kind is not ResultKind.SERIES or not p.episodes:
+        return res
+    n = p.episodes[0]
+    memo = {} if memo is None else memo
+    total = 0
+    try:
+        key = ("seasons", match.provider, match.id)
+        seasons = memo.get(key)
+        if seasons is None:
+            seasons = memo[key] = [x for x in searcher.seasons(match) if x > 0]
+        for season in sorted(seasons):
+            key = ("count", match.provider, match.id, season)
+            count = memo.get(key)
+            if count is None:
+                count = memo[key] = len(searcher.season_episodes(match, season))
+            if n <= total + count:
+                if (season, n - total) != (p.season, n):
+                    log.info("%s: capítulo %d contando desde el primero = T%dE%02d de %s", res.path.name,
+                             n, season, n - total, match.label)
+                return replace(res, parsed=replace(p, season=season, episodes=(n - total,)))
+            total += count
+    except ProviderError as exc:
+        log.warning("%s: no se pudo convertir la numeración absoluta: %s", res.path.name, exc)
+    return res
 
 
 def _with_titles(res: Resolution, searcher: Searcher) -> Resolution:
@@ -114,7 +178,7 @@ def search_for(res: Resolution, searcher: Searcher,
     out = replace(res, searched=True, candidates=tuple(response.results[:10]),
                   warnings=tuple(response.warnings), chosen=pick_best(response.results), error="", manual=False)
     log.info("%s → %s", res.path.name, f"{out.chosen.label} [{out.chosen.provider_name}]" if out.chosen else "sin coincidencia clara")
-    return _with_titles(out, searcher)
+    return _with_titles(_absolute_to_season(out, searcher, memo), searcher)
 
 
 def prefer_file_title(res: Resolution, settings: Settings) -> Resolution:
@@ -135,14 +199,16 @@ def prefer_file_title(res: Resolution, settings: Settings) -> Resolution:
 
 
 def choose(res: Resolution, match: SearchResult, searcher: Searcher,
-           season: int | None = None, episodes: tuple[int, ...] | None = None) -> Resolution:
+           season: int | None = None, episodes: tuple[int, ...] | None = None,
+           memo: dict | None = None) -> Resolution:
     """El usuario elige a mano una coincidencia (y, en series, opcionalmente el capítulo)."""
     if season is not None and episodes:
         same = season == res.parsed.season and tuple(episodes) == tuple(res.parsed.episodes)
         res = replace(res, parsed=replace(res.parsed, kind=MediaKind.EPISODE, season=season,
-                                          episodes=tuple(episodes),
+                                          episodes=tuple(episodes), absolute=False,
                                           episode_title=res.parsed.episode_title if same else ""))
-    return _with_titles(replace(res, searched=True, chosen=match, error="", manual=True), searcher)
+    out = replace(res, searched=True, chosen=match, error="", manual=True)
+    return _with_titles(_absolute_to_season(out, searcher, memo), searcher)
 
 
 def _is_video(p: Path) -> bool:

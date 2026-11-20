@@ -68,6 +68,11 @@ STRINGS: dict[str, tuple[str, str]] = {
     "all_files": ("Todos los archivos", "All files"),
     "choose_folder": ("Elegir carpeta", "Choose folder"),
     "analyzing": ("Analizando {n} archivo(s)…", "Analyzing {n} file(s)…"),
+    "identifying": ("Identificando {n} vídeo(s)…", "Identifying {n} video(s)…"),
+    "wait_analyzing": ("Espera un momento: aún se están analizando {n} archivo(s).",
+                       "Please wait: {n} file(s) are still being analyzed."),
+    "wait_identifying": ("Espera un momento: aún se están identificando {n} vídeo(s).",
+                         "Please wait: {n} video(s) are still being identified."),
     "not_video": ("No se ha podido leer como vídeo:\n{names}", "Could not be read as video:\n{names}"),
     "already_queued": ("Ya estaba en la cola", "Already in the queue"),
     "no_videos_found": ("No se han encontrado vídeos en esa carpeta.", "No videos found in that folder."),
@@ -137,6 +142,14 @@ STRINGS: dict[str, tuple[str, str]] = {
                    "página en IMDb, TMDB o TVmaze.",
                    "No results. Try the original title or paste the link to its IMDb, TMDB or TVmaze page."),
     "match_searching": ("Buscando…", "Searching…"),
+    "match_same_n": ("Usar esta misma serie para los otros {n} capítulos de «{title}» (cada uno conserva su "
+                     "número; no cambia los que elegiste a mano)",
+                     "Use this same show for the other {n} episodes of “{title}” (each keeps its own number; "
+                     "the ones you picked by hand are kept)"),
+    "match_same_1": ("Usar esta misma serie para el otro capítulo de «{title}» (conserva su número; no cambia "
+                     "si lo elegiste a mano)",
+                     "Use this same show for the other episode of “{title}” (it keeps its own number; not "
+                     "changed if you picked it by hand)"),
     "match_same": ('Usar esta misma serie para los demás capítulos (cada uno conserva su número de capítulo; no cambia los que elegiste a mano)', 'Use this same show for the other episodes (each keeps its own episode number; the ones you picked by hand are kept)'),
     "kind_series": ("Serie", "Show"),
     "kind_movie": ("Película", "Movie"),
@@ -577,6 +590,28 @@ STRINGS: dict[str, tuple[str, str]] = {
                      "<b>Developed by {author}</b><br>"
                      "Contact: <a href='mailto:{mail}'>{mail}</a><br>"
                      "<span style='color:#8d97b5'>Built with Claude, Anthropic</span>"),
+    "prov_title": ("<b>Procedencia</b>", "<b>Provenance</b>"),
+    "prov_official": ("Compilado por <b>GitHub Actions</b> a partir del commit <a href='{commit_url}'>{short}</a> "
+                      "de {repo} (<a href='{run_url}'>ver la compilación</a>, {built}). La descarga, su "
+                      "<code>SHA256SUMS</code> y el certificado de procedencia están en la "
+                      "<a href='{release_url}'>Release {v}</a>.",
+                      "Built by <b>GitHub Actions</b> from commit <a href='{commit_url}'>{short}</a> of {repo} "
+                      "(<a href='{run_url}'>see the build</a>, {built}). The download, its <code>SHA256SUMS</code> "
+                      "and the provenance attestation are in <a href='{release_url}'>release {v}</a>."),
+    "prov_verify": ("Para comprobar una descarga: <code>sha256sum -c SHA256SUMS</code> o "
+                    "<code>gh attestation verify {zip} --repo {repo}</code>. Las actualizaciones desde la "
+                    "app hacen la comprobación del SHA-256 solas.",
+                    "To verify a download: <code>sha256sum -c SHA256SUMS</code> or "
+                    "<code>gh attestation verify {zip} --repo {repo}</code>. In-app updates check the "
+                    "SHA-256 by themselves."),
+    "prov_local": ("<b>Compilación local, no oficial</b> ({built}): no la ha compilado GitHub. Las versiones "
+                   "oficiales están en <a href='{releases}'>github.com/Mortinner/TuxEnc/releases</a>.",
+                   "<b>Local build, not official</b> ({built}): it was not built by GitHub. Official "
+                   "versions are at <a href='{releases}'>github.com/Mortinner/TuxEnc/releases</a>."),
+    "prov_source": ("Ejecutando desde el código fuente (desarrollo). Las versiones oficiales están en "
+                    "<a href='{releases}'>github.com/Mortinner/TuxEnc/releases</a>.",
+                    "Running from source (development). Official versions are at "
+                    "<a href='{releases}'>github.com/Mortinner/TuxEnc/releases</a>."),
     "about_license": ("Software libre bajo licencia <b>GNU GPL v3</b>: puedes usarlo, estudiarlo, "
                       "compartirlo y modificarlo · <a href='https://www.gnu.org/licenses/gpl-3.0.html'>"
                       "gnu.org/licenses/gpl-3.0</a>",
