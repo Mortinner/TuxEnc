@@ -36,7 +36,7 @@ jobs:
       publicar: ${{ steps.v.outputs.publicar }}
       ensayo: ${{ steps.v.outputs.ensayo }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
 
@@ -82,15 +82,15 @@ jobs:
       TUXENC_DEPS: ${{ github.workspace }}/../deps
       TUXENC_TESTMEDIA: ${{ github.workspace }}/tests/.media
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: requirements-dev.txt
 
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
 
       - name: Bibliotecas del sistema (Qt sin pantalla y las X11 que se incluyen en el AppImage)
         run: |
@@ -112,7 +112,7 @@ jobs:
           echo "TUXENC_FFMPEG_DIR=$TUXENC_DEPS/rel-8.1/ffmpeg-n8.1-latest-linux64-gpl-shared-8.1/bin" >> "$GITHUB_ENV"
 
       - name: Vídeos de prueba (caché)
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: tests/.media
           key: media-${{ hashFiles('tests/media.py') }}
@@ -143,7 +143,7 @@ jobs:
 
       - name: Guardar el zip del ensayo
         if: needs.version.outputs.ensayo == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: TuxEnc-${{ needs.version.outputs.version }}-ensayo
           path: |
@@ -153,7 +153,7 @@ jobs:
 
       - name: Atestación de procedencia
         if: needs.version.outputs.ensayo != 'true'
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             dist/TuxEnc-${{ needs.version.outputs.version }}-linux-x86_64.zip
