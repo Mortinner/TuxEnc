@@ -85,7 +85,7 @@ TuxEnc detecta tu tarjeta gráfica al arrancar y solo muestra lo que funciona en
 
 ## Actualizar
 
-Desde la 1.2.7, **TuxEnc se actualiza solo.** Al abrirse (como mucho una vez al día) mira si hay una versión nueva y te avisa en la barra de arriba. Con **«Ver novedades»** lees qué cambia y eliges **Actualizar**, **Saltar esta versión** o **Ahora no**. La descarga se comprueba con su suma SHA-256 antes de instalar nada, y la versión nueva se usa al reiniciar: ahora, al terminar la cola o cuando quieras. Los vídeos en espera se conservan.
+Desde la 1.2.7, **TuxEnc se actualiza solo.** Cada vez que se abre mira si hay una versión nueva y te avisa en la barra de arriba. Con **«Actualizar…»** ves qué cambia y eliges **Actualizar**, **Saltar esta versión** o **Ahora no**. La descarga se comprueba con su suma SHA-256 antes de instalar nada, y la versión nueva se usa al reiniciar: ahora, al terminar la cola o cuando quieras. Los vídeos en espera se conservan.
 
 En **☰ → Preferencias → Actualizaciones** puedes desactivar la comprobación, buscar a mano o **volver a la versión anterior**.
 
@@ -187,7 +187,7 @@ Detected automatically. NVIDIA (NVENC) needs NVIDIA driver **570 or newer**; AMD
 
 ## Update
 
-Since 1.2.7, **TuxEnc updates itself.** At startup (at most once a day) it checks for a new version and shows it in the notice bar. **«What's new»** shows the changes, with **Update**, **Skip this version** and **Not now**. The download is verified against its SHA-256 sum before anything is installed, and the new version is used after a restart (now, when the queue finishes, or later). Waiting videos are kept.
+Since 1.2.7, **TuxEnc updates itself.** Every time it starts it checks for a new version and shows it in the notice bar. **«Update…»** shows the changes, with **Update**, **Skip this version** and **Not now**. The download is verified against its SHA-256 sum before anything is installed, and the new version is used after a restart (now, when the queue finishes, or later). Waiting videos are kept.
 
 In **☰ → Preferences → Updates** you can turn the check off, check now or **go back to the previous version**.
 

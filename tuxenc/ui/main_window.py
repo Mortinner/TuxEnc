@@ -121,7 +121,7 @@ class MainWindow(QMainWindow):
                 pass
         self._apply_modes()
         self._start_hw_detection()
-        QTimer.singleShot(5000, self.updater.auto_check)     # versión nueva en GitHub (una vez al día)
+        QTimer.singleShot(5000, self.updater.auto_check)     # ¿versión nueva en GitHub? (en cada arranque)
 
     # ================================================================== construcción
     def _build(self) -> None:

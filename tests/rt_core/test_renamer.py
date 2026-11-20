@@ -259,3 +259,16 @@ def test_progress_reports_every_file_once_with_parallel_moves(tmp_path):
     renamer._apply_moves([(f, f.with_name("n-" + f.name)) for f in files],
                          progress=lambda ev, s: seen.append((ev, s.name)))
     assert sorted(n for ev, n in seen if ev == "done") == sorted(f.name for f in files)
+
+
+def test_parallel_moves_alternate_folders():
+    """1.3.1: Linux no renombra a la vez dos archivos de la misma carpeta; alternando temporadas,
+    los hilos no se esperan unos a otros."""
+    from pathlib import Path
+    jobs = [(Path(f"/s/T{t}/e{e}"), Path(f"/s/T{t}/n{e}"), None) for t in (1, 2, 3) for e in (1, 2, 3, 4)]
+    out = renamer._interleave_by_folder(jobs)
+    key = lambda j: (str(j[0]), str(j[1]))  # noqa: E731
+    assert sorted(out, key=key) == sorted(jobs, key=key)
+    assert [a.parent.name for a, _, _ in out[:6]] == ["T1", "T2", "T3", "T1", "T2", "T3"]
+    single = jobs[:4]
+    assert renamer._interleave_by_folder(single) == single

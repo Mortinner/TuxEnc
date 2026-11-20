@@ -12,6 +12,7 @@ Reglas:
 from __future__ import annotations
 
 import errno
+import itertools
 import json
 import os
 import shutil
@@ -200,6 +201,21 @@ def _mkdirs(directory: Path) -> list[Path]:
 MOVE_WORKERS = 8          # movimientos a la vez: en un NAS casi todo el tiempo es esperar a la red
 
 
+def _interleave_by_folder(jobs: list[tuple[Path, Path, Path | None]]) -> list[tuple[Path, Path, Path | None]]:
+    """Reparte los movimientos alternando carpetas: T01, T02, T03…, T01, T02…
+
+    Linux no deja hacer a la vez dos renombrados en la misma carpeta (bloquea el directorio), así
+    que con los capítulos en orden los hilos esperaban unos a otros dentro de la misma temporada.
+    """
+    groups: dict[tuple[Path, Path], list] = {}
+    for job in jobs:
+        groups.setdefault((job[0].parent, job[1].parent), []).append(job)
+    if len(groups) < 2:
+        return jobs
+    rounds = itertools.zip_longest(*groups.values())
+    return [job for row in rounds for job in row if job is not None]
+
+
 def _apply_moves(moves: list[tuple[Path, Path]], progress=None, workers: int = MOVE_WORKERS) -> list[Path]:
     """Aplica todos los movimientos o ninguno. Devuelve las carpetas creadas.
 
@@ -266,6 +282,7 @@ def _apply_moves(moves: list[tuple[Path, Path]], progress=None, workers: int = M
             report("done", original)
 
     def run_parallel(jobs: list[tuple[Path, Path, Path | None]]) -> None:
+        jobs = _interleave_by_folder(jobs)
         if workers <= 1 or len(jobs) < 2:
             for a, b, o in jobs:
                 step(a, b, o)
