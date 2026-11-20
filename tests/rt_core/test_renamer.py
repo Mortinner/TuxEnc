@@ -206,3 +206,56 @@ def test_cross_device_move_copies_then_deletes(tmp_path, monkeypatch):
     assert not list(lib.rglob("*.retitler-tmp"))
     hist.undo_last()
     assert src.read_bytes() == b"x" * 1000 and not dst.exists() and not (lib / "B").exists()
+
+
+def test_big_batch_in_parallel_and_rollback_when_one_fails(tmp_path, monkeypatch):
+    """1.3.0: los movimientos van varios a la vez; si uno falla, se deshacen todos (también las
+    carpetas creadas), y un nombre que aparece después del plan nunca se pisa."""
+    src = tmp_path / "down"
+    src.mkdir()
+    files = [src / f"Serie.S01E{i:02}.mkv" for i in range(1, 41)]
+    for f in files:
+        f.write_bytes(f.name.encode())
+    lib = tmp_path / "lib"
+    lib.mkdir()
+    entries = [(f, f"Serie (2020)/Season 01/Serie (2020) - S01E{i:02}.mkv") for i, f in enumerate(files, 1)]
+    plan = build_plan(entries, lib)
+    # Un movimiento falla a mitad del lote (con otros en marcha a la vez): todo vuelve atrás
+    real, calls = os.rename, []
+
+    def flaky(a, b):
+        calls.append(a)
+        if len(calls) == 20:
+            raise PermissionError("denegado")
+        return real(a, b)
+
+    monkeypatch.setattr(renamer.os, "rename", flaky)
+    with pytest.raises(RenameError, match="No se ha cambiado nada"):
+        execute(plan)
+    monkeypatch.setattr(renamer.os, "rename", real)
+    assert sorted(p.name for p in src.iterdir()) == sorted(f.name for f in files)
+    assert all(f.read_bytes() == f.name.encode() for f in files)
+    assert not (lib / "Serie (2020)").exists()
+    # Alguien crea un destino entre el plan y la ejecución: se detecta y no se pisa
+    late = lib / "Serie (2020)" / "Season 01" / "Serie (2020) - S01E25.mkv"
+    late.parent.mkdir(parents=True)
+    late.write_bytes(b"ajeno")
+    with pytest.raises(RenameError, match="Ya existe"):
+        execute(plan)
+    assert late.read_bytes() == b"ajeno" and len(list(src.iterdir())) == 40
+    late.unlink()
+    # Sin el intruso: los 40 en su sitio y el historial permite deshacerlo todo
+    hist = History(tmp_path / "h.jsonl")
+    res = execute(build_plan(entries, lib), hist)
+    assert len(res.moves) == 40 and not any(src.iterdir())
+    assert len(list((lib / "Serie (2020)" / "Season 01").iterdir())) == 40
+    hist.undo_last()
+    assert len(list(src.iterdir())) == 40
+
+
+def test_progress_reports_every_file_once_with_parallel_moves(tmp_path):
+    files = touch(tmp_path, *[f"v{i}.mkv" for i in range(30)])
+    seen = []
+    renamer._apply_moves([(f, f.with_name("n-" + f.name)) for f in files],
+                         progress=lambda ev, s: seen.append((ev, s.name)))
+    assert sorted(n for ev, n in seen if ev == "done") == sorted(f.name for f in files)
