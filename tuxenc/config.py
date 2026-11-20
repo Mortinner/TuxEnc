@@ -33,7 +33,7 @@ class Config:
     last_dir: str = ""
     advanced_open: bool = False
     geometry: str = ""
-    update_check: bool = True           # buscar versiones nuevas al arrancar (como mucho una vez al día)
+    update_check: bool = True           # buscar versiones nuevas cada vez que se abre
     update_last_check: float = 0.0      # última comprobación correcta (epoch)
     update_skip: str = ""               # versión que el usuario pidió saltar
 

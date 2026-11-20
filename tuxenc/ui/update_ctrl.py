@@ -156,9 +156,7 @@ class UpdateController(QObject):
             return
         if not (updater.can_self_update() or os.environ.get(updater.API_OVERRIDE_ENV)):
             return                               # desarrollo o AppImage suelto: solo a mano
-        if time.time() - float(self.cfg.update_last_check or 0) < updater.CHECK_INTERVAL:
-            return
-        self.check(manual=False)
+        self.check(manual=False)                 # en cada arranque (1.3.1): una consulta, no se nota
 
     def check(self, manual: bool = True) -> None:
         if self.checking:

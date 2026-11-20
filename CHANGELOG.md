@@ -6,6 +6,23 @@ All notable changes to TuxEnc are listed here (Spanish first, English below each
 
 ## [Sin publicar] · Unreleased
 
+## [1.3.1] - 2026-11-20
+
+### Cambiado
+- **Busca actualizaciones cada vez que se abre**, no una vez al día. Es una sola consulta a GitHub y no retrasa nada. Se puede desactivar en ☰ → Preferencias → Actualizaciones.
+- **El botón del aviso de versión nueva dice «Actualizar…»** en lugar de «Ver novedades». Abre la misma ventana, con las novedades plegadas y Actualizar / Saltar esta versión / Ahora no.
+
+### Corregido
+- **El título de la ventana ya no repite el nombre** («TuxEnc 1.3.0 — TuxEnc»). El escritorio añadía « — TuxEnc» a cualquier título que no acabara en «TuxEnc».
+
+### Mejorado
+- **Renombrar dentro del NAS, todavía más rápido.** Linux no deja renombrar a la vez dos archivos de la misma carpeta, y con los capítulos en orden los hilos se esperaban unos a otros dentro de cada temporada. Ahora los movimientos alternan carpetas (T01, T02, T03…). En la prueba con el bloqueo por carpeta simulado, 777 capítulos pasan de 11 s a 4 s.
+
+### English
+- Changed: TuxEnc checks for updates every time it starts (it can be turned off in Preferences). The new-version notice button now says «Update…».
+- Fixed: the window title no longer repeats the name («TuxEnc 1.3.0 — TuxEnc»).
+- Improved: renames on a NAS alternate folders so parallel moves don't wait for each other (Linux allows one rename at a time per folder).
+
 ## [1.3.0] - 2026-11-20
 
 ### Corregido

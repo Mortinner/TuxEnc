@@ -28,7 +28,8 @@ QUIT_CMD = "quit_for_update"
 def _make_app() -> QApplication:
     app = QApplication(sys.argv[:1])
     app.setApplicationName(APP_NAME)
-    app.setApplicationDisplayName(APP_NAME)
+    # Sin setApplicationDisplayName: Qt añadiría « — TuxEnc» a cada título que no acabe en «TuxEnc»
+    # («TuxEnc 1.3.0 — TuxEnc»). El nombre de la aplicación ya es APP_NAME.
     app.setApplicationVersion(VERSION)
     app.setOrganizationName(APP_ID)
     app.setDesktopFileName(APP_ID)   # en Wayland enlaza la ventana con tuxenc.desktop (icono)

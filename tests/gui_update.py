@@ -127,12 +127,12 @@ wait(lambda: w._bar_kind == "update" and w.bar.isVisible(), what="aviso de versi
 assert NEW in w.bar_lbl.text(), w.bar_lbl.text()
 assert cfg.update_last_check > 0
 shot(w, "1-aviso")
-# Otra comprobación automática el mismo día no hace nada
+# 1.3.1: comprueba en cada arranque, aunque ya se haya comprobado hoy
 w.updater.info = None
 w.updater.auto_check()
-assert not w.updater.checking
-w.updater.check(manual=True)
-wait(lambda: w.updater.info is not None, what="comprobación manual")
+assert w.updater.checking
+wait(lambda: w.updater.info is not None, what="segunda comprobación automática")
+assert w.bar_btn.text() == tr("bar_update_btn") == "Actualizar…"
 
 
 # 2) «Ver novedades» → diálogo con las notas → Actualizar → descarga → instalado → «Más tarde»

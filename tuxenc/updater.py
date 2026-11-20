@@ -48,7 +48,6 @@ LOG_FILE = LOG_DIR / "actualizaciones.log"
 
 MAX_ZIP_BYTES = 600 * 1024 * 1024
 MIN_FREE_BYTES = 450 * 1024 * 1024           # zip + AppImage extraído, con margen
-CHECK_INTERVAL = 20 * 3600                   # como mucho una comprobación automática al día
 USER_AGENT = f"{APP_NAME}/{VERSION} (+https://github.com/{REPO})"
 
 

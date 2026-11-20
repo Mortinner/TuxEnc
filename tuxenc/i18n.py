@@ -721,7 +721,7 @@ STRINGS: dict[str, tuple[str, str]] = {
     # actualizaciones
     "bar_update": ("Hay una versión nueva de TuxEnc: la {v} (tienes la {cur}).",
                    "A new version of TuxEnc is available: {v} (you have {cur})."),
-    "bar_update_btn": ("Ver novedades", "What's new"),
+    "bar_update_btn": ("Actualizar…", "Update…"),
     "bar_update_ready": ("TuxEnc {v} ya está instalado: se usará al reiniciar.",
                          "TuxEnc {v} is installed and will be used after a restart."),
     "bar_restart": ("Reiniciar", "Restart"),
@@ -796,8 +796,7 @@ STRINGS: dict[str, tuple[str, str]] = {
     "upd_err_pending": ("Hay una versión nueva instalada que todavía no se ha usado: reinicia TuxEnc primero.",
                         "A new version is installed but not in use yet: restart TuxEnc first."),
     "upd_section": ("Actualizaciones", "Updates"),
-    "upd_auto": ("Buscar actualizaciones al arrancar (como mucho una vez al día)",
-                 "Check for updates at startup (at most once a day)"),
+    "upd_auto": ("Buscar actualizaciones al arrancar", "Check for updates at startup"),
     "upd_check_now": ("Buscar ahora", "Check now"),
     "upd_checking": ("Buscando actualizaciones…", "Checking for updates…"),
     "upd_uptodate": ("Tienes la última versión ({v}).", "You have the latest version ({v})."),
