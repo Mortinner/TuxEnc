@@ -38,6 +38,30 @@ def _row(*widgets) -> QHBoxLayout:
     return r
 
 
+_HW_NAMES = (("nvenc", "NVIDIA NVENC"), ("qsv", "Intel Quick Sync"), ("amf", "AMD AMF"),
+             ("vaapi", "VA-API"), ("vulkan", "Vulkan"))
+
+
+def _ffmpeg_version() -> str:
+    from ..paths import clean_env, ffmpeg_bin
+    import subprocess
+    try:
+        out = subprocess.run([ffmpeg_bin(), "-hide_banner", "-version"], env=clean_env(), capture_output=True,
+                             text=True, timeout=10, check=False).stdout
+    except (OSError, subprocess.SubprocessError):
+        return "?"
+    first = out.splitlines()[0] if out else ""
+    ver = first.split()[2] if first.startswith("ffmpeg version ") and len(first.split()) > 2 else "?"
+    return ver.split("-")[0] if ver.startswith("n") else ver
+
+
+def _hw_support() -> list[str]:
+    """Aceleraciones que sabe usar el FFmpeg incluido (no si este equipo las tiene)."""
+    from ..hw import ffmpeg_encoders
+    names = ffmpeg_encoders()
+    return [label for key, label in _HW_NAMES if any(n.endswith("_" + key) for n in names)]
+
+
 class SettingsWindow(QDialog):
     rolled_back = False             # se volvió a la versión anterior: la ventana principal reinicia
     update_requested = False        # «Ver novedades» de una versión nueva: lo abre la ventana principal
@@ -370,50 +394,64 @@ class SettingsWindow(QDialog):
 
     # ------------------------------------------------------------------ acerca de
     @staticmethod
-    def _provenance_label() -> QLabel:
-        from .. import build_info
-        from ..updater import RELEASES_PAGE, REPO
-        info = build_info.load()
-        releases = RELEASES_PAGE.rsplit("/", 1)[0]
-        if info["kind"] == "official":
-            text = tr("prov_official", commit_url=info["commit_url"], short=info["commit"][:7],
-                      repo=info["repo"], run_url=info["run_url"], built=info["built"],
-                      release_url=info["release_url"], v=VERSION)
-            text += "<br><br>" + tr("prov_verify", zip=f"{APP_NAME}-{VERSION}-linux-x86_64.zip", repo=REPO)
-        elif info["kind"] == "local":
-            text = tr("prov_local", built=info.get("built", ""), releases=releases)
-        else:
-            text = tr("prov_source", releases=releases)
-        lb = QLabel(tr("prov_title") + "<br>" + text)
-        lb.setObjectName("Provenance")
+    def _rich(text: str, muted: bool = False) -> QLabel:
+        lb = QLabel(text)
         lb.setTextFormat(Qt.RichText)
         lb.setOpenExternalLinks(True)
         lb.setWordWrap(True)
         lb.setTextInteractionFlags(Qt.TextBrowserInteraction)
+        if muted:
+            lb.setObjectName("Muted")
         return lb
 
+    @staticmethod
+    def _system_rows(info: dict) -> list[tuple[str, str]]:
+        """Datos de «Sistema»: dónde corre, de qué commit sale y qué lleva dentro."""
+        import platform
+        import PySide6
+        from PySide6.QtCore import qVersion
+        from .. import integration
+        from ..paths import appimage_path
+        if integration.running_installed_copy():
+            runtime = tr("sys_rt_installed")
+        elif appimage_path() is not None:
+            runtime = tr("sys_rt_loose")
+        else:
+            runtime = tr("sys_rt_source")
+        rows = [(tr("sys_runtime"), runtime)]
+        if info["kind"] == "official":
+            rows.append((tr("sys_commit"), info["commit"][:7]))
+        if info.get("built"):
+            rows.append((tr("sys_built"), info["built"]))
+        rows += [("Python", platform.python_version()),
+                 ("Qt", f"{qVersion()} (PySide6 {PySide6.__version__})"),
+                 ("FFmpeg", _ffmpeg_version())]
+        return rows
+
     def _build_about(self) -> QWidget:
+        from .. import build_info
+        info = build_info.load()
         w = QWidget()
         lay = QVBoxLayout(w)
         lay.setSpacing(12)
         top = QHBoxLayout()
         top.addWidget(_icon_label(96), 0, Qt.AlignTop)
-        about = QLabel(tr("about_text", v=VERSION))
-        about.setWordWrap(True)
-        about.setTextFormat(Qt.RichText)
-        top.addWidget(about, 1)
+        top.addWidget(self._rich(tr("about_text", v=VERSION)), 1)
         lay.addLayout(top)
-        author = QLabel(tr("about_author", author=AUTHOR, mail=CONTACT))
-        author.setTextFormat(Qt.RichText)
-        author.setOpenExternalLinks(True)
-        author.setWordWrap(True)
-        lay.addWidget(author)
-        lay.addWidget(self._provenance_label())
-        lic = QLabel(tr("about_license"))
-        lic.setTextFormat(Qt.RichText)
-        lic.setOpenExternalLinks(True)
-        lic.setWordWrap(True)
-        lay.addWidget(lic)
+        lay.addWidget(self._rich(tr("about_author", author=AUTHOR, mail=CONTACT)))
+
+        if info["kind"] == "official":
+            origin = tr("about_verified")
+        else:
+            origin = tr("about_local" if info["kind"] == "local" else "about_source")
+        lay.addWidget(self._rich(f"Copyright © 2026 {AUTHOR}<br>{origin}<br>{tr('about_gpl')}"))
+
+        rows = "".join(f"<tr><td style='padding-right:14px'>{k}:</td><td>{v}</td></tr>"
+                       for k, v in self._system_rows(info))
+        hw = _hw_support()
+        hw_html = (f"<br>{tr('sys_hw')}:<br>" + "<br>".join(f"&nbsp;&nbsp;- {h}" for h in hw)) if hw else ""
+        lay.addWidget(self._rich(f"<b>{tr('sys_title').upper()}</b><table>{rows}</table>{hw_html}"))
+
         credits = QLabel(tr("credits_text"))
         credits.setWordWrap(True)
         credits.setTextFormat(Qt.RichText)
