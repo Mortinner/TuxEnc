@@ -68,6 +68,9 @@ jobs:
           gh api -X DELETE "repos/$REPO/git/refs/heads/$RAMA" || true
           echo "::notice::Fusionado el PR #$PR ($titulo)."
 
-      - name: Lanzar «Publicar versión»
+      - name: Lanzar «Publicar versión» y «Pruebas» en main
         if: steps.pr.outputs.numero != ''
-        run: gh workflow run publicar.yml --repo "$REPO" --ref main -f ensayo=false
+        run: |
+          gh workflow run publicar.yml --repo "$REPO" --ref main -f ensayo=false
+          # Para que la insignia «Tests» del README refleje main (el push del bot no las lanza)
+          gh workflow run pruebas.yml --repo "$REPO" --ref main
