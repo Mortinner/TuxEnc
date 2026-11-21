@@ -441,7 +441,7 @@ class SettingsWindow(QDialog):
         lay.addWidget(self._rich(tr("about_author", author=AUTHOR, mail=CONTACT)))
 
         if info["kind"] == "official":
-            origin = f"<a href='{info['release_url']}'>{tr('about_verified')}</a>"
+            origin = tr("about_verified")
         else:
             origin = tr("about_local" if info["kind"] == "local" else "about_source")
         lay.addWidget(self._rich(f"Copyright © 2026 {AUTHOR}<br>{origin}<br>{tr('about_gpl')}"))

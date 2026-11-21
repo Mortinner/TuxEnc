@@ -578,11 +578,11 @@ STRINGS: dict[str, tuple[str, str]] = {
         "IMDb via OMDb · <a href='https://www.omdbapi.com/'>omdbapi.com</a>"),
     "about_text": ("<span style='font-size:20px'><b>TuxEnc {v}</b></span><br>"
                    "Transcodificador de vídeo para Linux con cola paralela, y renombrador de series y "
-                   "películas para tu biblioteca.<br>"
+                   "películas para tu biblioteca.<br><br>"
                    "<a href='https://github.com/Mortinner'>github.com/Mortinner</a>",
                    "<span style='font-size:20px'><b>TuxEnc {v}</b></span><br>"
                    "Video transcoder for Linux with a parallel queue, and TV show and movie renamer "
-                   "for your library.<br>"
+                   "for your library.<br><br>"
                    "<a href='https://github.com/Mortinner'>github.com/Mortinner</a>"),
     "about_author": ("<b>Desarrollado por {author}</b><br>"
                      "Contacto: <a href='mailto:{mail}'>{mail}</a><br>"
@@ -590,13 +590,15 @@ STRINGS: dict[str, tuple[str, str]] = {
                      "<b>Developed by {author}</b><br>"
                      "Contact: <a href='mailto:{mail}'>{mail}</a><br>"
                      "<span style='color:#8d97b5'>Built with Claude, Anthropic</span>"),
-    "about_verified": ("Verificado por GitHub", "Verified by GitHub"),
+    "about_verified": ("Verificado por GitHub, con su suma SHA-256 y su certificado de procedencia",
+                       "Verified by GitHub, with its SHA-256 sum and provenance attestation"),
     "about_local": ("Compilación local, no oficial", "Local build, not official"),
     "about_source": ("Ejecutando desde el código fuente", "Running from source"),
-    "about_gpl": ("Consulta la <a href='https://www.gnu.org/licenses/gpl-3.0.html'>Licencia Pública General "
-                  "de GNU, versión 3</a>, para más detalles.",
-                  "See the <a href='https://www.gnu.org/licenses/gpl-3.0.html'>GNU General Public License, "
-                  "version 3</a> for details."),
+    "about_gpl": ("Software libre bajo licencia <b>GNU GPL v3</b>: puedes usarlo, estudiarlo, "
+                  "compartirlo y modificarlo · <a href='https://www.gnu.org/licenses/gpl-3.0.html'>"
+                  "gnu.org/licenses/gpl-3.0</a>",
+                  "Free software under the <b>GNU GPL v3</b>: you may use, study, share and modify it · "
+                  "<a href='https://www.gnu.org/licenses/gpl-3.0.html'>gnu.org/licenses/gpl-3.0</a>"),
     "sys_title": ("Sistema", "System"),
     "sys_runtime": ("Entorno de ejecución", "Runtime environment"),
     "sys_rt_installed": ("AppImage (integrado en el sistema)", "AppImage (integrated into the system)"),
