@@ -379,10 +379,12 @@ class MainWindow(QMainWindow):
         wanted = encoder(s.video_encoder)
         alt = next((e for e in VIDEO_ENCODERS if not e.hw and e.codec == wanted.codec
                     and e.id in self.available), encoder("libx264"))
-        from ..hw import REASONS
-        why = REASONS.get(wanted.id) or tr("why_unknown")
-        QMessageBox.information(self, APP_NAME, tr("preset_hw_missing", enc=wanted.label,
-                                                   alt=alt.label, why=why))
+        # Solo para esta sesión: lo que se guarda sigue siendo lo que pidió el preset, y en cuanto
+        # la GPU vuelva a responder se recupera solo. El aviso queda en la barra (1.3.3).
+        self._hw_fallback = {"alt": alt.id, "wanted": wanted.label, "alt_label": alt.label,
+                             "settings": s.to_dict()}
+        self.cfg.hw_fallback = wanted.id
+        self._bar_dismissed.discard("hw_fallback")
         s.video_encoder = alt.id
         s.quality = alt.q_default
         s.speed_preset = alt.preset_default
@@ -464,8 +466,19 @@ class MainWindow(QMainWindow):
         Path(path).write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
 
     # ================================================================== ajustes
+    def _settings_to_save(self) -> dict:
+        """Lo que se guarda: con la GPU caída, los ajustes originales del preset, no el sustituto."""
+        current = self.panel.settings
+        fb = getattr(self, "_hw_fallback", None)
+        if fb and current.video_encoder == fb["alt"]:
+            return dict(fb["settings"])
+        if fb:                                   # el usuario eligió otro codificador a mano
+            self._hw_fallback = None
+            self.cfg.hw_fallback = ""
+        return current.to_dict()
+
     def _on_settings_changed(self) -> None:
-        self.cfg.settings = self.panel.settings.to_dict()
+        self.cfg.settings = self._settings_to_save()
         self._refresh_summary()
         if self.cfg.rename_on and hasattr(self, "rename"):
             self.rename.refresh_previews()
@@ -1105,6 +1118,12 @@ class MainWindow(QMainWindow):
                 kind, text, btn = "library", tr("bar_library"), tr("bar_configure")
             elif not has_tmdb:
                 kind, text, btn = "tmdb", tr("bar_tmdb"), tr("bar_configure")
+        fb = getattr(self, "_hw_fallback", None)
+        if fb and "hw_fallback" not in self._bar_dismissed:          # lo más importante: va primero
+            kind, text, btn = "hw_fallback", tr("bar_hw_fallback", enc=fb["wanted"], alt=fb["alt_label"]), \
+                tr("gpu_diag")
+        elif getattr(self, "_hw_recovered", "") and "hw_recovered" not in self._bar_dismissed:
+            kind, text, btn = "hw_recovered", tr("bar_hw_recovered", enc=self._hw_recovered), tr("gpu_diag")
         upd = self.updater.bar_state() if getattr(self, "updater", None) else None
         if not kind and upd and upd[0] not in self._bar_dismissed:
             kind, text, btn = upd
@@ -1121,7 +1140,8 @@ class MainWindow(QMainWindow):
                 self.cfg.engines_notice_shown = True
         if kind and kind not in self._bar_dismissed:
             self._bar_kind = kind
-            self.bar_lbl.setText(("🆕 " if kind.startswith("update") else "💡 ") + text)
+            icon = "🆕 " if kind.startswith("update") else "⚠ " if kind == "hw_fallback" else "💡 "
+            self.bar_lbl.setText(icon + text)
             self.bar_btn.setText(btn)
             self.bar.setVisible(True)
         else:
@@ -1142,6 +1162,11 @@ class MainWindow(QMainWindow):
         return out
 
     def _on_bar_action(self) -> None:
+        if self._bar_kind.startswith("hw_"):
+            from .dialogs import LogDialog
+            from ..paths import LOG_DIR
+            LogDialog(tr("gpu_diag_title"), str(LOG_DIR / "gpu-detect.log"), self).exec()
+            return
         if self._bar_kind.startswith("update"):
             self.updater.bar_action(self._bar_kind)
             return
@@ -1219,6 +1244,14 @@ class MainWindow(QMainWindow):
     def _on_hw_ready(self, avail: list[str]) -> None:
         self.available = avail or ["libx264"]
         current = self.panel.settings
+        fb = getattr(self, "_hw_fallback", None)
+        if fb and current.video_encoder == fb["alt"]:      # otra detección: partir de lo que pidió el preset
+            current = EncodeSettings.from_dict(fb["settings"])
+        self._hw_fallback = None
+        recovered = self.cfg.hw_fallback if self.cfg.hw_fallback in self.available else ""
+        if recovered:
+            self.cfg.hw_fallback = ""
+            self._hw_recovered = encoder(recovered).label
         self.panel.available = self.available
         self.panel.hw_detected = True
         self._reload_presets()
@@ -1227,6 +1260,7 @@ class MainWindow(QMainWindow):
         else:
             self.panel.load(current)
         self._refresh_summary()
+        self._update_bar()
 
     # ================================================================== otros
     def _open_prefs(self, tab: str = "") -> None:
@@ -1339,6 +1373,6 @@ class MainWindow(QMainWindow):
         self.rename.shutdown()
         self.prober.shutdown(wait=False, cancel_futures=True)
         self.cfg.geometry = bytes(self.saveGeometry()).hex()
-        self.cfg.settings = self.panel.settings.to_dict()
+        self.cfg.settings = self._settings_to_save()
         self.cfg.save()
         e.accept()
