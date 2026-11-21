@@ -48,9 +48,8 @@ jobs:
             echo "## Commits"
             git log --reverse --format='- %s' origin/main..HEAD
             echo
-            echo "## Antes de fusionar"
-            echo "- [ ] Las pruebas pasan (comprobación «Pruebas» de este PR)."
-            echo "- [ ] He revisado los cambios, sobre todo los de \`.github/\` y \`packaging/\`."
-            echo "- [ ] Si cambia \`VERSION\`, el CHANGELOG tiene su sección: al fusionar se publica la Release."
+            echo "## Qué pasa ahora"
+            echo "Cuando «Pruebas» termine en verde, «Fusión automática» fusiona este PR en main y lanza"
+            echo "«Publicar versión»: si \`VERSION\` ha cambiado, se publica la Release; si no, no se publica nada."
           } > cuerpo.md
           gh pr create --base main --head "$RAMA" --title "$titulo" --body-file cuerpo.md

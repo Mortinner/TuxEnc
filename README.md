@@ -123,7 +123,7 @@ If something breaks or you miss a feature, open an [issue](https://github.com/Mo
 
 ## Development
 
-To run from source: Python 3.12, `pip install -r requirements-dev.txt` and FFmpeg 8 (`python3 run.py`). Run the tests with `bash tests/run_all.sh` (test videos are generated automatically). Build the AppImage with `bash packaging/fetch_deps.sh` and `python3 packaging/build.py`. Every change on `main` is tested in GitHub Actions and, when the version goes up, published automatically with its Release, `SHA256SUMS` and a build provenance attestation.
+To run from source: Python 3.12, `pip install -r requirements-dev.txt` and FFmpeg 8 (`python3 run.py`). Run the tests with `bash tests/run_all.sh` (test videos are generated automatically). Build the AppImage with `bash packaging/fetch_deps.sh` and `python3 packaging/build.py`. Every change is tested in GitHub Actions; changes prepared on `claude/…` branches are merged automatically once the tests pass, and when the version goes up the release is published automatically with its `SHA256SUMS` and a build provenance attestation.
 
 ## License
 
@@ -256,7 +256,7 @@ Si algo falla o echas algo en falta, abre una [incidencia](https://github.com/Mo
 
 ## Desarrollo
 
-Para ejecutarlo desde el código: Python 3.12, `pip install -r requirements-dev.txt` y FFmpeg 8 (`python3 run.py`). Las pruebas se lanzan con `bash tests/run_all.sh`; los vídeos de prueba se generan solos. El AppImage se compila con `bash packaging/fetch_deps.sh` y `python3 packaging/build.py`. Cada cambio en `main` pasa las pruebas en GitHub Actions y, si sube la versión, se publica solo con su Release, su `SHA256SUMS` y una atestación de procedencia.
+Para ejecutarlo desde el código: Python 3.12, `pip install -r requirements-dev.txt` y FFmpeg 8 (`python3 run.py`). Las pruebas se lanzan con `bash tests/run_all.sh`; los vídeos de prueba se generan solos. El AppImage se compila con `bash packaging/fetch_deps.sh` y `python3 packaging/build.py`. Cada cambio pasa las pruebas en GitHub Actions; los que se preparan en ramas `claude/…` se fusionan solos cuando las pruebas salen en verde y, si sube la versión, se publica la Release con su `SHA256SUMS` y una atestación de procedencia.
 
 ## Licencia
 
