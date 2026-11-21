@@ -2,6 +2,8 @@
 
 **English** · [Español más abajo](#español)
 
+[![release](https://img.shields.io/github/v/release/Mortinner/TuxEnc?label=release&color=e05d44)](https://github.com/Mortinner/TuxEnc/releases/latest) [![Tests](https://img.shields.io/github/actions/workflow/status/Mortinner/TuxEnc/pruebas.yml?branch=main&label=Tests&logo=github)](https://github.com/Mortinner/TuxEnc/actions/workflows/pruebas.yml) [![License: GPL-3.0](https://img.shields.io/github/license/Mortinner/TuxEnc?label=license)](LICENSE)
+
 TuxEnc converts videos to **H.264, H.265, AV1 and VP9**, just like HandBrake, but **transcodes several videos at the same time** and has a simple interface. It also **identifies and renames** your shows and movies (TMDB, TheTVDB, TVmaze, IMDb) and files them neatly in your library. Everything happens in the window: you never need a terminal.
 
 <p align="center">
