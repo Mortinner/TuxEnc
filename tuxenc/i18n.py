@@ -578,45 +578,33 @@ STRINGS: dict[str, tuple[str, str]] = {
         "IMDb via OMDb · <a href='https://www.omdbapi.com/'>omdbapi.com</a>"),
     "about_text": ("<span style='font-size:20px'><b>TuxEnc {v}</b></span><br>"
                    "Transcodificador de vídeo para Linux con cola paralela, y renombrador de series y "
-                   "películas para tu biblioteca.<br><br>"
-                   "Usa <b>FFmpeg</b> (x264, x265, SVT-AV1, libvpx, Opus…) y <b>Qt</b>.",
+                   "películas para tu biblioteca.<br>"
+                   "<a href='https://github.com/Mortinner'>github.com/Mortinner</a>",
                    "<span style='font-size:20px'><b>TuxEnc {v}</b></span><br>"
                    "Video transcoder for Linux with a parallel queue, and TV show and movie renamer "
-                   "for your library.<br><br>"
-                   "Uses <b>FFmpeg</b> (x264, x265, SVT-AV1, libvpx, Opus…) and <b>Qt</b>."),
+                   "for your library.<br>"
+                   "<a href='https://github.com/Mortinner'>github.com/Mortinner</a>"),
     "about_author": ("<b>Desarrollado por {author}</b><br>"
                      "Contacto: <a href='mailto:{mail}'>{mail}</a><br>"
                      "<span style='color:#8d97b5'>Built with Claude, Anthropic</span>",
                      "<b>Developed by {author}</b><br>"
                      "Contact: <a href='mailto:{mail}'>{mail}</a><br>"
                      "<span style='color:#8d97b5'>Built with Claude, Anthropic</span>"),
-    "prov_title": ("<b>Procedencia</b>", "<b>Provenance</b>"),
-    "prov_official": ("Compilado por <b>GitHub Actions</b> a partir del commit <a href='{commit_url}'>{short}</a> "
-                      "de {repo} (<a href='{run_url}'>ver la compilación</a>, {built}). La descarga, su "
-                      "<code>SHA256SUMS</code> y el certificado de procedencia están en la "
-                      "<a href='{release_url}'>Release {v}</a>.",
-                      "Built by <b>GitHub Actions</b> from commit <a href='{commit_url}'>{short}</a> of {repo} "
-                      "(<a href='{run_url}'>see the build</a>, {built}). The download, its <code>SHA256SUMS</code> "
-                      "and the provenance attestation are in <a href='{release_url}'>release {v}</a>."),
-    "prov_verify": ("Para comprobar una descarga: <code>sha256sum -c SHA256SUMS</code> o "
-                    "<code>gh attestation verify {zip} --repo {repo}</code>. Las actualizaciones desde la "
-                    "app hacen la comprobación del SHA-256 solas.",
-                    "To verify a download: <code>sha256sum -c SHA256SUMS</code> or "
-                    "<code>gh attestation verify {zip} --repo {repo}</code>. In-app updates check the "
-                    "SHA-256 by themselves."),
-    "prov_local": ("<b>Compilación local, no oficial</b> ({built}): no la ha compilado GitHub. Las versiones "
-                   "oficiales están en <a href='{releases}'>github.com/Mortinner/TuxEnc/releases</a>.",
-                   "<b>Local build, not official</b> ({built}): it was not built by GitHub. Official "
-                   "versions are at <a href='{releases}'>github.com/Mortinner/TuxEnc/releases</a>."),
-    "prov_source": ("Ejecutando desde el código fuente (desarrollo). Las versiones oficiales están en "
-                    "<a href='{releases}'>github.com/Mortinner/TuxEnc/releases</a>.",
-                    "Running from source (development). Official versions are at "
-                    "<a href='{releases}'>github.com/Mortinner/TuxEnc/releases</a>."),
-    "about_license": ("Software libre bajo licencia <b>GNU GPL v3</b>: puedes usarlo, estudiarlo, "
-                      "compartirlo y modificarlo · <a href='https://www.gnu.org/licenses/gpl-3.0.html'>"
-                      "gnu.org/licenses/gpl-3.0</a>",
-                      "Free software under the <b>GNU GPL v3</b>: you may use, study, share and modify it · "
-                      "<a href='https://www.gnu.org/licenses/gpl-3.0.html'>gnu.org/licenses/gpl-3.0</a>"),
+    "about_verified": ("Verificado por GitHub", "Verified by GitHub"),
+    "about_local": ("Compilación local, no oficial", "Local build, not official"),
+    "about_source": ("Ejecutando desde el código fuente", "Running from source"),
+    "about_gpl": ("Consulta la <a href='https://www.gnu.org/licenses/gpl-3.0.html'>Licencia Pública General "
+                  "de GNU, versión 3</a>, para más detalles.",
+                  "See the <a href='https://www.gnu.org/licenses/gpl-3.0.html'>GNU General Public License, "
+                  "version 3</a> for details."),
+    "sys_title": ("Sistema", "System"),
+    "sys_runtime": ("Entorno de ejecución", "Runtime environment"),
+    "sys_rt_installed": ("AppImage (integrado en el sistema)", "AppImage (integrated into the system)"),
+    "sys_rt_loose": ("AppImage (sin integrar)", "AppImage (not integrated)"),
+    "sys_rt_source": ("Código fuente (desarrollo)", "Source code (development)"),
+    "sys_commit": ("Commit", "Commit hash"),
+    "sys_built": ("Fecha de compilación", "Build date"),
+    "sys_hw": ("Aceleración por hardware incluida", "Built with support for"),
 
     # primer arranque / integración
     "integrate_q_title": ("Bienvenido a TuxEnc", "Welcome to TuxEnc"),

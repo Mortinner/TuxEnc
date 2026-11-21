@@ -6,6 +6,14 @@ All notable changes to TuxEnc are listed here (Spanish first, English below each
 
 ## [Sin publicar] · Unreleased
 
+## [1.3.2] - 2026-11-21
+
+### Cambiado
+- **«Acerca de» más claro y escueto:** enlace a github.com/Mortinner, copyright, «Verificado por GitHub» (enlazado a la Release, con su `SHA256SUMS` y su certificado de procedencia) y la licencia. Se añade un apartado **Sistema** con el entorno de ejecución (AppImage integrado, sin integrar o código fuente), el commit y la fecha de compilación, las versiones de Python, Qt y FFmpeg y la aceleración por hardware que incluye el FFmpeg empaquetado. Una compilación local lo indica («Compilación local, no oficial»).
+
+### English
+- Changed: a shorter About tab with copyright, «Verified by GitHub» (linked to the release), the license, and a System section (runtime, commit, build date, Python, Qt and FFmpeg versions, hardware acceleration included in the bundled FFmpeg).
+
 ## [1.3.1] - 2026-11-20
 
 ### Cambiado
