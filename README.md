@@ -1,6 +1,139 @@
 # TuxEnc 🐧🎬
 
-**Español** · [English below](#english)
+**English** · [Español más abajo](#español)
+
+TuxEnc converts videos to **H.264, H.265, AV1 and VP9**, just like HandBrake, but **transcodes several videos at the same time** and has a simple interface. It also **identifies and renames** your shows and movies (TMDB, TheTVDB, TVmaze, IMDb) and files them neatly in your library. Everything happens in the window: you never need a terminal.
+
+<p align="center">
+  <img src="docs/capturas/en-cola.png" width="49%" alt="Queue with each video's identification and new name">
+  <img src="docs/capturas/en-convirtiendo.png" width="49%" alt="Converting two videos at once">
+  <img src="docs/capturas/en-identificar.png" width="49%" alt="Identifying a show and picking the episode">
+  <img src="docs/capturas/en-ajustes.png" width="38%" alt="Conversion settings">
+</p>
+
+## Getting started
+
+0. Download the zip of the **[latest release](https://github.com/Mortinner/TuxEnc/releases/latest)** (`TuxEnc-…-linux-x86_64.zip`). Optionally verify it with `sha256sum -c SHA256SUMS`.
+1. Unzip it anywhere.
+2. Double-click **`TuxEnc-…-x86_64.AppImage`**.
+3. The first time, TuxEnc asks whether to **integrate it into the system**. If you accept, it appears in the applications menu and on the desktop. You can then delete the folder you downloaded.
+
+### Doesn't open with a double-click?
+
+Your file manager needs to know it is a program. **Right-click the AppImage → Properties**, then:
+
+| Desktop | Where the option is |
+|---|---|
+| **GNOME** (Ubuntu, Fedora…) | *Permissions* tab → enable **"Allow executing file as program"** |
+| **KDE Plasma** (Kubuntu, CachyOS, Manjaro…) | *Permissions* tab → check **"Is executable"** |
+| **Cinnamon / MATE** (Linux Mint…) | *Permissions* tab → check **"Allow executing file as program"** |
+| **XFCE** | *Permissions* tab → check **"Allow this file to run as a program"** |
+
+Accept and double-click again.
+
+## Usage
+
+1. **Drag** videos or whole folders into the window (or use *＋ Add*).
+2. Pick a **preset** at the top (for example *H.265 · High quality*). **☰ → Conversion** (or a click on the summary line) lets you change everything: codec, quality, bitrate, resolution, filters, audio and subtitle tracks…
+3. Press **▶ Start**.
+
+**Adding videos while the queue runs:** they show as «New · not confirmed» and Start turns into **＋ Add (n)** (or **🏷 Rename (n)** with only «Rename»). Until you press it, they follow the switches, the preset and *Save to*, so you can still change them or fix the identification. When you press it, conversions join the queue and wait their turn; rename-only runs right away. A confirmed video no longer changes, even if you touch the settings. Each row shows its task («Convert only», «Rename only»…).
+
+- **Already-small videos**: with average or constant bitrate, if the original already has a lower bitrate than requested, TuxEnc **copies the video without re-encoding** (no quality loss, in seconds) and only processes the audio, subtitles, format and name. It can be turned off in ☰ → Conversion → Video. The same applies to **audio**: a track already in the chosen format with a lower bitrate is copied as is (Audio tab).
+- **🧹 Clear**: removes finished videos, those not started, or everything (empty the queue) from the list. It never deletes files.
+- **At once**: how many videos are transcoded simultaneously. *Auto* picks the best value for your CPU. It can be changed with the queue stopped.
+- **Stop**: cancels what is running; videos not started go back to pending.
+- **My languages**: the languages you want for audio and subtitles. TuxEnc picks the tracks automatically in every video. To change them for one video, use **Audio and subtitles…** on its row.
+- **When done**: notify, quit TuxEnc, suspend or shut down. Suspend and shut down show a 60-second countdown you can cancel.
+- **Your own presets**: in **☰ → Presets** you can save your settings as a preset, **import HandBrake presets** (a `.json` exported from HandBrake) or export yours.
+- Your original files are **never overwritten**.
+
+## Renaming and library
+
+At the top left there are two switches: **🎞 Convert** and **🏷 Rename**. Use either or both:
+
+| Mode | What it does |
+|---|---|
+| **Convert** only | Converts the videos and keeps their names. |
+| **Rename** only | Identifies each video and gives it its name (and folder) instantly. It can be **↶ undone**. |
+| **Both** | The converted video is born with its final name and in its folder. |
+
+- **Identification**: when you add videos, each row says what it is («Arrow (2012) · S01E02 · Honor Thy Father») and how it will be named. If in doubt, **Identify…** opens a two-step window: on the left you pick the show or movie (or search for it), and on the right, for shows, the available seasons and episodes, so you choose yours with one click. If a brand-new episode isn't listed yet, you can type it. The chosen show can be applied to all its episodes at once.
+  - **Episode titles in your language:** they are looked up in TMDB and in **TheTVDB**, which often has lesser-known shows translated. If a title only exists in English and your file already has one («Show - S01E01 - The German Woman»), yours is kept (can be turned off in ☰ → Renaming). The row says «(title from your file)» or «(in English)».
+  - **Doesn't show up by name?** (it happens with titles that are only translated on some sites): find it on IMDb, TMDB, TheTVDB or TVmaze, copy the address of its page and paste it into the search box of **Identify…**. The IMDb code also works (`tt3324124`).
+- **Search services, nothing to set up**: TuxEnc includes its own **TMDB** and **TheTVDB** keys, and **TVmaze** needs none. **IMDb (OMDb)** is optional and needs your own free key (its daily limit would run out if it were shared). **☰ → Search services** shows each one's status and lets you use your own keys. If you used Retitler, TuxEnc offers to import its keys.
+- **Formats**: by default:
+  - Shows: `Show (2012)/Season 01/Show (2012) - S01E02 - Title - [1080p].mkv`
+  - Movies: `B/Babel (2006) - [1080p].mkv`
+
+  They can be changed with presets or by hand. Variables: `{series}` `{season}` `{episode}` `{title}` `{year}` `{resolution}` `{initial}`.
+- **Automatic resolution** (`{resolution}`): 2160p, 1080p, 720p or 480p. The long side of the video is compared with the standard widths and the short side with the standard heights, and the higher class wins (halfway rounds up). So 1920×804 is 1080p and 1280×536 is 720p. When converting, **the resulting video** is measured: a 4K movie converted with a 1080p maximum is named `[1080p]`.
+- **Library**: in **Save to** choose **📚 Library**. Shows go to your shows folder and movies to your movies folder (set them in ☰ → Renaming).
+- **External subtitles** (`.srt` next to the video): renamed or copied with the new name, keeping the language (`.spa.forced.srt`).
+- **Metadata**: when converting, the title, show, season and episode are written into the file.
+- **The original**: when converting and renaming, it stays where it is, or goes to the trash if you choose so in ☰ → Renaming.
+- **If the converted file is bigger than the original**, the original is never deleted automatically: the row asks which one to keep (**The converted one**, **The original** or **Both**). If you choose the original, the converted file goes to the trash and the original takes its place in the library, already with its final name.
+- If a video is not identified when you press Start, it **waits in the queue** until you choose its match. The queue is not considered finished (and the computer doesn't shut down) while one is still pending.
+
+## GPU acceleration
+
+TuxEnc detects your graphics card at startup and only shows what works on your computer:
+
+- **NVIDIA (NVENC)**: needs NVIDIA driver **570 or newer** (proprietary or open kernel module).
+- **AMD / Intel (VAAPI)**: needs your distribution's VA-API drivers (`mesa-va-drivers` or `intel-media-driver`; on Arch/CachyOS: `libva-mesa-driver` / `intel-media-driver`).
+- **Intel Quick Sync (QSV)**: needs `intel-media-driver` and the oneVPL runtime.
+
+## Update
+
+Since 1.2.7, **TuxEnc updates itself.** Every time it starts it checks for a new version and shows it in the notice bar. **«Update…»** shows the changes, with **Update**, **Skip this version** and **Not now**. The download is verified against its SHA-256 checksum before anything is installed, and the new version is used after a restart: now, when the queue finishes, or whenever you want. Waiting videos are kept.
+
+In **☰ → Preferences → Updates** you can turn the check off, check now or **go back to the previous version**.
+
+You can also update by hand, as with versions before 1.2.7: download the new version and open its AppImage, even if TuxEnc is open. It asks whether to update; if you accept, it closes the running TuxEnc (waiting videos are kept), replaces it and opens the new version.
+
+## Uninstall
+
+Open the applications menu and choose **"Uninstall TuxEnc"**. It removes the program, shortcuts, icons, your settings, any keys you entered and the rename history. **Your videos are not touched.** The system is left exactly as it was.
+
+If you never integrated it, just delete the AppImage.
+
+## Requirements
+
+64-bit Linux with glibc 2.34 or newer: Ubuntu 22.04+, Linux Mint 21+, Debian 12+, Fedora 36+, Arch, CachyOS, Manjaro, openSUSE Tumbleweed… Works on X11 and Wayland. Nothing else to install: FFmpeg is bundled.
+
+## Settings
+
+Everything is in the **☰** menu (top right), in a single window with tabs: **Conversion**, **Renaming**, **Search services**, **Presets**, **Preferences** and **About**. Everything can always be configured, even when conversion or renaming are switched off.
+
+## Author
+
+Developed by **Mortinner** · contact: [mortinner@gmail.com](mailto:mortinner@gmail.com) · Built with Claude, Anthropic.
+
+## TV and movie data
+
+This product uses the TMDB API but is not endorsed or certified by [TMDB](https://www.themoviedb.org/). Metadata provided by [TheTVDB](https://thetvdb.com/). Data from [TVmaze](https://www.tvmaze.com/) (CC BY-SA). IMDb via [OMDb](https://www.omdbapi.com/).
+
+## What's new
+
+The changes in each version are listed in **`CHANGELOG.md`** and in the [Releases](https://github.com/Mortinner/TuxEnc/releases).
+
+## Issues and suggestions
+
+If something breaks or you miss a feature, open an [issue](https://github.com/Mortinner/TuxEnc/issues/new/choose). Attaching the logs helps a lot: **☰ → Preferences → Open logs folder** (the failed conversion's log, `renombrado.log` for renaming, `gpu-detect.log` for GPU problems). For security issues, see [`SECURITY.md`](https://github.com/Mortinner/TuxEnc/blob/main/SECURITY.md).
+
+## Development
+
+To run from source: Python 3.12, `pip install -r requirements-dev.txt` and FFmpeg 8 (`python3 run.py`). Run the tests with `bash tests/run_all.sh` (test videos are generated automatically). Build the AppImage with `bash packaging/fetch_deps.sh` and `python3 packaging/build.py`. Every change on `main` is tested in GitHub Actions and, when the version goes up, published automatically with its Release, `SHA256SUMS` and a build provenance attestation.
+
+## License
+
+TuxEnc is **free software** under the **GNU GPL v3** (see `LICENSE.txt`). It bundles FFmpeg (x264, x265, SVT-AV1, libvpx, Opus…) and Qt.
+
+---
+
+<a name="español"></a>
+
+# Español
 
 TuxEnc convierte vídeos a **H.264, H.265, AV1 y VP9**, igual que HandBrake, pero **transcodificando varios vídeos a la vez** y con una interfaz sencilla. Además **identifica y renombra** tus series y películas (TMDB, TheTVDB, TVmaze, IMDb) y las coloca ordenadas en tu biblioteca. Todo se hace desde la ventana: no hace falta abrir ninguna terminal.
 
@@ -128,103 +261,3 @@ Para ejecutarlo desde el código: Python 3.12, `pip install -r requirements-dev.
 ## Licencia
 
 TuxEnc es **software libre** bajo la licencia **GNU GPL v3** (ver `LICENSE.txt`). Incluye FFmpeg (x264, x265, SVT-AV1, libvpx, Opus…) y Qt.
-
----
-
-<a name="english"></a>
-# English
-
-TuxEnc converts videos to **H.264, H.265, AV1 and VP9**, just like HandBrake, but **transcodes several videos at the same time** and has a simple interface. It also **identifies and renames** your shows and movies (TMDB, TheTVDB, TVmaze, IMDb) and files them neatly in your library. Everything happens in the window: you never need a terminal.
-
-<p align="center">
-  <img src="docs/capturas/en-cola.png" width="49%" alt="Queue with each video's identification and new name">
-  <img src="docs/capturas/en-convirtiendo.png" width="49%" alt="Converting two videos at once">
-  <img src="docs/capturas/en-identificar.png" width="49%" alt="Identifying a show and picking the episode">
-  <img src="docs/capturas/en-ajustes.png" width="38%" alt="Conversion settings">
-</p>
-
-## Getting started
-
-0. Download the zip of the **[latest release](https://github.com/Mortinner/TuxEnc/releases/latest)** (`TuxEnc-…-linux-x86_64.zip`). Optionally verify it with `sha256sum -c SHA256SUMS`.
-1. Unzip this file anywhere.
-2. Double-click **`TuxEnc-…-x86_64.AppImage`**.
-3. The first time, TuxEnc asks whether to **integrate it into the system**. If you accept, it appears in the applications menu and on the desktop. You can then delete the folder you downloaded.
-
-**Doesn't open with a double-click?** Right-click the AppImage → **Properties** → *Permissions* tab → enable **"Allow executing file as program"** (GNOME, Cinnamon, MATE, XFCE) or **"Is executable"** (KDE). Then double-click again.
-
-## Usage
-
-1. **Drag** videos or whole folders into the window (or use *＋ Add*).
-2. Pick a **preset** at the top. **☰ → Conversion** (or a click on the summary line) lets you change everything: codec, quality, bitrate, resolution, filters, audio and subtitle tracks…
-3. Press **▶ Start**.
-
-**Adding videos while the queue runs:** they show as «New · not confirmed» and Start turns into **＋ Add (n)** (or **🏷 Rename (n)** with only «Rename»). Until you press it they follow the current switches, preset and *Save to*. Conversions then join the queue and wait their turn; rename-only runs right away. Confirmed videos no longer change. Each row shows its task.
-
-- **Already-small videos**: with average/constant bitrate, if the original already has a lower bitrate than requested, TuxEnc **copies the video without re-encoding** and only processes audio, subtitles, format and name (can be turned off in ☰ → Conversion → Video). The same applies to **audio** tracks already in the chosen format with a lower bitrate (Audio tab).
-- **🧹 Clear**: removes finished videos, those not started, or everything (empty the queue) from the list. It never deletes files.
-- **At once**: how many videos are transcoded simultaneously. *Auto* picks the best value for your CPU. It can be changed with the queue stopped.
-- **Stop** cancels what is running; videos not started go back to pending.
-- **My languages**: the languages you want for audio and subtitles; tracks are chosen automatically. Use **Audio and subtitles…** on a row to pick them by hand for one video.
-- **When done**: notify, quit, suspend or shut down. Suspend and shut down show a 60-second countdown you can cancel.
-- **☰ → Presets**: save your own presets, **import HandBrake presets** (`.json`), export yours.
-- Your original files are **never overwritten**.
-
-## Renaming and library
-
-Two switches at the top left: **🎞 Convert** and **🏷 Rename**. Use either or both. Rename only is instant and can be **↶ undone**; with both, the converted file is born with its final name and folder.
-
-- Each row shows what the video is and how it will be named; **Identify…** lets you pick or search the show or movie and, for shows, click the episode from the list of seasons and episodes (or type it if it's brand new). If an episode title only exists in English but your file name already has one, yours is kept (☰ → Renaming); TheTVDB often has translated episode titles too. If it doesn't show up by name, paste the link to its IMDb, TMDB, TheTVDB or TVmaze page (or the IMDb code, `tt1234567`) into the search box.
-- Search services work out of the box: TuxEnc includes its own **TMDB** and **TheTVDB** keys and **TVmaze** needs none. **IMDb (OMDb)** is optional and needs your own free key. **☰ → Search services** shows each one's status and lets you use your own keys. Retitler keys can be imported.
-- Default formats: `Show (2012)/Season 01/Show (2012) - S01E02 - Title - [1080p].mkv` and `B/Babel (2006) - [1080p].mkv`. Variables: `{series}` `{season}` `{episode}` `{title}` `{year}` `{resolution}` `{initial}`.
-- `{resolution}` is 2160p/1080p/720p/480p: long side vs standard widths, short side vs standard heights, the higher class wins (ties round up). When converting, the **resulting** video is measured.
-- **Save to → 📚 Library** sends shows and movies to their own folders. External subtitles follow the video; metadata tags are written when converting; the original can optionally go to the trash.
-- Unidentified videos wait in the queue until you pick their match; the queue (and shutdown) waits for them.
-- If the converted file is **bigger than the original**, the original is never deleted automatically: the row asks which one to keep.
-
-## GPU acceleration
-
-Detected automatically. NVIDIA (NVENC) needs NVIDIA driver **570 or newer**; AMD/Intel (VAAPI) need your distro's VA-API drivers; Intel QSV needs `intel-media-driver` and the oneVPL runtime.
-
-## Update
-
-Since 1.2.7, **TuxEnc updates itself.** Every time it starts it checks for a new version and shows it in the notice bar. **«Update…»** shows the changes, with **Update**, **Skip this version** and **Not now**. The download is verified against its SHA-256 checksum before anything is installed, and the new version is used after a restart (now, when the queue finishes, or later). Waiting videos are kept.
-
-In **☰ → Preferences → Updates** you can turn the check off, check now or **go back to the previous version**.
-
-You can also update by hand, as with versions before 1.2.7: download the new version and open its AppImage, even if TuxEnc is open. It asks whether to update; if you accept, it closes the running TuxEnc (waiting videos are kept), replaces it and opens the new version.
-
-## Uninstall
-
-Open the applications menu and choose **"Uninstall TuxEnc"**. It removes the program, shortcuts, icons, settings, any keys you entered and the rename history. **Your videos are not touched.** The system is left exactly as it was.
-
-## Requirements
-
-64-bit Linux with glibc 2.34+ (Ubuntu 22.04+, Mint 21+, Debian 12+, Fedora 36+, Arch, CachyOS…). X11 and Wayland. FFmpeg is bundled.
-
-## Settings
-
-Everything is in the **☰** menu (top right), in a single window with tabs: **Conversion**, **Renaming**, **Search services**, **Presets**, **Preferences** and **About**. Everything can always be configured, even when conversion or renaming are switched off.
-
-## Author
-
-Developed by **Mortinner** · contact: [mortinner@gmail.com](mailto:mortinner@gmail.com) · Built with Claude, Anthropic.
-
-## TV and movie data
-
-This product uses the TMDB API but is not endorsed or certified by [TMDB](https://www.themoviedb.org/). Metadata provided by [TheTVDB](https://thetvdb.com/). Data from [TVmaze](https://www.tvmaze.com/) (CC BY-SA). IMDb via [OMDb](https://www.omdbapi.com/).
-
-## What's new
-
-The changes in each version are listed in **`CHANGELOG.md`** and in the [Releases](https://github.com/Mortinner/TuxEnc/releases).
-
-## Issues and suggestions
-
-If something breaks or you miss a feature, open an [issue](https://github.com/Mortinner/TuxEnc/issues/new/choose). Attaching the logs helps a lot: **☰ → Preferences → Open logs folder** (the failed conversion's log, `renombrado.log` for renaming, `gpu-detect.log` for GPU problems). For security issues, see [`SECURITY.md`](https://github.com/Mortinner/TuxEnc/blob/main/SECURITY.md).
-
-## Development
-
-To run from source: Python 3.12, `pip install -r requirements-dev.txt` and FFmpeg 8 (`python3 run.py`). Run the tests with `bash tests/run_all.sh` (test videos are generated automatically). Build the AppImage with `bash packaging/fetch_deps.sh` and `python3 packaging/build.py`. Every change on `main` is tested in GitHub Actions and, when the version goes up, published automatically with its Release, `SHA256SUMS` and a build provenance attestation.
-
-## License
-
-TuxEnc is **free software** under the **GNU GPL v3** (see `LICENSE.txt`). It bundles FFmpeg and Qt.
