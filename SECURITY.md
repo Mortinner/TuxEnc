@@ -20,7 +20,7 @@ Cada Release incluye `SHA256SUMS` (`sha256sum -c SHA256SUMS`) y una atestación 
 gh attestation verify TuxEnc-X.Y.Z-linux-x86_64.zip --repo Mortinner/TuxEnc
 ```
 
-Desde la 1.2.7, las actualizaciones desde la propia app hacen esta comprobación solas: solo descargan de GitHub por HTTPS y no instalan nada si el zip no coincide con la suma SHA-256 de su Release.
+Desde la 1.2.7, las actualizaciones desde la propia app hacen esta comprobación solas: solo descargan de GitHub por HTTPS y no instalan nada si el zip no coincide con el checksum SHA-256 de su Release.
 
 ---
 
@@ -35,4 +35,4 @@ Only the latest version in [Releases](https://github.com/Mortinner/TuxEnc/releas
 
 ## Verifying a download
 
-Each Release ships `SHA256SUMS` and a GitHub build provenance attestation: `gh attestation verify TuxEnc-X.Y.Z-linux-x86_64.zip --repo Mortinner/TuxEnc`. Since 1.2.7, in-app updates do this check themselves: GitHub over HTTPS only, and nothing is installed unless the zip matches the release's SHA-256 sum.
+Each Release ships `SHA256SUMS` and a GitHub build provenance attestation: `gh attestation verify TuxEnc-X.Y.Z-linux-x86_64.zip --repo Mortinner/TuxEnc`. Since 1.2.7, in-app updates do this check themselves: GitHub over HTTPS only, and nothing is installed unless the zip matches the release's SHA-256 checksum.

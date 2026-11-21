@@ -590,8 +590,8 @@ STRINGS: dict[str, tuple[str, str]] = {
                      "<b>Developed by {author}</b><br>"
                      "Contact: <a href='mailto:{mail}'>{mail}</a><br>"
                      "<span style='color:#8d97b5'>Built with Claude, Anthropic</span>"),
-    "about_verified": ("Verificado por GitHub, con su suma SHA-256 y su certificado de procedencia",
-                       "Verified by GitHub, with its SHA-256 sum and provenance attestation"),
+    "about_verified": ("Verificado por GitHub con checksum SHA-256 y certificado de procedencia",
+                       "Verified by GitHub with SHA-256 checksum and provenance attestation"),
     "about_local": ("Compilación local, no oficial", "Local build, not official"),
     "about_source": ("Ejecutando desde el código fuente", "Running from source"),
     "about_gpl": ("Software libre bajo licencia <b>GNU GPL v3</b>: puedes usarlo, estudiarlo, "
@@ -718,10 +718,10 @@ STRINGS: dict[str, tuple[str, str]] = {
     "upd_title": ("Actualización de TuxEnc", "TuxEnc update"),
     "upd_available": ("<b>TuxEnc {v} ya está disponible.</b><br>Tienes la {cur}.",
                       "<b>TuxEnc {v} is available.</b><br>You have {cur}."),
-    "upd_how": ("Se descarga de GitHub (unos {mb} MB), se comprueba con su suma SHA-256 y se instala "
+    "upd_how": ("Se descarga de GitHub (unos {mb} MB), se comprueba con su checksum SHA-256 y se instala "
                 "en su sitio. Lo que tengas en la cola no se pierde, y la versión que usas ahora se "
                 "guarda por si quieres volver a ella.",
-                "It is downloaded from GitHub (about {mb} MB), checked against its SHA-256 sum and "
+                "It is downloaded from GitHub (about {mb} MB), checked against its SHA-256 checksum and "
                 "installed in place. Nothing in your queue is lost, and the version you use now is "
                 "kept in case you want to go back to it."),
     "upd_manual_note": ("Esta copia de TuxEnc no está integrada en el sistema, así que no puede "
@@ -762,13 +762,13 @@ STRINGS: dict[str, tuple[str, str]] = {
                         "The download is too big to be TuxEnc. Nothing was installed."),
     "upd_err_incomplete": ("La descarga se ha cortado. No se ha instalado nada; inténtalo de nuevo.",
                            "The download was interrupted. Nothing was installed; please try again."),
-    "upd_err_no_checksum": ("Esta versión no publica la suma SHA-256 de su descarga, así que no se "
+    "upd_err_no_checksum": ("Esta versión no publica el checksum SHA-256 de su descarga, así que no se "
                             "puede comprobar. No se ha instalado nada.",
-                            "This version does not publish the SHA-256 sum of its download, so it cannot "
+                            "This version does not publish the SHA-256 checksum of its download, so it cannot "
                             "be verified. Nothing was installed."),
-    "upd_err_checksum": ("La descarga no coincide con su suma SHA-256: puede estar dañada o alterada. "
+    "upd_err_checksum": ("La descarga no coincide con su checksum SHA-256: puede estar dañada o alterada. "
                          "No se ha instalado nada.",
-                         "The download does not match its SHA-256 sum: it may be damaged or tampered "
+                         "The download does not match its SHA-256 checksum: it may be damaged or tampered "
                          "with. Nothing was installed."),
     "upd_err_bad_zip": ("El zip descargado no contiene el AppImage de esa versión. No se ha instalado nada.",
                         "The downloaded zip does not contain that version's AppImage. Nothing was installed."),
