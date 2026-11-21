@@ -38,6 +38,8 @@ w.engine.stop(); pump(1)
 # aviso con motivo
 from tuxenc.presets import import_handbrake
 w._adapt(import_handbrake(str(__import__("pathlib").Path(__file__).resolve().parent / "fixtures" / "handbrake-1080-pelis.json"))[0].settings)
-print("\nAVISO:\n" + msgs[-1])
+w._update_bar()
+print("\nAVISO:\n" + w.bar_lbl.text())
+assert not w._hw_fallback or (w._bar_kind == "hw_fallback" and w.bar.isVisible())
 assert w.engine.max_parallel == 1 and cfg.parallel == 1
 w.engine.shutdown()

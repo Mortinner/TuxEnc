@@ -6,6 +6,19 @@ All notable changes to TuxEnc are listed here (Spanish first, English below each
 
 ## [Sin publicar] · Unreleased
 
+## [1.3.3] - 2026-11-21
+
+### Corregido
+- **Si la GPU no responde al arrancar, el preset ya no se queda en la CPU para siempre.** Antes, si NVENC fallaba al abrir TuxEnc (por ejemplo, tras actualizar el driver de NVIDIA sin reiniciar), el ajuste se cambiaba a x265 y se guardaba: en los arranques siguientes seguía convirtiendo con la CPU, unas diez veces más lento, aunque la GPU ya funcionara. Ahora el cambio dura solo esa sesión, el preset no se toca y, en cuanto la GPU vuelve a responder, se usa otra vez sola.
+
+### Mejorado
+- **El aviso de GPU que no responde va en la barra de avisos**, no en una ventana que se cierra sin leer, y se queda mientras dure: «NVENC no responde ahora mismo: se convierte con x265 (CPU, bastante más lento)… Si acabas de actualizar el driver, reinicia el equipo». Cuando vuelve, la barra lo dice.
+- **`gpu-detect.log` guarda las 30 últimas detecciones**, con fecha y hora, la más reciente arriba. Antes se sobrescribía en cada arranque y no quedaba rastro del día en que falló.
+
+### English
+- Fixed: if the GPU does not respond at startup, the switch to the CPU encoder only lasts that session; the preset is not changed and the GPU is used again as soon as it responds.
+- Improved: the notice goes in the notice bar and stays while it lasts. `gpu-detect.log` keeps the last 30 detections with date and time.
+
 ## [1.3.2] - 2026-11-21
 
 ### Cambiado

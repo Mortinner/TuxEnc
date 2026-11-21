@@ -1,0 +1,73 @@
+name: Fusión automática
+
+# Cuando «Pruebas» termina en verde en una rama claude/…, fusiona su pull request en main
+# (exactamente el commit probado) y lanza «Publicar versión». Si VERSION no ha cambiado,
+# la publicación no hace nada. Decidido por Marcos (21-11-2026): «de momento, todo automático».
+#
+# Las fusiones hechas con GITHUB_TOKEN no disparan otros workflows por push; por eso la
+# publicación se lanza a mano con workflow_dispatch, que sí está permitido.
+# Para volver a fusionar a mano basta con desactivar este workflow (Actions → … → Disable).
+
+on:
+  workflow_run:
+    workflows: ["Pruebas"]
+    types: [completed]
+    branches: ["claude/**"]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: fusion-automatica
+  cancel-in-progress: false
+
+jobs:
+  fusionar:
+    name: Fusionar y publicar
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      RAMA: ${{ github.event.workflow_run.head_branch }}
+      SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - name: Buscar el pull request de la rama
+        id: pr
+        run: |
+          set -euo pipefail
+          owner="${REPO%%/*}"
+          for _ in 1 2 3 4 5 6; do
+            pr="$(gh api "repos/$REPO/pulls?state=open&base=main&head=$owner:$RAMA" --jq '.[0].number // empty')"
+            [ -n "$pr" ] && break
+            sleep 10                       # el PR automático puede tardar unos segundos
+          done
+          if [ -z "${pr:-}" ]; then
+            echo "::notice::No hay pull request abierto para $RAMA: nada que fusionar."
+            exit 0
+          fi
+          cabeza="$(gh api "repos/$REPO/pulls/$pr" --jq .head.sha)"
+          if [ "$cabeza" != "$SHA" ]; then
+            echo "::notice::El PR #$pr ya tiene commits más nuevos ($cabeza); se fusionará cuando pasen sus pruebas."
+            exit 0
+          fi
+          echo "numero=$pr" >> "$GITHUB_OUTPUT"
+
+      - name: Fusionar el PR (solo el commit probado)
+        if: steps.pr.outputs.numero != ''
+        env:
+          PR: ${{ steps.pr.outputs.numero }}
+        run: |
+          set -euo pipefail
+          titulo="$(gh api "repos/$REPO/pulls/$PR" --jq .title)"
+          gh api -X PUT "repos/$REPO/pulls/$PR/merge" -f sha="$SHA" -f merge_method=merge \
+            -f commit_title="Merge pull request #$PR from $RAMA" -f commit_message="$titulo" --jq .message
+          gh api -X DELETE "repos/$REPO/git/refs/heads/$RAMA" || true
+          echo "::notice::Fusionado el PR #$PR ($titulo)."
+
+      - name: Lanzar «Publicar versión»
+        if: steps.pr.outputs.numero != ''
+        run: gh workflow run publicar.yml --repo "$REPO" --ref main -f ensayo=false

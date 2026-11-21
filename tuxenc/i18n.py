@@ -381,6 +381,14 @@ STRINGS: dict[str, tuple[str, str]] = {
     "preset_imported": ("Importados {n} preset(s) de HandBrake.", "Imported {n} HandBrake preset(s)."),
     "preset_import_fail": ("No se ha podido leer el archivo de presets:\n{err}",
                            "Could not read the presets file:\n{err}"),
+    "bar_hw_fallback": ("{enc} no responde ahora mismo: se convierte con {alt} (CPU, bastante más lento). "
+                        "Tu preset no cambia y volverá a usar la GPU en cuanto responda. Si acabas de "
+                        "actualizar el driver, reinicia el equipo.",
+                        "{enc} is not responding right now: converting with {alt} (CPU, much slower). Your "
+                        "preset is unchanged and will use the GPU again as soon as it responds. If you just "
+                        "updated the driver, restart the computer."),
+    "bar_hw_recovered": ("{enc} vuelve a funcionar: tu preset vuelve a usar la GPU.",
+                         "{enc} works again: your preset is using the GPU again."),
     "preset_hw_missing": ("Este preset usa {enc}, que no está disponible en este equipo.\n\n"
                           "Motivo: {why}\n\nSe usará {alt}. Tienes el diagnóstico completo en "
                           "☰ Preferencias → Ver diagnóstico de GPU.",

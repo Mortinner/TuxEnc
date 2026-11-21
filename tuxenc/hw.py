@@ -86,6 +86,32 @@ def _nvidia_info() -> list[str]:
     return lines
 
 
+DETECTION_LOG_KEEP = 30
+_LOG_HEAD = "===== "
+
+
+def _append_detection_log(report: list[str]) -> None:
+    """gpu-detect.log con historial: la detección más reciente arriba y las 30 últimas.
+
+    Antes se sobrescribía en cada arranque, y si la GPU fallaba un día ya no quedaba rastro.
+    """
+    import time
+    from . import VERSION
+    path = LOG_DIR / "gpu-detect.log"
+    block = f"{_LOG_HEAD}{time.strftime('%Y-%m-%d %H:%M:%S')} · TuxEnc {VERSION}\n" + "\n".join(report) + "\n"
+    try:
+        old = path.read_text(encoding="utf-8") if path.exists() else ""
+    except OSError:
+        old = ""
+    parts = [b for b in old.split(_LOG_HEAD) if b.strip()] if old.startswith(_LOG_HEAD) else []
+    blocks = [block] + [_LOG_HEAD + b for b in parts][: DETECTION_LOG_KEEP - 1]
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        path.write_text("\n".join(x.rstrip("\n") + "\n" for x in blocks), encoding="utf-8")
+    except OSError:
+        pass
+
+
 def detect_available(gpus: list | None | bool = False) -> list[str]:
     """IDs de encoders utilizables, en el orden del catálogo.
 
@@ -126,9 +152,5 @@ def detect_available(gpus: list | None | bool = False) -> list[str]:
         report.append(f"{e.id:12s} {'OK' if res else 'NO'}")
         if not res:
             report += ["    " + ln for ln in err.splitlines()[:4]]
-    try:
-        LOG_DIR.mkdir(parents=True, exist_ok=True)
-        (LOG_DIR / "gpu-detect.log").write_text("\n".join(report) + "\n", encoding="utf-8")
-    except OSError:
-        pass
+    _append_detection_log(report)
     return [e.id for e in VIDEO_ENCODERS if e.id in soft or ok.get(e.id)]
