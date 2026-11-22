@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import logging.handlers
+import os
 import sys
 from pathlib import Path
 
@@ -25,6 +26,39 @@ def log_path() -> Path:
 _path: Path | None = None
 
 
+class _Handler(logging.handlers.RotatingFileHandler):
+    """Con rotación y, si el archivo se borra o se mueve con el programa abierto, lo vuelve a
+    crear (como WatchedFileHandler). Antes se seguía escribiendo en el archivo borrado y el
+    registro se perdía al cerrar (1.3.5)."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._ident = self._stat_ident()
+
+    def _stat_ident(self):
+        try:
+            st = os.stat(self.baseFilename)
+            return st.st_dev, st.st_ino
+        except OSError:
+            return None
+
+    def emit(self, record: logging.LogRecord) -> None:
+        if self.stream is not None and self._stat_ident() != self._ident:
+            try:
+                self.stream.close()
+            except OSError:
+                pass
+            self.stream = None
+        if self.stream is None:
+            self.stream = self._open()
+            self._ident = self._stat_ident()
+        super().emit(record)
+
+    def doRollover(self) -> None:
+        super().doRollover()
+        self._ident = self._stat_ident()
+
+
 def setup_logging(verbose: bool = False, path: Path | None = None) -> Path | None:
     """Activa el registro en archivo (y en la terminal si ``verbose``). Devuelve la ruta del archivo."""
     global _configured, _path
@@ -36,7 +70,7 @@ def setup_logging(verbose: bool = False, path: Path | None = None) -> Path | Non
     path = path or log_path()
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-        handler = logging.handlers.RotatingFileHandler(path, maxBytes=5_000_000, backupCount=2, encoding="utf-8")
+        handler = _Handler(path, maxBytes=5_000_000, backupCount=2, encoding="utf-8")
         handler.setLevel(logging.DEBUG if verbose else logging.INFO)
         handler.setFormatter(fmt)
         log.addHandler(handler)

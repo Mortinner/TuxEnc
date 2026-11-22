@@ -82,14 +82,14 @@ STRINGS: dict[str, tuple[str, str]] = {
     "mode_rename": ("Renombrar", "Rename"),
     "mode_convert_tip": ("Transcodificar los vídeos con los ajustes del preset.",
                          "Transcode the videos with the preset settings."),
-    "mode_rename_tip": ("Identificar cada vídeo en TMDB / TVmaze / IMDb y darle su nombre (y carpeta) "
+    "mode_rename_tip": ("Identificar cada vídeo en TMDB / TVmaze / IMDb y ponerle el nombre (y la carpeta) "
                         "según los formatos de ☰ Preferencias → Renombrado.",
-                        "Identify each video on TMDB / TVmaze / IMDb and give it its name (and folder) "
+                        "Identify each video on TMDB / TVmaze / IMDb and give it the right name (and folder) "
                         "using the formats in ☰ Preferences → Renaming."),
     "need_a_mode": ("Activa «Convertir», «Renombrar» o los dos.", "Turn on “Convert”, “Rename” or both."),
     "undo_rename": ('Deshacer renombrado', 'Undo rename'),
-    "undo_rename_tip": ("Deshacer el último renombrado (los archivos vuelven a su nombre y carpeta)",
-                        "Undo the last rename (files go back to their name and folder)"),
+    "undo_rename_tip": ("Deshacer el último renombrado (los archivos recuperan el nombre y la carpeta de antes)",
+                        "Undo the last rename (files get their previous name and folder back)"),
     "undo_done": ("Renombrado deshecho: {n} archivo(s) han vuelto a su sitio.",
                   "Rename undone: {n} file(s) are back in place."),
     "undo_fail": ("No se pudo deshacer:\n{err}", "Could not undo:\n{err}"),
@@ -97,6 +97,14 @@ STRINGS: dict[str, tuple[str, str]] = {
     "id_ambiguous": ('⚠ No está claro qué es: pulsa «Identificar…»', '⚠ Not sure what this is: click “Identify…”'),
     "id_none": ('⚠ No se ha encontrado: pulsa «Identificar…» para buscarlo', '⚠ Not found: click “Identify…” to search for it'),
     "id_error": ("⚠ {err}", "⚠ {err}"),
+    "id_suspect_season": ('⚠ Está en una carpeta de temporada, pero parece la película {movie}. Pulsa «Identificar…»',
+                          '⚠ It is in a season folder but looks like the movie {movie}. Click “Identify…”'),
+    "id_suspect_series": ('⚠ Está en Series, pero parece la película {movie}. Pulsa «Identificar…»',
+                          '⚠ It is in TV shows but looks like the movie {movie}. Click “Identify…”'),
+    "id_suspect_movie": ('⚠ Está en Películas, pero parece la serie {show}. Pulsa «Identificar…»',
+                         '⚠ It is in Movies but looks like the TV show {show}. Click “Identify…”'),
+    "id_same_movie": ('⚠ {n} vídeos parecen la misma película, {movie}. Pulsa «Identificar…»',
+                      '⚠ {n} videos look like the same movie, {movie}. Click “Identify…”'),
     "match_btn": ('Identificar…', 'Identify…'),
     "match_tip": ('Elegir qué serie o película es y, en las series, qué capítulo', 'Choose which show or movie it is and, for shows, which episode'),
     "match_title": ('Identificar «{name}»', 'Identify “{name}”'),
@@ -107,7 +115,7 @@ STRINGS: dict[str, tuple[str, str]] = {
     "match_step2": ("2 · ¿Qué capítulo?", "2 · Which episode?"),
     "match_query_ph": ("Título, o pega un enlace de IMDb, TMDB o TVmaze",
                        "Title, or paste an IMDb, TMDB or TVmaze link"),
-    "match_query_tip": ("Si no aparece por su nombre, búscala en IMDb (o TMDB, TVmaze), copia la dirección "
+    "match_query_tip": ("Si no aparece por el nombre, búscala en IMDb (o TMDB, TVmaze), copia la dirección "
                         "de la página y pégala aquí. También vale el código de IMDb (tt1234567).",
                         "If it doesn't show up by name, look it up on IMDb (or TMDB, TVmaze), copy the page "
                         "address and paste it here. An IMDb code (tt1234567) works too."),
@@ -138,19 +146,19 @@ STRINGS: dict[str, tuple[str, str]] = {
     "match_kind_series": ("Serie", "TV show"),
     "match_kind_movie": ("Película", "Movie"),
     "match_use": ('Aceptar', 'OK'),
-    "match_none": ("Sin resultados. Prueba con el título original (en inglés) o pega el enlace de su "
-                   "página en IMDb, TMDB o TVmaze.",
-                   "No results. Try the original title or paste the link to its IMDb, TMDB or TVmaze page."),
+    "match_none": ("Sin resultados. Prueba con el título original (en inglés) o pega el enlace "
+                   "de la página en IMDb, TMDB o TVmaze.",
+                   "No results. Try the original title or paste the IMDb, TMDB or TVmaze link."),
     "match_searching": ("Buscando…", "Searching…"),
-    "match_same_n": ("Usar esta misma serie para los otros {n} capítulos de «{title}» (cada uno conserva su "
+    "match_same_n": ("Usar esta misma serie para los otros {n} capítulos de «{title}» (cada uno conserva el "
                      "número; no cambia los que elegiste a mano)",
                      "Use this same show for the other {n} episodes of “{title}” (each keeps its own number; "
                      "the ones you picked by hand are kept)"),
-    "match_same_1": ("Usar esta misma serie para el otro capítulo de «{title}» (conserva su número; no cambia "
+    "match_same_1": ("Usar esta misma serie para el otro capítulo de «{title}» (conserva el número; no cambia "
                      "si lo elegiste a mano)",
                      "Use this same show for the other episode of “{title}” (it keeps its own number; not "
                      "changed if you picked it by hand)"),
-    "match_same": ('Usar esta misma serie para los demás capítulos (cada uno conserva su número de capítulo; no cambia los que elegiste a mano)', 'Use this same show for the other episodes (each keeps its own episode number; the ones you picked by hand are kept)'),
+    "match_same": ('Usar esta misma serie para los demás capítulos (cada uno conserva el número de capítulo; no cambia los que elegiste a mano)', 'Use this same show for the other episodes (each keeps its own episode number; the ones you picked by hand are kept)'),
     "kind_series": ("Serie", "Show"),
     "kind_movie": ("Película", "Movie"),
     "renamed_ok": ("✓ Renombrado", "✓ Renamed"),
@@ -268,16 +276,16 @@ STRINGS: dict[str, tuple[str, str]] = {
     "rp_skip_articles": ("{initial}: ignorar artículos (The Batman → B, El Padrino → P)",
                          "{initial}: ignore articles (The Batman → B, El Padrino → P)"),
     "rp_library": ("Biblioteca", "Library"),
-    "rp_library_hint": ("Con «Guardar en: Biblioteca», las series van a su carpeta y las películas "
-                        "a la suya, cada una con su formato.",
-                        "With “Save to: Library”, shows go to their folder and movies to theirs, "
+    "rp_library_hint": ("Con «Guardar en: Biblioteca», las series van a la carpeta de series y "
+                        "las películas a la de películas, cada una con el formato que le toca.",
+                        "With “Save to: Library”, shows go to the shows folder and movies to the movies folder, "
                         "each with its own format."),
     "rp_series_root": ("Carpeta de series", "Shows folder"),
     "rp_movie_root": ("Carpeta de películas", "Movies folder"),
     "rp_not_set": ("Sin elegir", "Not set"),
     "rp_original": ("Al convertir y renombrar, el archivo original…", "When converting and renaming, the original file…"),
     "rp_orig_keep": ("Se deja donde está", "Stays where it is"),
-    "rp_orig_trash": ("Se envía a la papelera (con sus subtítulos)", "Goes to the trash (with its subtitles)"),
+    "rp_orig_trash": ("Se envía a la papelera (con los subtítulos)", "Goes to the trash (with the subtitles)"),
     "rp_orig_hint": ("Solo cuando la conversión termina bien. La papelera es recuperable.",
                      "Only when the conversion finishes successfully. The trash can be restored."),
     "fmt_s_library": ("Biblioteca con resolución — Serie (2012)/Season 01/Serie (2012) - S01E02 - Título - [1080p]",
@@ -299,13 +307,13 @@ STRINGS: dict[str, tuple[str, str]] = {
     "bigger_q": ("⚠ El convertido ocupa más que el original ({pct} %). ¿Con cuál te quedas?",
                  "⚠ The converted file is bigger than the original ({pct} %). Which one do you keep?"),
     "bigger_use_conv": ("El convertido", "The converted one"),
-    "bigger_use_conv_tip": ("El original (y sus subtítulos) va a la papelera",
-                            "The original (and its subtitles) goes to the trash"),
+    "bigger_use_conv_tip": ("El original (y los subtítulos) va a la papelera",
+                            "The original (and the subtitles) goes to the trash"),
     "bigger_use_orig": ("El original", "The original"),
     "bigger_use_orig_tip": ("El convertido va a la papelera. Si estabas renombrando, el original "
-                            "ocupa su lugar con el nombre final",
+                            "ocupa el lugar del convertido, con el nombre final",
                             "The converted file goes to the trash. If you were renaming, the original "
-                            "takes its place with the final name"),
+                            "takes its place, with the final name"),
     "bigger_keep_both": ("Los dos", "Both"),
     "bigger_keep_both_tip": ("No se borra nada", "Nothing is deleted"),
     "bigger_kept_orig": ("✓ Te quedaste con el original", "✓ You kept the original"),
@@ -478,9 +486,9 @@ STRINGS: dict[str, tuple[str, str]] = {
     "size_per_hour": ("≈ {mb} por hora de vídeo (sin contar el audio)",
                       "≈ {mb} per hour of video (audio not included)"),
     "upscale": ("Permitir ampliar vídeos más pequeños", "Allow upscaling smaller videos"),
-    "upscale_hint": ("El vídeo siempre se ajusta al recuadro elegido manteniendo su proporción. "
+    "upscale_hint": ("El vídeo siempre se ajusta al recuadro elegido sin deformarlo. "
                      "Ampliar no añade detalle: solo aumenta el tamaño del archivo.",
-                     "The video always fits inside the chosen box keeping its aspect ratio. "
+                     "The video always fits inside the chosen box without distorting it. "
                      "Upscaling adds no detail: it only makes the file bigger."),
     "bit_depth": ("Profundidad de color", "Color depth"),
     "bits8": ("8 bits", "8-bit"),
@@ -517,9 +525,9 @@ STRINGS: dict[str, tuple[str, str]] = {
     "mix_51": ("5.1", "5.1"),
     "langs": ("Mis idiomas (por orden de preferencia)", "My languages (in order of preference)"),
     "lang_add": ("Añadir idioma…", "Add language…"),
-    "lang_hint": ("Si un vídeo no tiene ninguno de tus idiomas, se usa su pista principal. "
+    "lang_hint": ("Si un vídeo no tiene ninguno de tus idiomas, se usa la pista principal. "
                   "Lista vacía = cualquier idioma.",
-                  "If a video has none of your languages, its main track is used. "
+                  "If a video has none of your languages, the main track is used. "
                   "Empty list = any language."),
     "s_tracks": ("Subtítulos", "Subtitles"),
     "s_none": ("Ninguno", "None"),
@@ -621,7 +629,7 @@ STRINGS: dict[str, tuple[str, str]] = {
     "integrate_q": ("<b>¿Integrar TuxEnc en el sistema?</b><br><br>"
                     "Se añadirá al menú de aplicaciones (junto con «Desinstalar TuxEnc») "
                     "y se creará un acceso directo en el escritorio.<br><br>"
-                    "TuxEnc se copiará a su propia carpeta, así que después puedes borrar "
+                    "TuxEnc se copiará a una carpeta propia, así que después puedes borrar "
                     "lo que has descargado.",
                     "<b>Integrate TuxEnc into the system?</b><br><br>"
                     "It will be added to the applications menu (together with “Uninstall TuxEnc”) "
@@ -668,16 +676,16 @@ STRINGS: dict[str, tuple[str, str]] = {
     "integrate_ok": ("¡Listo! TuxEnc ya está en el menú de aplicaciones.",
                      "Done! TuxEnc is now in the applications menu."),
     "integrate_ok_restart": ("<b>¡Listo! TuxEnc ya está en el menú de aplicaciones.</b><br><br>"
-                             "Se va a reiniciar para abrirse desde su sitio. Después ya puedes "
+                             "Se va a reiniciar para abrirse desde la copia instalada. Después ya puedes "
                              "borrar el archivo que descargaste.",
                              "<b>Done! TuxEnc is now in the applications menu.</b><br><br>"
-                             "It will restart to run from its own place. After that you can delete "
+                             "It will restart to run from the installed copy. After that you can delete "
                              "the file you downloaded."),
     "update_ok_restart": ("<b>¡Actualizado a TuxEnc {new}!</b>{old}<br><br>"
-                          "Se va a reiniciar para abrirse desde su sitio. Después ya puedes "
+                          "Se va a reiniciar para abrirse desde la copia instalada. Después ya puedes "
                           "borrar el archivo que descargaste.",
                           "<b>Updated to TuxEnc {new}!</b>{old}<br><br>"
-                          "It will restart to run from its own place. After that you can delete "
+                          "It will restart to run from the installed copy. After that you can delete "
                           "the file you downloaded."),
     "update_from": ("<br>(antes tenías la {v})", "<br>(you had {v} before)"),
     "restart_btn": ("Reiniciar TuxEnc", "Restart TuxEnc"),
@@ -726,11 +734,11 @@ STRINGS: dict[str, tuple[str, str]] = {
     "upd_title": ("Actualización de TuxEnc", "TuxEnc update"),
     "upd_available": ("<b>TuxEnc {v} ya está disponible.</b><br>Tienes la {cur}.",
                       "<b>TuxEnc {v} is available.</b><br>You have {cur}."),
-    "upd_how": ("Se descarga de GitHub (unos {mb} MB), se comprueba con su checksum SHA-256 y se instala "
-                "en su sitio. Lo que tengas en la cola no se pierde, y la versión que usas ahora se "
+    "upd_how": ("Se descarga de GitHub (unos {mb} MB), se comprueba con el checksum SHA-256 "
+                "publicado y se instala. Lo que tengas en la cola no se pierde, y la versión que usas ahora se "
                 "guarda por si quieres volver a ella.",
-                "It is downloaded from GitHub (about {mb} MB), checked against its SHA-256 checksum and "
-                "installed in place. Nothing in your queue is lost, and the version you use now is "
+                "It is downloaded from GitHub (about {mb} MB), checked against the published SHA-256 checksum "
+                "and installed. Nothing in your queue is lost, and the version you use now is "
                 "kept in case you want to go back to it."),
     "upd_manual_note": ("Esta copia de TuxEnc no está integrada en el sistema, así que no puede "
                         "actualizarse sola. Descarga la versión nueva y ábrela: te preguntará si "
@@ -770,25 +778,25 @@ STRINGS: dict[str, tuple[str, str]] = {
                         "The download is too big to be TuxEnc. Nothing was installed."),
     "upd_err_incomplete": ("La descarga se ha cortado. No se ha instalado nada; inténtalo de nuevo.",
                            "The download was interrupted. Nothing was installed; please try again."),
-    "upd_err_no_checksum": ("Esta versión no publica el checksum SHA-256 de su descarga, así que no se "
+    "upd_err_no_checksum": ("Esta versión no publica el checksum SHA-256 de la descarga, así que no se "
                             "puede comprobar. No se ha instalado nada.",
-                            "This version does not publish the SHA-256 checksum of its download, so it cannot "
+                            "This version does not publish the SHA-256 checksum of the download, so it cannot "
                             "be verified. Nothing was installed."),
-    "upd_err_checksum": ("La descarga no coincide con su checksum SHA-256: puede estar dañada o alterada. "
+    "upd_err_checksum": ("La descarga no coincide con el checksum SHA-256 publicado: puede estar dañada o alterada. "
                          "No se ha instalado nada.",
-                         "The download does not match its SHA-256 checksum: it may be damaged or tampered "
+                         "The download does not match the published SHA-256 checksum: it may be damaged or tampered "
                          "with. Nothing was installed."),
     "upd_err_bad_zip": ("El zip descargado no contiene el AppImage de esa versión. No se ha instalado nada.",
                         "The downloaded zip does not contain that version's AppImage. Nothing was installed."),
     "upd_err_not_appimage": ("El archivo descargado no es un AppImage válido. No se ha instalado nada.",
                              "The downloaded file is not a valid AppImage. Nothing was installed."),
-    "upd_err_no_assets": ("Esta versión todavía no tiene su descarga publicada. Inténtalo dentro de un rato.",
+    "upd_err_no_assets": ("Esta versión todavía no tiene la descarga publicada. Inténtalo dentro de un rato.",
                           "This version's download is not published yet. Please try again in a while."),
     "upd_err_no_space": ("No hay espacio suficiente en el disco: hacen falta unos 450 MB libres.",
                          "There is not enough disk space: about 450 MB free are needed."),
-    "upd_err_install": ("No se ha podido poner la versión nueva en su sitio ({detail}). "
+    "upd_err_install": ("No se ha podido instalar la versión nueva ({detail}). "
                         "Sigues teniendo la que usas ahora.",
-                        "The new version could not be put in place ({detail}). "
+                        "The new version could not be installed ({detail}). "
                         "You still have the one you are using now."),
     "upd_err_no_previous": ("No hay ninguna versión anterior guardada.", "No previous version is kept."),
     "upd_err_pending": ("Hay una versión nueva instalada que todavía no se ha usado: reinicia TuxEnc primero.",

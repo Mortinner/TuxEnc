@@ -80,6 +80,17 @@ class MainWindow(QMainWindow):
         self.engine.low_priority = cfg.low_priority
         # 8 análisis a la vez: con miles de vídeos en un NAS, casi todo el tiempo es esperar a la red
         self.prober = ThreadPoolExecutor(max_workers=8, thread_name_prefix="tuxenc-probe")
+        self._probed_buf: list[Job] = []
+        self._probed_timer = QTimer(self)
+        self._probed_timer.setSingleShot(True)
+        self._probed_timer.setInterval(150)
+        self._probed_timer.timeout.connect(self._flush_probed)
+        # Repaso de botones y contadores agrupado: con miles de vídeos identificándose, repasar
+        # toda la cola por cada uno crecía con el cuadrado (1.3.5)
+        self._refresh_timer = QTimer(self)
+        self._refresh_timer.setSingleShot(True)
+        self._refresh_timer.setInterval(100)
+        self._refresh_timer.timeout.connect(self._refresh_controls)
         self.pending_probes = 0
         self._load: dict | None = None        # tanda que se está analizando / identificando (registro)
         self._order_seq = 1e9
@@ -706,11 +717,15 @@ class MainWindow(QMainWindow):
             if self._load:
                 self._load["failed"] += 1
         else:
-            job = Job(input=path, info=info, order=order, staged=True)
-            self.engine.add(job)
-            self.queue.sync(self.engine.jobs, refresh=False)
-            if self.cfg.rename_on:
-                self.rename.identify([job])
+            # Los vídeos analizados entran en la cola por tandas (1.3.5): añadir las filas de una
+            # en una hacía que cada una costara más que la anterior, y con 5800 vídeos la cola
+            # se llevaba 6 de los 7 minutos del análisis.
+            self._probed_buf.append(Job(input=path, info=info, order=order, staged=True))
+            if self.pending_probes and len(self._probed_buf) < 500:
+                if not self._probed_timer.isActive():
+                    self._probed_timer.start()
+                return
+        self._flush_probed(refresh=False)
         if self.pending_probes == 0:
             self._load_probed()
         if self.pending_probes == 0 and self.failed_probes:
@@ -720,6 +735,23 @@ class MainWindow(QMainWindow):
             self.failed_probes = []
             QMessageBox.warning(self, APP_NAME, tr("not_video", names=names))
         self._refresh_controls()
+
+    def _flush_probed(self, refresh: bool = True) -> None:
+        """Pasa a la cola los vídeos analizados que esperan (de una vez)."""
+        self._probed_timer.stop()
+        jobs, self._probed_buf = self._probed_buf, []
+        if jobs:
+            for job in jobs:
+                self.engine.add(job)
+            self.queue.setUpdatesEnabled(False)
+            try:
+                self.queue.sync(self.engine.jobs, refresh=False)
+            finally:
+                self.queue.setUpdatesEnabled(True)
+            if self.cfg.rename_on:
+                self.rename.identify(jobs)
+        if refresh:
+            self._refresh_controls()
 
     # ---- registro de la carga (renombrado.log): cuánto tarda analizar e identificar cada tanda
     def _load_started(self, n: int) -> None:
@@ -910,7 +942,12 @@ class MainWindow(QMainWindow):
         self.queue.sync(self.engine.jobs)
         self._refresh_controls()
 
+    def _refresh_soon(self) -> None:
+        if not self._refresh_timer.isActive():
+            self._refresh_timer.start()
+
     def _refresh_controls(self) -> None:
+        self._refresh_timer.stop()
         jobs = self.engine.jobs
         self.stack.setCurrentWidget(self.queue if jobs else self.drop)
         c = self.engine.counts()

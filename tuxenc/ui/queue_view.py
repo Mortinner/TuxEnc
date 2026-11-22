@@ -335,11 +335,24 @@ class QueueList(QListWidget):
                 item, _ = self.rows.pop(jid)
                 self.takeItem(self.row(item))
         # los que faltan se insertan en su sitio; rehacerlo todo con cada vídeo nuevo era O(n²)
-        for pos, j in enumerate(jobs):
-            if j.id not in self.rows:
-                self._add(j, pos)
-            elif refresh:
-                self.update_job(j)
+        missing = sum(1 for j in jobs if j.id not in self.rows)
+        # Con la lista visible, Qt recoloca todas las filas que ya hay cada vez que entra una:
+        # con miles de vídeos, cada fila nueva costaba más que la anterior (1.3.5). Se oculta un
+        # momento mientras entran (sin pintar entre medias, así que no se ve) y se coloca una vez.
+        hide = missing > 20 and self.isVisible()
+        if hide:
+            scroll = self.verticalScrollBar().value()
+            self.setVisible(False)
+        try:
+            for pos, j in enumerate(jobs):
+                if j.id not in self.rows:
+                    self._add(j, pos)
+                elif refresh:
+                    self.update_job(j)
+        finally:
+            if hide:
+                self.setVisible(True)
+                self.verticalScrollBar().setValue(scroll)
 
     def _add(self, job: Job, pos: int | None = None) -> None:
         row = JobRow(job)
