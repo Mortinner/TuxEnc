@@ -6,6 +6,24 @@ All notable changes to TuxEnc are listed here (Spanish first, English below each
 
 ## [Sin publicar] · Unreleased
 
+## [1.3.5] - 2026-11-22
+
+### Corregido
+- **Capítulos que acababan en la biblioteca de películas.** En la prueba de 5814 capítulos, 122 de dos series (y uno suelto en cada prueba anterior) se renombraron como películas: 57 de *SeaQuest DSV* como «SeaQuest DSV (1993) - [480p] (2)», «(3)»… y 65 de *Star Trek: Discovery* como un especial. Ahora:
+  - **Se reconocen `S001E01`** (temporada con tres cifras y cero delante) **y `S01E01x02`** (capítulo doble 1 y 2; con el mismo número detrás de la «x», un capítulo).
+  - **Lo que está en una carpeta «Season 01», «Temporada 2»… nunca es una película.** Si no se entiende el número del capítulo, se busca la serie y queda «falta saber qué capítulo es», para elegirlo a mano.
+  - **TuxEnc pregunta en vez de renombrar** cuando la identificación no cuadra con la carpeta: un vídeo de la carpeta de series (o de una carpeta de temporada) que parece una película, uno de la carpeta de películas que parece una serie, o varios vídeos que parecen la misma película. Quedan como dudosos hasta confirmarlos con «Identificar…».
+- **`renombrado.log` se vuelve a crear si se borra con TuxEnc abierto.** Antes se seguía escribiendo en el archivo borrado y el registro se perdía al cerrar.
+
+### Mejorado
+- **Añadir miles de vídeos ya no se hace cada vez más lento.** Lo que más tardaba no era la red, sino la cola: cada fila nueva hacía que Qt recolocara todas las anteriores, así que cada vídeo costaba más que el anterior. Ahora los vídeos entran por tandas y la lista se coloca una vez. Sin contar el análisis, la cola pasa de 107,8 s a 34,1 s con 4000 vídeos, y el tiempo crece en proporción al número de vídeos. Los contadores y botones también se actualizan por tandas mientras se identifica.
+- **Peticiones iguales a la vez se hacen una sola vez.** Con 4 identificaciones en paralelo, los capítulos de una temporada pedían a la vez los mismos datos (o la misma temporada inexistente, hasta 4 veces); ahora el primero pregunta y los demás usan la respuesta.
+- **Textos más naturales**, sin posesivos de más: «se comprueba con el checksum SHA-256 publicado», «con los subtítulos», «sin deformarlo»…
+
+### English
+- Fixed: episodes ending up in the movies library. `S001E01` and `S01E01x02` are recognized; nothing inside a «Season NN» folder is treated as a movie; and when an identification contradicts the folder (a video in the shows folder that looks like a movie, one in the movies folder that looks like a show, or several videos that look like the same movie) it is marked as uncertain until confirmed with “Identify…”. `renombrado.log` is recreated if deleted while TuxEnc is open.
+- Improved: adding thousands of videos no longer slows down with each one (rows are added in batches; 4000 videos: 107.8 s → 34.1 s of queue work). Identical requests made at the same time go out once. More natural wording in the interface.
+
 ## [1.3.4] - 2026-11-22
 
 ### Mejorado

@@ -289,8 +289,15 @@ class CachedFetch:
     def __init__(self, fetch: Fetch, cache: JsonCache, clock: Callable[[], float] = time.monotonic) -> None:
         self._fetch, self._cache, self._clock = fetch, cache, clock
         self._missing: dict[str, float] = {}
+        self._locks: dict[str, threading.Lock] = {}
 
     def __call__(self, url: str, headers: Mapping[str, str]) -> Any:
+        # Varios hilos piden a la vez la misma dirección (los capítulos de una temporada): el
+        # primero pregunta y los demás esperan su respuesta, que ya está en la caché (1.3.5).
+        with self._locks.setdefault(url, threading.Lock()):
+            return self._call(url, headers)
+
+    def _call(self, url: str, headers: Mapping[str, str]) -> Any:
         short = "/season/" in url or "/episodes" in url or "Season=" in url
         hit, value = self._cache.get(url, SEASON_TTL if short else None)
         if hit:

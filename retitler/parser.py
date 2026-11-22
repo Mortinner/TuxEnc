@@ -103,10 +103,11 @@ def is_media_file(name: str) -> bool:
 _B = r"(?<![A-Za-z0-9])"  # no hay letra/dígito justo antes
 _E = r"(?![A-Za-z0-9])"   # no hay letra/dígito justo después
 
-# S01E02, S01E02E03, S01E02-E04, S01E02-03
+# S01E02, S01E02E03, S01E02-E04, S01E02-03, S001E02 (temporada con tres cifras y cero delante),
+# S01E01x02 (capítulo doble: 1 y 2) y S01E01x01 (el número repetido: un capítulo)
 _SXXEYY = re.compile(
-    _B + r"S(\d{1,2})[ ._-]?E(\d{1,3})"
-    r"((?:[ ._-]?E\d{1,3}|-\d{2}(?![0-9pPiIkK]))*)" + _E,
+    _B + r"S(0\d{2}|\d{1,2})[ ._-]?E(\d{1,3})"
+    r"((?:[ ._-]?E\d{1,3}|-\d{2}(?![0-9pPiIkK])|x\d{1,3})*)" + _E,
     re.I,
 )
 # 1x02
@@ -153,7 +154,7 @@ _ACRONYM = re.compile(r"(?<![A-Za-z0-9])(?:[A-Za-z]\.){2,}")
 _SEASON_TAG = re.compile(_B + r"(?:S\d{1,2}|Season[ ._]?\d+|Temporada[ ._]?\d+)" + _E, re.I)
 # "La Casa de Papel - Temporada 3 [Cap.301]": la temporada repetida no es parte del título
 _TRAILING_SEASON = re.compile(r"[\s\-–—:,]*(?:(?:Temporada|Temp|Season|Series)[ ._]?\d{1,2}|T\d{1,2}|S\d{1,2})\s*$", re.I)
-_SEASON_DIR = re.compile(r"^(?:season|temporada|temp|series|s)[ ._-]?(\d{1,2})$", re.I)
+_SEASON_DIR = re.compile(r"^(?:season|temporada|temp|series|s)[ ._-]?(0\d{2}|\d{1,2})$", re.I)
 _LEADING_EP = re.compile(r"^(?:e|ep|episode|episodio|cap)?[ ._]?(\d{1,3})(?:[ ._-]+|$)", re.I)
 
 
@@ -198,10 +199,12 @@ def _episodes_from_match(m: re.Match[str]) -> tuple[int, ...]:
         return (int(m.group(1)),)
     episodes = [int(m.group(2))]
     if m.re is _SXXEYY and m.group(3):
-        for sign, num in re.findall(r"(-?)[ ._]?(?:E)?(\d{1,3})", m.group(3), flags=re.I):
+        for sign, num in re.findall(r"([-x]?)[ ._]?(?:E)?(\d{1,3})", m.group(3), flags=re.I):
             n = int(num)
-            # "E05-E07" o "E05-07" significa rango; "E05E06" es una lista.
-            if sign == "-" and 0 < n - episodes[-1] <= 12:
+            if sign.lower() == "x" and n == episodes[-1]:
+                continue                                   # «E01x01»: el mismo capítulo
+            # "E05-E07", "E05-07" o "E05x07" significa rango; "E05E06" es una lista.
+            if sign.lower() in ("-", "x") and 0 < n - episodes[-1] <= 12:
                 episodes.extend(range(episodes[-1] + 1, n + 1))
             else:
                 episodes.append(n)
@@ -277,6 +280,11 @@ def parse_filename(name: str) -> ParsedName:
     )
 
 
+def is_season_folder(name: str) -> bool:
+    """«Season 01», «Temporada 2», «S03»…"""
+    return bool(_SEASON_DIR.match(name))
+
+
 def parse_path(path: str | PurePath) -> ParsedName:
     """Como parse_filename, pero apoyándose en las carpetas cuando el nombre no basta.
 
@@ -309,6 +317,18 @@ def parse_path(path: str | PurePath) -> ParsedName:
                 episodes=(int(m.group(1)),),
                 extension=parsed.extension,
             )
+        # Dentro de «Season 01» nunca es una película (1.3.5): es un capítulo que no se ha sabido
+        # leer. Se busca la serie y queda «sin capítulo», para elegirlo a mano.
+        title, year = _title_from_dirname(series_dir) if series_dir else ("", None)
+        return ParsedName(
+            original=parsed.original,
+            kind=MediaKind.EPISODE,
+            title=title or parsed.title,
+            year=year or parsed.year,
+            season=int(season_dir.group(1)),
+            episodes=(),
+            extension=parsed.extension,
+        )
     return parsed
 
 

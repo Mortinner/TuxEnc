@@ -84,7 +84,7 @@ def analyze(path: str | Path) -> Resolution:
     """Análisis sin internet (instantáneo; como mucho lista la carpeta una vez cada 30 s)."""
     p = Path(path)
     parsed = parse_path(p)
-    if parsed.kind is not MediaKind.EPISODE and trailing_number(p.name):
+    if (parsed.kind is not MediaKind.EPISODE or not parsed.episodes) and trailing_number(p.name):
         # «Dinosaucers 01.mp4»: capítulo solo si la carpeta muestra que es una serie
         numbered = numbered_episode(p, _names_in(p.parent))
         if numbered is not None:

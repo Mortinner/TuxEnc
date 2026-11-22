@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QDialogButtonBox, 
                                QSpinBox, QSplitter, QVBoxLayout, QWidget)
 
 from retitler.matching import normalize
-from retitler.parser import MediaKind
+from retitler.parser import MediaKind, is_season_folder
 from retitler.providers import ResultKind
 
 from ..catalog import CONTAINERS
@@ -24,6 +24,17 @@ from ..i18n import tr
 from retitler.providers import ENGLISH_SOURCES, PROVIDER_NAMES
 from ..library import (AMBIGUOUS, EPISODE, ERROR, NONE, OK, PENDING, Destination, Library,
                        predicted_resolution)
+
+
+def _under(path: Path, root: str) -> bool:
+    """¿Está dentro de esa carpeta? Solo con el texto de la ruta: nada de preguntar al NAS."""
+    if not root:
+        return False
+    a, b = os.path.abspath(path), os.path.abspath(root)
+    try:
+        return os.path.commonpath([a, b]) == b
+    except ValueError:
+        return False
 
 
 def describe_match(res) -> str:
@@ -155,7 +166,7 @@ class RenameController(QObject):
 
     def _apply(self, job: Job, state: str, res) -> None:
         self._apply_inner(job, state, res)
-        self.w._refresh_controls()
+        self.w._refresh_soon()
 
     def _apply_inner(self, job: Job, state: str, res) -> None:
         job.ident, job.rt = state, res
@@ -184,7 +195,58 @@ class RenameController(QObject):
             return
         state, res, subs = payload
         job.companions = [str(s) for s in subs]
+        why = self._suspect(job, state, res)
+        if why:
+            self._apply_inner(job, AMBIGUOUS, res)
+            job.note = why
+            self.w.queue.update_job(job)
+            self.w._refresh_soon()
+            return
         self._apply(job, state, res)
+        self._check_same_movie(job)
+
+    # ------------------------------------------------------------------ comprobaciones (1.3.5)
+    def _suspect(self, job: Job, state: str, res) -> str:
+        """Motivo para no fiarse de una identificación automática («» si es de fiar).
+
+        Una serie con el capítulo escrito de forma rara («S001E01») acababa como película en la
+        biblioteca de películas. Si la carpeta o la biblioteca dicen otra cosa, se pregunta.
+        """
+        if state != OK or res is None or res.chosen is None or getattr(res, "manual", False):
+            return ""
+        src = Path(job.input)
+        cfg = self.w.cfg
+        series = _under(src, cfg.series_root)
+        movies = _under(src, cfg.movie_root)
+        if res.chosen.kind is ResultKind.MOVIE:
+            if is_season_folder(src.parent.name):
+                return tr("id_suspect_season", movie=res.chosen.label)
+            if series and not movies:
+                return tr("id_suspect_series", movie=res.chosen.label)
+        elif movies and not series:
+            return tr("id_suspect_movie", show=res.chosen.label)
+        return ""
+
+    def _check_same_movie(self, job: Job) -> None:
+        """Varios vídeos identificados como la misma película: se pregunta por todos."""
+        res = job.rt
+        if job.ident != OK or res is None or res.chosen is None or res.chosen.kind is not ResultKind.MOVIE \
+                or getattr(res, "manual", False):
+            return
+        key = (res.chosen.provider, res.chosen.id)
+        same = [j for j in self.w.engine.jobs
+                if j.status == WAITING and j.ident in (OK, AMBIGUOUS) and j.rt is not None
+                and j.rt.chosen is not None and not getattr(j.rt, "manual", False)
+                and j.rt.chosen.kind is ResultKind.MOVIE and (j.rt.chosen.provider, j.rt.chosen.id) == key]
+        if len(same) < 2:
+            return
+        note = tr("id_same_movie", n=len(same), movie=res.chosen.label)
+        for j in same:
+            if j.ident == OK or j is job:
+                self._apply_inner(j, AMBIGUOUS, j.rt)
+            j.note = note
+            self.w.queue.update_job(j)
+        self.w._refresh_soon()
 
     def _on_chosen(self, job_id: int, payload) -> None:
         job = self.w._job(job_id)
