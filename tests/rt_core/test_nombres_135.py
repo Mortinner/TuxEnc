@@ -45,12 +45,12 @@ def test_formas_de_siempre_sin_cambios():
     assert parse_filename("Show - S100E01.mkv").kind is not MediaKind.EPISODE
 
 
-@pytest.mark.parametrize("name", ["Season 01", "Temporada 2", "S03", "Season 001", "season.4"])
+@pytest.mark.parametrize("name", ["Season 01", "Temporada 2", "S03", "Season 001", "season.4", "Specials", "Especiales"])
 def test_carpetas_de_temporada(name):
     assert is_season_folder(name)
 
 
-@pytest.mark.parametrize("name", ["Peliculas", "Arrow (2012)", "Specials", "Season of the Witch (2011)"])
+@pytest.mark.parametrize("name", ["Peliculas", "Arrow (2012)", "Extras", "Season of the Witch (2011)"])
 def test_no_son_carpetas_de_temporada(name):
     assert not is_season_folder(name)
 
@@ -74,3 +74,13 @@ def test_numerados_dentro_de_una_temporada(tmp_path):
         (d / f"Dinosaucers {n:02}.mp4").touch()
     res = analyze(d / "Dinosaucers 02.mp4")
     assert res.parsed.kind is MediaKind.EPISODE and res.parsed.episodes == (2,)
+
+
+# ----------------------------------------------------------------------------- 1.3.6
+def test_especiales_en_specials_son_temporada_0():
+    p = parse_path(f"{S}/Dragon Ball Z (1989)/Specials/Dragon Ball Z (1989) - S00E05x06 - Dragon Ball Z Gaiden "
+                   "El plan para destruir a los Superguerreros (Parte 1) (OVA).mkv")
+    assert (p.kind, p.title, p.season, p.episodes) == (MediaKind.EPISODE, "Dragon Ball Z", 0, (5, 6))
+    # Sin número reconocible, en «Specials» tampoco es una película: temporada 0 sin capítulo
+    p = parse_path(f"{S}/Dragon Ball Z (1989)/Specials/Dragon Ball Z Especial 3 (1993).mkv")
+    assert (p.kind, p.season, p.episodes) == (MediaKind.EPISODE, 0, ())

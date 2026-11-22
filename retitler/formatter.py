@@ -3,7 +3,7 @@
 Campos disponibles en las plantillas:
     {series}    nombre de la serie
     {season}    número de temporada
-    {episode}   número(s) de episodio (varios: 01-02)
+    {episode}   número(s) de episodio (varios: 01-02; tras una «E», 01-E02)
     {title}     título del episodio (series) o de la película
     {year}      año (de la serie o de la película)
     {resolution} resolución estándar del vídeo: 2160p, 1080p, 720p, 480p
@@ -154,7 +154,7 @@ def _fmt(value: object, spec: str, field: str) -> str:
         raise TemplateError(f"Formato «{spec}» no válido para {{{field}}}: {exc}") from exc
 
 
-def _render_field(canon: str, spec: str, ctx: NameContext, windows_safe: bool) -> str:
+def _render_field(canon: str, spec: str, ctx: NameContext, windows_safe: bool, before: str = "") -> str:
     if canon in ("series", "title"):
         raw = ctx.series if canon == "series" else ctx.title
         items = [raw] if isinstance(raw, str) else list(raw)
@@ -168,8 +168,10 @@ def _render_field(canon: str, spec: str, ctx: NameContext, windows_safe: bool) -
         return _fmt(sanitize_component(ctx.resolution, windows_safe=windows_safe), spec, canon)
     if canon == "initial":
         return _fmt(sanitize_component(ctx.initial, windows_safe=windows_safe), spec, canon)
-    # episode: varios números se unen con "-"  (S01E01-02)
-    return "-".join(_fmt(n, spec, canon) for n in ctx.episodes)
+    # episode: varios números se unen con "-". Tras una «E» se repite la letra (S01E01-E02), que es
+    # la forma que reconocen Jellyfin, Plex y Kodi; con «1x01» queda «1x01-02» (1.3.6).
+    sep = "-" + before[-1] if before[-1:] in ("E", "e") else "-"
+    return sep.join(_fmt(n, spec, canon) for n in ctx.episodes)
 
 
 def render(template: str, ctx: NameContext, extension: str = "", *, windows_safe: bool = True) -> str:
@@ -189,7 +191,7 @@ def render(template: str, ctx: NameContext, extension: str = "", *, windows_safe
             continue
         if conversion:
             raise TemplateError("Las conversiones (!r, !s) no están soportadas")
-        out.append(_render_field(_canonical(field_name), spec or "", ctx, windows_safe))
+        out.append(_render_field(_canonical(field_name), spec or "", ctx, windows_safe, literal))
 
     parts = [_tidy_component(p) for p in "".join(out).split("/")]
     parts = [p for p in parts if p]

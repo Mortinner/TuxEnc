@@ -154,7 +154,12 @@ _ACRONYM = re.compile(r"(?<![A-Za-z0-9])(?:[A-Za-z]\.){2,}")
 _SEASON_TAG = re.compile(_B + r"(?:S\d{1,2}|Season[ ._]?\d+|Temporada[ ._]?\d+)" + _E, re.I)
 # "La Casa de Papel - Temporada 3 [Cap.301]": la temporada repetida no es parte del título
 _TRAILING_SEASON = re.compile(r"[\s\-–—:,]*(?:(?:Temporada|Temp|Season|Series)[ ._]?\d{1,2}|T\d{1,2}|S\d{1,2})\s*$", re.I)
-_SEASON_DIR = re.compile(r"^(?:season|temporada|temp|series|s)[ ._-]?(0\d{2}|\d{1,2})$", re.I)
+_SEASON_DIR = re.compile(r"^(?:(?:season|temporada|temp|series|s)[ ._-]?(0\d{2}|\d{1,2})"
+                         r"|(specials?|especial(?:es)?))$", re.I)   # «Specials» = temporada 0 (1.3.6)
+
+
+def _season_of(m: re.Match[str]) -> int:
+    return 0 if m.group(2) else int(m.group(1))
 _LEADING_EP = re.compile(r"^(?:e|ep|episode|episodio|cap)?[ ._]?(\d{1,3})(?:[ ._-]+|$)", re.I)
 
 
@@ -281,7 +286,7 @@ def parse_filename(name: str) -> ParsedName:
 
 
 def is_season_folder(name: str) -> bool:
-    """«Season 01», «Temporada 2», «S03»…"""
+    """«Season 01», «Temporada 2», «S03», «Specials»…"""
     return bool(_SEASON_DIR.match(name))
 
 
@@ -313,7 +318,7 @@ def parse_path(path: str | PurePath) -> ParsedName:
                 kind=MediaKind.EPISODE,
                 title=title,
                 year=year,
-                season=int(season_dir.group(1)),
+                season=_season_of(season_dir),
                 episodes=(int(m.group(1)),),
                 extension=parsed.extension,
             )
@@ -325,7 +330,7 @@ def parse_path(path: str | PurePath) -> ParsedName:
             kind=MediaKind.EPISODE,
             title=title or parsed.title,
             year=year or parsed.year,
-            season=int(season_dir.group(1)),
+            season=_season_of(season_dir),
             episodes=(),
             extension=parsed.extension,
         )

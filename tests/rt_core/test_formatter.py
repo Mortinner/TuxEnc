@@ -31,7 +31,10 @@ def test_sanitization_linux_only():
 
 def test_multi_episode_and_titles():
     ctx = NameContext("Show", 1, (1, 2), ["Uno", "Dos"])
-    assert render("{series} S{season:02}E{episode:02} - {title}", ctx, ".mkv") == "Show S01E01-02 - Uno & Dos.mkv"
+    # Tras una «E» se repite la letra (S01E01-E02), que es lo que leen Jellyfin, Plex y Kodi (1.3.6)
+    assert render("{series} S{season:02}E{episode:02} - {title}", ctx, ".mkv") == "Show S01E01-E02 - Uno & Dos.mkv"
+    assert render("{series} s{season:02}e{episode:02}", ctx, ".mkv") == "Show s01e01-e02.mkv"
+    assert render("{series} - {season}x{episode:02}", ctx, ".mkv") == "Show - 1x01-02.mkv"
 
 
 def test_movie_and_missing_year():

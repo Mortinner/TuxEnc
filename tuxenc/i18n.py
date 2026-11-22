@@ -103,6 +103,8 @@ STRINGS: dict[str, tuple[str, str]] = {
                           '⚠ It is in TV shows but looks like the movie {movie}. Click “Identify…”'),
     "id_suspect_movie": ('⚠ Está en Películas, pero parece la serie {show}. Pulsa «Identificar…»',
                          '⚠ It is in Movies but looks like the TV show {show}. Click “Identify…”'),
+    "id_other_episode": ('⚠ El título del archivo es el de {ep} («{title}»), no el de {now}. Pulsa «Identificar…»',
+                         '⚠ The file\'s title is the one of {ep} (“{title}”), not {now}. Click “Identify…”'),
     "id_same_movie": ('⚠ {n} vídeos parecen la misma película, {movie}. Pulsa «Identificar…»',
                       '⚠ {n} videos look like the same movie, {movie}. Click “Identify…”'),
     "match_btn": ('Identificar…', 'Identify…'),

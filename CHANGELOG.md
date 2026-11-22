@@ -6,6 +6,19 @@ All notable changes to TuxEnc are listed here (Spanish first, English below each
 
 ## [Sin publicar] · Unreleased
 
+Cambios ya hechos para la 1.3.6, que se publicará cuando haya 4 o 5.
+
+### Corregido
+- **Los especiales de la carpeta «Specials» ya no acaban como películas.** «Specials» y «Especiales» cuentan como temporada 0, y lo que hay dentro nunca se toma por una película. Caso real: «Dragon Ball Z (1989) - S00E05x06 - … El plan para destruir a los Superguerreros (OVA)» se renombró como la película *Dragon Ball Z: Dead Zone* (1989).
+- **Capítulos dobles con el formato que leen Jellyfin, Plex y Kodi:** `S01E05-E06` en lugar de `S01E05-06`. Con plantillas tipo `1x05`, sigue siendo `1x05-06`.
+
+### Añadido
+- **Aviso cuando el título del archivo es el de otro capítulo.** Si el archivo trae título («SeaQuest DSV - S001E01 - La ventana del diablo») y en el buscador ese título es el de otro capítulo de la temporada (S01E03, porque el piloto doble cuenta como 1 y 2), queda como dudoso: «El título del archivo es el de S01E03 («La ventana del diablo»), no el de S01E01». Al pulsar «Identificar…», la ventana ya trae marcado ese capítulo. Solo se consulta la temporada cuando el título no cuadra, una vez por temporada.
+
+### English
+- Fixed: files in a «Specials» folder are season 0 and never treated as movies. Double episodes are written `S01E05-E06`, the form Jellyfin, Plex and Kodi read.
+- Added: when the file's episode title belongs to another episode of the season, it is marked as uncertain and “Identify…” suggests that episode.
+
 ## [1.3.5] - 2026-11-22
 
 ### Corregido

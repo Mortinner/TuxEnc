@@ -176,6 +176,10 @@ class RenameController(QObject):
                 self.w.engine.release(job.id)
         elif state == EPISODE:
             job.note = tr("id_episode", show=res.chosen.label)
+        elif state == AMBIGUOUS and res is not None and getattr(res, "suggested", None):
+            season, number, title = res.suggested
+            job.note = tr("id_other_episode", now=f"S{res.parsed.season:02}E{res.parsed.episodes[0]:02}",
+                          ep=f"S{season:02}E{number:02}", title=title)
         elif state == AMBIGUOUS:
             job.note = tr("id_ambiguous")
         elif state == NONE:
@@ -431,6 +435,9 @@ class MatchDialog(QDialog):
         p = res.parsed
         self.want_season = p.season
         self.want_eps = tuple(p.episodes)
+        sug = getattr(job.rt, "suggested", None) if job.rt is not None else None
+        if sug:                       # el título del archivo apunta a otro capítulo: se propone ese
+            self.want_season, self.want_eps = sug[0], (sug[1],)
         self.setWindowTitle(tr("match_title", name=job.name))
         self.resize(1180, 720)
         self.setMinimumSize(900, 560)

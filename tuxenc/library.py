@@ -21,7 +21,8 @@ from pathlib import Path, PurePosixPath
 
 from retitler.config import KeyStore, Settings, legacy_retitler_keys
 from retitler.parser import MediaKind, split_extension
-from retitler.pipeline import Resolution, analyze, choose, companions, prefer_file_title, search_for
+from retitler.pipeline import (Resolution, analyze, check_episode_title, choose, companions,
+                               prefer_file_title, search_for)
 from retitler.providers import ResultKind, SearchResult
 from retitler.renamer import History, PlanItem, build_plan, execute
 from retitler.search import SearchResponse, Searcher, build_searcher
@@ -107,7 +108,8 @@ class Library:
         """(estado, Resolution, subtítulos acompañantes). Usa internet."""
         res = analyze(path)
         subs = companions(Path(path))
-        res = prefer_file_title(search_for(res, self.searcher, self.memo), self.settings)
+        res = search_for(res, self.searcher, self.memo)
+        res = prefer_file_title(check_episode_title(res, self.searcher, self.memo), self.settings)
         return state_of(res), res, subs
 
     def choose(self, res: Resolution, match: SearchResult, season: int | None = None,
@@ -300,6 +302,8 @@ def state_of(res: Resolution) -> str:
         return NONE if not res.candidates else AMBIGUOUS
     if res.chosen.kind is ResultKind.SERIES and (res.parsed.season is None or not res.parsed.episodes):
         return EPISODE
+    if res.suggested:
+        return AMBIGUOUS      # el título del archivo es el de otro capítulo: se pregunta
     return OK
 
 
