@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from dataclasses import dataclass, field
 
@@ -116,13 +117,15 @@ def _kbps(value) -> int:
         return 0
 
 
-def probe(path: str, timeout: float = 60, measure_audio: bool = True) -> MediaInfo:
-    """Analiza un vídeo (solo la cabecera). Con measure_audio=False no mide el bitrate del audio
-    que no lo declara: eso lee los 2 primeros minutos del archivo y se deja para cuando se
-    vaya a convertir (ensure_audio_measured). Al añadir cientos de vídeos de un NAS, leerlos
-    enteros de entrada sobraba, sobre todo si solo se van a renombrar."""
-    cmd = [ffprobe_bin(), "-v", "error", "-hide_banner", "-print_format", "json",
-           "-show_format", "-show_streams", path]
+# Contenedores que declaran todas sus pistas en la cabecera: basta con leer 1 MB (por defecto
+# ffprobe lee hasta 5 MB, y en un NAS con miles de vídeos eso satura la red de 1 Gbps).
+LIGHT_PROBE_EXTS = {".mkv", ".mp4", ".m4v", ".mov", ".webm"}
+LIGHT_PROBE = ["-probesize", "1000000", "-analyzeduration", "1000000"]
+
+
+def _ffprobe(path: str, timeout: float, light: bool) -> dict:
+    cmd = [ffprobe_bin(), "-v", "error", "-hide_banner", *(LIGHT_PROBE if light else []),
+           "-print_format", "json", "-show_format", "-show_streams", path]
     try:
         res = subprocess.run(cmd, env=clean_env(), capture_output=True, text=True,
                              timeout=timeout, check=False)
@@ -131,9 +134,43 @@ def probe(path: str, timeout: float = 60, measure_audio: bool = True) -> MediaIn
     if res.returncode != 0:
         raise ProbeError(res.stderr.strip().splitlines()[-1] if res.stderr.strip() else "ffprobe")
     try:
-        data = json.loads(res.stdout or "{}")
+        return json.loads(res.stdout or "{}")
     except json.JSONDecodeError as exc:
         raise ProbeError(str(exc)) from exc
+
+
+def _complete(data: dict) -> bool:
+    """¿Tiene el análisis ligero todo lo que hace falta? Si no, se repite completo."""
+    streams = data.get("streams") or []
+    try:
+        if float((data.get("format") or {}).get("duration") or 0) <= 0:
+            return False
+    except (TypeError, ValueError):
+        return False
+    videos = [s for s in streams if s.get("codec_type") == "video"
+              and not (s.get("disposition") or {}).get("attached_pic")]
+    if not videos:
+        return False
+    for s in streams:
+        kind = s.get("codec_type")
+        if kind in ("video", "audio", "subtitle") and not s.get("codec_name"):
+            return False
+        if kind == "video" and s in videos and not (s.get("width") and s.get("height")):
+            return False
+        if kind == "audio" and not (s.get("channels") and s.get("sample_rate")):
+            return False
+    return True
+
+
+def probe(path: str, timeout: float = 60, measure_audio: bool = True) -> MediaInfo:
+    """Analiza un vídeo (solo la cabecera). Con measure_audio=False no mide el bitrate del audio
+    que no lo declara: eso lee los 2 primeros minutos del archivo y se deja para cuando se
+    vaya a convertir (ensure_audio_measured). Al añadir cientos de vídeos de un NAS, leerlos
+    enteros de entrada sobraba, sobre todo si solo se van a renombrar."""
+    light = os.path.splitext(path)[1].lower() in LIGHT_PROBE_EXTS
+    data = _ffprobe(path, timeout, light)
+    if light and not _complete(data):           # algo quedó a medias: análisis completo
+        data = _ffprobe(path, timeout, False)
 
     fmt = data.get("format", {})
     info = MediaInfo(path=path)

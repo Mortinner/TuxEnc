@@ -95,7 +95,13 @@ SOURCE_NAMES = {"tmdb": "TMDB", "tmdb-mx": "TMDB (español de Latinoamérica)", 
 ENGLISH_SOURCES = frozenset({"tmdb-en", "tvdb-en", "tvmaze", "omdb"})
 
 # TMDB y TVmaze devuelven «Episodio 9» / «Episode 9» cuando el episodio aún no tiene título.
-_PLACEHOLDER = re.compile(r"^\s*(?:episode|episodio|épisode|episódio|folge|episodi|capítulo|capitulo|afl\.?)\s*#?\s*\d+\s*$", re.I)
+# «Episodio 9» en varios idiomas, también con el número delante («1.Bölüm», «1. Folge») y en
+# japonés, chino y coreano («第1話», «第1集», «1화»): aún no hay título real.
+_EP_WORDS = (r"episode|episodio|épisode|episódio|episodi|episod|folge|capítulo|capitulo|capitolo|puntata|"
+             r"afl\.?|aflevering|avsnitt|jakso|epizód|epizoda|odcinek|bölüm|серия|эпизод|επεισόδιο|tập")
+_PLACEHOLDER = re.compile(
+    rf"^\s*(?:(?:{_EP_WORDS})\s*#?\s*\d+|\d+\s*\.?\s*(?:{_EP_WORDS})|第\s*\d+\s*[話话集回]|제?\s*\d+\s*화)\s*$",
+    re.I)
 
 
 def is_placeholder(title: str) -> bool:
@@ -276,15 +282,27 @@ SEASON_TTL = 2 * 3600.0
 
 
 class CachedFetch:
-    def __init__(self, fetch: Fetch, cache: JsonCache) -> None:
-        self._fetch, self._cache = fetch, cache
+    # Un «no existe» (HTTP 404) se recuerda un rato solo en memoria: en una tanda grande, una
+    # temporada que TMDB no tiene se pedía una vez por capítulo (hasta 12 veces la misma).
+    NOT_FOUND_TTL = 30 * 60.0
+
+    def __init__(self, fetch: Fetch, cache: JsonCache, clock: Callable[[], float] = time.monotonic) -> None:
+        self._fetch, self._cache, self._clock = fetch, cache, clock
+        self._missing: dict[str, float] = {}
 
     def __call__(self, url: str, headers: Mapping[str, str]) -> Any:
         short = "/season/" in url or "/episodes" in url or "Season=" in url
         hit, value = self._cache.get(url, SEASON_TTL if short else None)
         if hit:
             return value
-        value = self._fetch(url, headers)
+        seen = self._missing.get(url)
+        if seen is not None and self._clock() - seen < self.NOT_FOUND_TTL:
+            raise NotFound("No encontrado")
+        try:
+            value = self._fetch(url, headers)
+        except NotFound:
+            self._missing[url] = self._clock()
+            raise
         self._cache.set(url, value)
         return value
 
