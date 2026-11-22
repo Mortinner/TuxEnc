@@ -135,7 +135,7 @@ def test_series_without_episode_needs_episode_then_manual_pick(env):
     target, _ = lib.target(f, res, dest, "1080p", ".mkv")
     assert target.name == "Arrow (2012) - S01E02 - Honra a tu padre - [1080p].mkv"
     st, res = lib.choose(res, ARROW, 1, (2, 3))               # capítulo doble
-    assert res.parsed.episodes == (2, 3) and "S01E02-03 - Honra a tu padre & Pistoleros solitarios" in lib.relative_name(res, "1080p", ".mkv")[0]
+    assert res.parsed.episodes == (2, 3) and "S01E02-E03 - Honra a tu padre & Pistoleros solitarios" in lib.relative_name(res, "1080p", ".mkv")[0]
 
 
 def test_seasons_and_episodes_merge_providers():

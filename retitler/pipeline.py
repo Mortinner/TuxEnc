@@ -16,14 +16,14 @@ from typing import Iterable
 
 from .config import Settings
 from .formatter import NameContext, TemplateError, initial_of, render
-from .matching import normalize
+from .matching import normalize, similarity
 from .parser import (SUBTITLE_EXTS, VIDEO_EXTS, MediaKind, ParsedName, is_media_file, numbered_episode,
                      parse_path, split_extension, trailing_number)
 from .log import log
 from .providers import ENGLISH_SOURCES, SOURCE_NAMES, ProviderError, ResultKind, SearchResult
 from .search import SearchResponse, Searcher, pick_best
 
-__all__ = ["Resolution", "analyze", "choose", "collect_media", "companions", "search_for"]
+__all__ = ["Resolution", "analyze", "check_episode_title", "choose", "collect_media", "companions", "search_for"]
 
 
 @dataclass(frozen=True)
@@ -39,6 +39,8 @@ class Resolution:
     manual: bool = False                         # la coincidencia la eligió el usuario a mano
     error: str = ""                              # por qué no hay nombre (red, carpeta, no es vídeo...)
     warnings: tuple[str, ...] = ()               # avisos de los proveedores
+    # (temporada, capítulo, título) si el título que trae el archivo es el de otro capítulo (1.3.6)
+    suggested: tuple[int, int, str] | None = None
 
     def new_name(self, settings: Settings, *, resolution: str = "",
                  extension: str | None = None) -> tuple[str | None, str]:
@@ -185,6 +187,51 @@ def search_for(res: Resolution, searcher: Searcher,
     return _with_titles(_absolute_to_season(out, searcher, memo), searcher)
 
 
+# Parecido del título del archivo con otro capítulo para sospechar que el número está mal
+TITLE_MATCH = 0.85
+TITLE_MARGIN = 0.25
+
+
+def check_episode_title(res: Resolution, searcher: Searcher, memo: dict | None = None) -> Resolution:
+    """¿El título que trae el archivo es el de otro capítulo de la temporada? (1.3.6)
+
+    Caso de Marcos: «SeaQuest DSV - S001E01 - La ventana del diablo» es el S01E03 en TheTVDB, que
+    cuenta el piloto doble como capítulos 1 y 2. Renombrar por el número le ponía el título del
+    piloto. Solo se mira cuando el título del proveedor no se parece al del archivo, y solo se
+    sospecha si otro capítulo de la temporada se le parece mucho más.
+    """
+    p, m = res.parsed, res.chosen
+    if (m is None or m.kind is not ResultKind.SERIES or res.error or p.season is None
+            or len(p.episodes) != 1 or not p.episode_title):
+        return replace(res, suggested=None) if res.suggested else res
+    current = res.titles[0] if res.titles and not res.provisional else ""
+    here = similarity(p.episode_title, current) if current else 0.0
+    if here >= TITLE_MATCH:
+        return replace(res, suggested=None) if res.suggested else res
+    memo = {} if memo is None else memo
+    key = ("season-eps", m.provider, m.id, p.season)
+    with memo.setdefault(("lock",) + key, threading.Lock()):
+        eps = memo.get(key)
+        if eps is None:
+            try:
+                eps = searcher.season_episodes(m, p.season)
+            except ProviderError as exc:
+                log.warning("%s: no se pudo comprobar el título del capítulo: %s", res.path.name, exc)
+                eps = []
+            memo[key] = eps
+    best, score = None, 0.0
+    for e in eps:
+        if e.title and not e.provisional:
+            sc = similarity(p.episode_title, e.title)
+            if sc > score:
+                best, score = e, sc
+    if best is None or best.number == p.episodes[0] or score < TITLE_MATCH or score - here < TITLE_MARGIN:
+        return replace(res, suggested=None) if res.suggested else res
+    log.info("%s: el título del archivo %r es el de S%02dE%02d (%r), no el de S%02dE%02d", res.path.name,
+             p.episode_title, best.season, best.number, best.title, p.season, p.episodes[0])
+    return replace(res, suggested=(best.season, best.number, best.title))
+
+
 def prefer_file_title(res: Resolution, settings: Settings) -> Resolution:
     """Si el capítulo solo tiene título en inglés (o ninguno) y el nombre del archivo ya trae uno
     («Serie - S01E01 - La mujer alemana»), se queda el del archivo. Solo con los buscadores en español."""
@@ -211,8 +258,11 @@ def choose(res: Resolution, match: SearchResult, searcher: Searcher,
         res = replace(res, parsed=replace(res.parsed, kind=MediaKind.EPISODE, season=season,
                                           episodes=tuple(episodes), absolute=False,
                                           episode_title=res.parsed.episode_title if same else ""))
-    out = replace(res, searched=True, chosen=match, error="", manual=True)
-    return _with_titles(_absolute_to_season(out, searcher, memo), searcher)
+    out = replace(res, searched=True, chosen=match, error="", manual=True, suggested=None)
+    out = _with_titles(_absolute_to_season(out, searcher, memo), searcher)
+    if season is not None and episodes:
+        return out                     # el capítulo lo ha elegido el usuario: manda él
+    return check_episode_title(out, searcher, memo)
 
 
 def _is_video(p: Path) -> bool:
