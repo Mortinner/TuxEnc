@@ -36,7 +36,7 @@ def setup_logging(verbose: bool = False, path: Path | None = None) -> Path | Non
     path = path or log_path()
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-        handler = logging.handlers.RotatingFileHandler(path, maxBytes=1_000_000, backupCount=2, encoding="utf-8")
+        handler = logging.handlers.RotatingFileHandler(path, maxBytes=5_000_000, backupCount=2, encoding="utf-8")
         handler.setLevel(logging.DEBUG if verbose else logging.INFO)
         handler.setFormatter(fmt)
         log.addHandler(handler)

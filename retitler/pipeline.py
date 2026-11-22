@@ -130,9 +130,10 @@ def _absolute_to_season(res: Resolution, searcher: Searcher, memo: dict | None =
     total = 0
     try:
         key = ("seasons", match.provider, match.id)
-        seasons = memo.get(key)
-        if seasons is None:
-            seasons = memo[key] = [x for x in searcher.seasons(match) if x > 0]
+        with memo.setdefault(("lock",) + key, threading.Lock()):
+            seasons = memo.get(key)
+            if seasons is None:
+                seasons = memo[key] = [x for x in searcher.seasons(match) if x > 0]
         for season in sorted(seasons):
             key = ("count", match.provider, match.id, season)
             count = memo.get(key)
@@ -172,9 +173,12 @@ def search_for(res: Resolution, searcher: Searcher,
         return replace(res, searched=True, error="no es un vídeo ni un subtítulo")
     memo = {} if memo is None else memo
     key = (res.parsed.title.casefold(), res.parsed.year, res.parsed.kind)
-    response = memo.get(key)
-    if response is None:
-        response = memo[key] = searcher.search_parsed(res.parsed)
+    # Varios hilos identifican a la vez: los capítulos de la misma serie esperan a la primera
+    # búsqueda en vez de repetirla (setdefault es atómico).
+    with memo.setdefault(("lock",) + key, threading.Lock()):
+        response = memo.get(key)
+        if response is None:
+            response = memo[key] = searcher.search_parsed(res.parsed)
     out = replace(res, searched=True, candidates=tuple(response.results[:10]),
                   warnings=tuple(response.warnings), chosen=pick_best(response.results), error="", manual=False)
     log.info("%s → %s", res.path.name, f"{out.chosen.label} [{out.chosen.provider_name}]" if out.chosen else "sin coincidencia clara")

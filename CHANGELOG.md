@@ -6,6 +6,22 @@ All notable changes to TuxEnc are listed here (Spanish first, English below each
 
 ## [Sin publicar] · Unreleased
 
+## [1.3.4] - 2026-11-22
+
+### Mejorado
+- **Añadir miles de vídeos desde un NAS, bastante más rápido.** En la prueba de 3972 capítulos por SMB a 1 Gbps, el análisis y la identificación se llevaban 5 minutos de los 6 y medio:
+  - **Análisis:** ffprobe lee como mucho 1 MB de cada MKV, MP4, MOV o WebM (antes hasta 5 MB, que con miles de archivos saturaba la red). Si con eso le falta algún dato, repite el análisis completo. Además, se analizan 8 vídeos a la vez en lugar de 4.
+  - **Identificación:** se identifican 4 vídeos a la vez y, por separado de los renombrados, los capítulos de una misma serie esperan a la primera búsqueda en lugar de repetirla. En una prueba con 1000 capítulos de 40 series, de 63 s a 24 s.
+- **Una temporada que el buscador no tiene se pide una sola vez.** Antes se volvía a preguntar por cada capítulo; en la prueba, hasta 12 veces la misma.
+
+### Corregido
+- **Títulos provisionales en otros idiomas.** «1.Bölüm» (turco), «4. Folge», «Odcinek 2», «第1話», «1화»… ya cuentan como «Episodio N» sin título real. Antes, en series con el título original en otro idioma, sustituían al provisional en español.
+- **`renombrado.log` guarda más:** rota a los 5 MB en lugar de a 1 MB. Una tanda de 4000 vídeos ocupaba 2,4 MB y con una más grande se perdía el principio.
+
+### English
+- Improved: adding thousands of videos from a NAS is much faster: ffprobe reads at most 1 MB of MKV/MP4/MOV/WebM files (full analysis if anything is missing), 8 analyses at a time, and identification runs 4 at a time with one search per show. A season the provider doesn't have is requested only once.
+- Fixed: placeholder episode titles in other languages («1.Bölüm», «4. Folge», «第1話»…) are treated as placeholders. `renombrado.log` rotates at 5 MB.
+
 ## [1.3.3] - 2026-11-21
 
 ### Corregido

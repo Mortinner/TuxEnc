@@ -78,7 +78,8 @@ class MainWindow(QMainWindow):
         self.engine.cleanup = self._cleanup_failed
         self.engine.set_parallel(cfg.parallel or auto_parallel())
         self.engine.low_priority = cfg.low_priority
-        self.prober = ThreadPoolExecutor(max_workers=4, thread_name_prefix="tuxenc-probe")
+        # 8 análisis a la vez: con miles de vídeos en un NAS, casi todo el tiempo es esperar a la red
+        self.prober = ThreadPoolExecutor(max_workers=8, thread_name_prefix="tuxenc-probe")
         self.pending_probes = 0
         self._load: dict | None = None        # tanda que se está analizando / identificando (registro)
         self._order_seq = 1e9

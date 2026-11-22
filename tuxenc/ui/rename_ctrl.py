@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import itertools
+import threading
 import os
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -74,6 +75,9 @@ def same_series_targets(job: Job, prev, jobs: list[Job]) -> list[Job]:
     return out
 
 
+IDENTIFY_WORKERS = 4
+
+
 class RenameController(QObject):
     identified = Signal(int, object)     # job_id, (estado, Resolution, subtítulos) | Exception
     chosen = Signal(int, object)         # job_id, (estado, Resolution) | Exception
@@ -90,7 +94,12 @@ class RenameController(QObject):
         self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="tuxenc-rename")
         # El diálogo de identificar usa su propio hilo: no espera detrás de la cola
         self.ui_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="tuxenc-identify")
+        # Identificar va aparte y de 4 en 4 (1.3.4): con miles de vídeos, de uno en uno la
+        # identificación terminaba minutos después del análisis. Los renombrados siguen en
+        # self.pool, de uno en uno y en orden.
+        self.id_pool = ThreadPoolExecutor(max_workers=IDENTIFY_WORKERS, thread_name_prefix="tuxenc-id")
         self._tokens = itertools.count(1)
+        self._busy_lock = threading.Lock()
         self.busy = 0
         self.identified.connect(self._on_identified)
         self.rename_step.connect(self._on_rename_step)
@@ -112,15 +121,17 @@ class RenameController(QObject):
         mode = cfg.output_mode if cfg.output_mode in ("source", "folder", "library") else "source"
         return Destination(mode, cfg.output_folder, cfg.series_root, cfg.movie_root)
 
-    def _submit(self, fn, *args):
-        self.busy += 1
+    def _submit(self, fn, *args, pool=None):
+        with self._busy_lock:
+            self.busy += 1
 
         def run():
             try:
                 return fn(*args)
             finally:
-                self.busy -= 1
-        return self.pool.submit(run)
+                with self._busy_lock:
+                    self.busy -= 1
+        return (pool or self.pool).submit(run)
 
     # ------------------------------------------------------------------ identificar
     def identify(self, jobs: list[Job], force: bool = False) -> None:
@@ -132,7 +143,7 @@ class RenameController(QObject):
             if job.rt is not None and getattr(job.rt, "manual", False) and not force:
                 continue
             job.ident, job.note = PENDING, tr("id_pending")
-            self._submit(self._identify_task, job.id, job.input)
+            self._submit(self._identify_task, job.id, job.input, pool=self.id_pool)
             self.w.queue.update_job(job)
 
     def _identify_task(self, job_id: int, path: str) -> None:
@@ -232,11 +243,11 @@ class RenameController(QObject):
         prev = job.rt.chosen                       # la serie que tenía antes de corregirla
         job.hand_pick = bool(season is not None and episodes)
         job.ident, job.note = PENDING, tr("id_pending")
-        self._submit(self._choose_task, job.id, job.rt, match, season, episodes)
+        self._submit(self._choose_task, job.id, job.rt, match, season, episodes, pool=self.id_pool)
         targets = [] if not same else same_series_targets(job, prev, self.w.engine.jobs)
         for t in targets:
             t.ident, t.note = PENDING, tr("id_pending")
-            self._submit(self._choose_task, t.id, t.rt, match, None, None)
+            self._submit(self._choose_task, t.id, t.rt, match, None, None, pool=self.id_pool)
         self.w.queue.sync(self.w.engine.jobs)
 
     def _choose_task(self, job_id: int, res, match, season=None, episodes=None) -> None:
@@ -338,6 +349,7 @@ class RenameController(QObject):
     def shutdown(self) -> None:
         self.pool.shutdown(wait=False, cancel_futures=True)
         self.ui_pool.shutdown(wait=False, cancel_futures=True)
+        self.id_pool.shutdown(wait=False, cancel_futures=True)
 
 
 class MatchDialog(QDialog):
