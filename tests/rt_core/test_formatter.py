@@ -100,3 +100,11 @@ def test_from_parsed():
     assert render(DEFAULT_SERIES_TEMPLATE, ctx, p.extension) == "Breaking Bad - 1x02 - Gray Matter.mkv"
     m = parse_filename("Inception.2010.1080p.mkv")
     assert render(DEFAULT_MOVIE_TEMPLATE, NameContext.from_parsed(m), m.extension) == "Inception (2010).mkv"
+
+
+def test_dos_puntos_parecidos_se_tratan_como_dos_puntos():
+    # TMDB: «Dragon Ball Z꞉ La super batalla» (U+A789), y variantes de ancho completo (1.3.6)
+    from retitler.formatter import sanitize_component
+    for colon in ("꞉", "：", "∶", "︓", "﹕", ":"):
+        assert sanitize_component(f"Dragon Ball Z{colon} La super batalla") == "Dragon Ball Z - La super batalla"
+    assert sanitize_component("Dragon Ball Z꞉ X", windows_safe=False) == "Dragon Ball Z: X"
