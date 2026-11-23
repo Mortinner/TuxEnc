@@ -101,6 +101,9 @@ def initial_of(text: str, skip_articles: bool = True) -> str:
 _CTRL = re.compile(r"[\x00-\x1f\x7f]")
 
 
+_COLON_LOOKALIKES = re.compile("[\uA789\uFF1A\u2236\uFE13\uFE55]")
+
+
 def sanitize_component(text: str, *, windows_safe: bool = True) -> str:
     """Quita lo que no puede ir en un nombre de archivo.
 
@@ -109,6 +112,9 @@ def sanitize_component(text: str, *, windows_safe: bool = True) -> str:
     """
     s = unicodedata.normalize("NFC", text)
     s = _CTRL.sub("", s)
+    # Dos puntos «disfrazados»: TMDB escribe a veces «꞉» (U+A789) para que el título valga en
+    # Windows. Se tratan como dos puntos normales, para que todos los nombres queden iguales (1.3.6).
+    s = _COLON_LOOKALIKES.sub(":", s)
     s = s.replace("/", "-")
     if windows_safe:
         s = s.replace("\\", "-")
