@@ -63,6 +63,20 @@ def test_rename_only_into_library_with_real_resolution_and_undo(env):
     assert not (tmp / "Multimedia/Peliculas/B").exists()
 
 
+def test_log_anota_origen_y_destino_de_cada_archivo(env, caplog):
+    """1.3.6: renombrado.log dice de dónde viene y adónde va cada archivo (y al deshacer)."""
+    import logging
+    caplog.set_level(logging.INFO, logger="retitler")
+    lib, dest, down, tmp = env
+    f = down / "Babel.2006.BluRay.mkv"
+    st, res, subs = lib.identify(str(f))
+    _, moves = lib.rename_batch([(f, res, subs)], dest)
+    final = tmp / "Multimedia/Peliculas/B/Babel (2006) - [1080p].mkv"
+    assert f"Movido: {f} → {final}" in caplog.text
+    lib.undo_last()
+    assert f"Devuelto: {final} → {f}" in caplog.text
+
+
 def test_rename_never_overwrites(env):
     lib, dest, down, tmp = env
     target = tmp / "Multimedia/Peliculas/B/Babel (2006) - [1080p].mkv"

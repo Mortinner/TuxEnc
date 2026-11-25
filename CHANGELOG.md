@@ -16,10 +16,11 @@ Cambios ya hechos para la 1.3.6, que se publicará cuando haya 4 o 5.
 
 ### Añadido
 - **Aviso cuando el título del archivo es el de otro capítulo.** Si el archivo trae título («SeaQuest DSV - S001E01 - La ventana del diablo») y en el buscador ese título es el de otro capítulo de la temporada (S01E03, porque el piloto doble cuenta como 1 y 2), queda como dudoso: «El título del archivo es el de S01E03 («La ventana del diablo»), no el de S01E01». Al pulsar «Identificar…», la ventana ya trae marcado ese capítulo. Solo se consulta la temporada cuando el título no cuadra, una vez por temporada.
+- **`renombrado.log` anota cada archivo movido con su ruta de origen y la de destino** («Movido: /Descargas/Telegram/8x03 - … .mkv → /Series/Endeavour (2013)/Season 08/…»). También al deshacer («Devuelto: …») y al terminar de convertir («Convertido: … → …», más los subtítulos copiados). Así se sabe dónde acabó un archivo aunque se haya renombrado con otro nombre.
 
 ### English
 - Fixed: files in a «Specials» folder are season 0 and never treated as movies. Colon look-alikes from TMDB (such as «꞉») are treated as colons in file names. Double episodes are written `S01E05-E06`, the form Jellyfin, Plex and Kodi read. Download folders («Telegram», «Downloads»…) are no longer used as the show name, and a show name taken from the folder is only accepted automatically on a near-exact match.
-- Added: when the file's episode title belongs to another episode of the season, it is marked as uncertain and “Identify…” suggests that episode.
+- Added: when the file's episode title belongs to another episode of the season, it is marked as uncertain and “Identify…” suggests that episode. `renombrado.log` now records every moved file as source path → destination path (also on undo and after converting).
 
 ## [1.3.5] - 2026-11-22
 
