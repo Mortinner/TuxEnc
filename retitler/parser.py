@@ -40,6 +40,7 @@ class ParsedName:
     extension: str = ""
     episode_title: str = ""      # el que trae el nombre: «Serie - S01E01 - La mujer alemana»
     absolute: bool = False       # «Serie 37»: capítulo 37 contando desde el primero (sin temporada)
+    title_from_folder: bool = False  # el título no venía en el archivo: sale del nombre de la carpeta
 
     @property
     def is_multi_episode(self) -> bool:
@@ -285,6 +286,26 @@ def parse_filename(name: str) -> ParsedName:
     )
 
 
+# Carpetas que no son el nombre de ninguna serie: descargas, escritorio, carpetas de cajón…
+# Caso de Marcos (1.3.6): «Telegram/8x03 - El detective Endeavour.mkv» se buscó como «Telegram»
+# y se dio por buena la serie «Techegram» (parecido 0,82).
+_GENERIC_DIRS = frozenset({
+    "telegram", "telegram desktop", "downloads", "download", "descargas", "descarga", "mis descargas",
+    "videos", "video", "mis videos", "my videos", "movies", "peliculas", "series", "tv", "tv shows",
+    "temp", "tmp", "incoming", "complete", "completed", "completados", "completadas", "torrents",
+    "torrent", "transmission", "qbittorrent", "desktop", "escritorio", "nueva carpeta", "new folder",
+    "media", "multimedia", "varios", "misc", "unsorted", "sin clasificar", "nuevo", "nuevos", "new",
+})
+
+
+def is_generic_folder(name: str) -> bool:
+    """«Telegram», «Descargas», «Vídeos»…: carpetas que nunca son el nombre de una serie."""
+    import unicodedata
+
+    plain = "".join(c for c in unicodedata.normalize("NFKD", name) if not unicodedata.combining(c))
+    return re.sub(r"[\s._-]+", " ", plain).strip().casefold() in _GENERIC_DIRS
+
+
 def is_season_folder(name: str) -> bool:
     """«Season 01», «Temporada 2», «S03», «Specials»…"""
     return bool(_SEASON_DIR.match(name))
@@ -301,12 +322,14 @@ def parse_path(path: str | PurePath) -> ParsedName:
     parsed = parse_filename(p.name)
     season_dir = _SEASON_DIR.match(p.parent.name)
     series_dir = p.parent.parent.name if season_dir else p.parent.name
+    if is_generic_folder(series_dir):
+        series_dir = ""   # «Telegram», «Descargas»…: mejor sin título (se elige a mano) que uno inventado
 
     if parsed.kind is MediaKind.EPISODE:
         if parsed.title or not series_dir:
             return parsed
         title, year = _title_from_dirname(series_dir)
-        return _replace(parsed, title=title, year=parsed.year or year)
+        return _replace(parsed, title=title, year=parsed.year or year, title_from_folder=bool(title))
 
     if season_dir:
         stem, _ = split_extension(p.name)
@@ -321,6 +344,7 @@ def parse_path(path: str | PurePath) -> ParsedName:
                 season=_season_of(season_dir),
                 episodes=(int(m.group(1)),),
                 extension=parsed.extension,
+                title_from_folder=bool(title),
             )
         # Dentro de «Season 01» nunca es una película (1.3.5): es un capítulo que no se ha sabido
         # leer. Se busca la serie y queda «sin capítulo», para elegirlo a mano.
@@ -333,6 +357,7 @@ def parse_path(path: str | PurePath) -> ParsedName:
             season=_season_of(season_dir),
             episodes=(),
             extension=parsed.extension,
+            title_from_folder=bool(title),
         )
     return parsed
 
