@@ -211,10 +211,14 @@ class Library:
         result = execute(plan, self.history, on_progress)
         rlog.info("Renombrado: %d archivo(s) movidos (%d copiados entre discos). Plan %.1f s, "
                   "movimientos %.1f s", len(result.moves), len(copies), t1 - t0, time.monotonic() - t1)
+        _log_moves("Movido", result.moves)
         return plan, result.moves
 
     def undo_last(self):
-        return self.history.undo_last()
+        result = self.history.undo_last()
+        rlog.info("Deshacer renombrado: %d archivo(s) vuelven a su sitio", len(result.moves))
+        _log_moves("Devuelto", result.moves)
+        return result
 
     def can_undo(self) -> bool:
         return self.history.last_undoable() is not None
@@ -241,6 +245,7 @@ class Library:
             _remove_empty_dirs(out.parent, stop_at=target.parent)
             job.output = str(final)
             out = final
+        rlog.info("Convertido: %s → %s", job.input, out)
         # Subtítulos externos: copia con el nombre nuevo (los .srt de dentro ya van en el MKV)
         stem = out.name[: -len(ext)] if out.name.endswith(ext) else out.stem
         for sub in job.companions:
@@ -249,6 +254,7 @@ class Library:
             try:
                 shutil.copy2(sub, dst)
                 job.copied_subs.append(str(dst))
+                rlog.info("  Subtítulo copiado: %s → %s", sub, dst)
             except OSError as exc:
                 warnings.append(f"no se pudo copiar {sub.name}: {exc}")
         # Si el convertido ocupa más que el original, el original NUNCA se borra solo:
@@ -291,6 +297,15 @@ class Library:
         else:
             job.output = job.input
         return []
+
+
+def _log_moves(what: str, moves) -> None:
+    """Una línea por archivo en renombrado.log: ruta de origen → ruta de destino (1.3.6).
+
+    Así se puede saber dónde acabó un archivo aunque se haya renombrado con otro nombre.
+    """
+    for src, dst in moves:
+        rlog.info("  %s: %s → %s", what, src, dst)
 
 
 def state_of(res: Resolution) -> str:
