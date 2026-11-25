@@ -166,6 +166,10 @@ def _with_titles(res: Resolution, searcher: Searcher) -> Resolution:
         return replace(res, titles=(), title_sources=(), provisional=False, error=f"{match.label}: error de red ({exc})")
 
 
+# Parecido mínimo para elegir sin preguntar cuando el título sale del nombre de la carpeta
+FOLDER_MIN_SCORE = 0.9
+
+
 def search_for(res: Resolution, searcher: Searcher,
                memo: dict[tuple, SearchResponse] | None = None) -> Resolution:
     """Busca la mejor coincidencia y los títulos de episodio (usa internet)."""
@@ -181,8 +185,11 @@ def search_for(res: Resolution, searcher: Searcher,
         response = memo.get(key)
         if response is None:
             response = memo[key] = searcher.search_parsed(res.parsed)
-    out = replace(res, searched=True, candidates=tuple(response.results[:10]),
-                  warnings=tuple(response.warnings), chosen=pick_best(response.results), error="", manual=False)
+    # Si el nombre de la serie sale de la carpeta y no del archivo, solo se acepta solo si cuadra
+    # casi del todo: un parecido aproximado con el nombre de una carpeta suele ser otra serie (1.3.6).
+    min_score = FOLDER_MIN_SCORE if res.parsed.title_from_folder else 0.75
+    out = replace(res, searched=True, candidates=tuple(response.results[:10]), warnings=tuple(response.warnings),
+                  chosen=pick_best(response.results, min_score=min_score), error="", manual=False)
     log.info("%s → %s", res.path.name, f"{out.chosen.label} [{out.chosen.provider_name}]" if out.chosen else "sin coincidencia clara")
     return _with_titles(_absolute_to_season(out, searcher, memo), searcher)
 
