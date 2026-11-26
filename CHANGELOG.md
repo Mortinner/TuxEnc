@@ -4,9 +4,7 @@ Todos los cambios importantes de TuxEnc se anotan aquí. El formato sigue [Keep 
 
 All notable changes to TuxEnc are listed here (Spanish first, English below each version).
 
-## [Sin publicar] · Unreleased
-
-Cambios ya hechos para la 1.3.6, que se publicará cuando haya 4 o 5.
+## [1.3.6] - 2026-11-26
 
 ### Corregido
 - **Los especiales de la carpeta «Specials» ya no acaban como películas.** «Specials» y «Especiales» cuentan como temporada 0, y lo que hay dentro nunca se toma por una película. Caso real: «Dragon Ball Z (1989) - S00E05x06 - … El plan para destruir a los Superguerreros (OVA)» se renombró como la película *Dragon Ball Z: Dead Zone* (1989).
