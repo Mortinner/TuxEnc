@@ -194,7 +194,8 @@ class MainWindow(QMainWindow):
         mm = QMenu(self.menu_btn)
         for tab, icon, key in (("conversion", "🎞", "tab_conversion"), ("rename", "🏷", "tab_rename"),
                                ("engines", "🔎", "tab_engines"), ("presets", "★", "tab_presets"),
-                               ("prefs", "🔧", "tab_prefs"), ("about", "ℹ", "tab_about")):
+                               ("prefs", "🔧", "tab_prefs"), ("history", "🕘", "tab_history"),
+                               ("about", "ℹ", "tab_about")):
             if tab == "prefs":
                 mm.addSeparator()
             mm.addAction(f"{icon}  " + tr(key) + "…", lambda t=tab: self.open_settings(t))
@@ -594,13 +595,20 @@ class MainWindow(QMainWindow):
         return default_output(job, st, folder, self.engine.reserved_outputs(job.id))
 
     def _post_process(self, job: Job) -> None:
-        """Hilo del trabajo: nombre final exacto, subtítulos externos y original (si se renombra)."""
-        if not job.rename or job.rt is None or job.dest is None:
-            return
-        warns = self.rename.lib.finalize_converted(job, job.rt, job.dest, job.settings.container,
-                                                   self.cfg.original_after)
-        if warns:
-            job.warning = "; ".join(warns)
+        """Hilo del trabajo: nombre final exacto, subtítulos externos y original (si se renombra).
+
+        Al final, la conversión queda apuntada en el historial (pestaña «Historial»).
+        """
+        renamed = bool(job.rename and job.rt is not None and job.dest is not None)
+        if renamed:
+            warns = self.rename.lib.finalize_converted(job, job.rt, job.dest, job.settings.container,
+                                                       self.cfg.original_after)
+            if warns:
+                job.warning = "; ".join(warns)
+        from ..activity import record_conversion
+        trashed = renamed and self.cfg.original_after == "trash" and not job.bigger
+        record_conversion(job.input, job.output, renamed=renamed, original="trash" if trashed else "",
+                          subs=len(job.copied_subs))
 
     def _decide_bigger(self, job: Job, action: str) -> None:
         """El convertido ocupa más que el original: el usuario elige con cuál quedarse."""

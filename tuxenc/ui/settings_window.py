@@ -1,4 +1,5 @@
-"""Ventana única de ajustes: Conversión · Renombrado · Buscadores · Presets · Preferencias · Acerca de.
+"""Ventana única de ajustes: Conversión · Renombrado · Buscadores · Presets · Preferencias · Historial ·
+Acerca de.
 
 Se crea una sola vez (la conserva la ventana principal) y se abre desde el menú ☰ en la pestaña
 pedida. Todo se puede configurar siempre, estén activados o no la conversión y el renombrado.
@@ -18,7 +19,7 @@ from ..paths import LOG_DIR
 from ..presets import load_user_presets, save_user_presets
 from .dialogs import LogDialog, _icon_label, _scrolled, _section
 
-TABS = ("conversion", "rename", "engines", "presets", "prefs", "about")
+TABS = ("conversion", "rename", "engines", "presets", "prefs", "history", "about")
 AUTHOR = "Mortinner"
 CONTACT = "mortinner@gmail.com"
 
@@ -101,6 +102,12 @@ class SettingsWindow(QDialog):
         self.tabs.addTab(self._build_presets(), "★  " + tr("tab_presets"))
         # 🔧 Preferencias
         self.tabs.addTab(_scrolled(self._build_prefs()), "🔧  " + tr("tab_prefs"))
+        # 🕘 Historial: lo que se ha renombrado y convertido (se carga al abrir la pestaña)
+        from .history_view import HistoryView
+        self.history = HistoryView()
+        self.tabs.addTab(self.history, "🕘  " + tr("tab_history"))
+        self.tabs.currentChanged.connect(
+            lambda i: self.history.reload() if self.tabs.widget(i) is self.history else None)
         # ℹ Acerca de
         self.tabs.addTab(_scrolled(self._build_about()), "ℹ  " + tr("tab_about"))
 
@@ -128,7 +135,10 @@ class SettingsWindow(QDialog):
         self.lang.setCurrentIndex(max(0, self.lang.findData(self.cfg.ui_lang)))
         self.lang.blockSignals(False)
         self.lang_note.setVisible(False)
-        self.tabs.setCurrentIndex(TABS.index(tab) if tab in TABS else 0)
+        index = TABS.index(tab) if tab in TABS else 0
+        if index == self.tabs.currentIndex() and tab == "history":
+            self.history.reload()          # ya estaba en esa pestaña: no salta currentChanged
+        self.tabs.setCurrentIndex(index)
         self.exec()
 
     @property
