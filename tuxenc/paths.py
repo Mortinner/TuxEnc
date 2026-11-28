@@ -50,6 +50,7 @@ def _find_bin(name: str) -> str:
     if ad:
         candidates.append(ad / "usr" / "ffmpeg" / "bin" / name)
     candidates.append(PKG_DIR.parent / "ffmpeg" / "bin" / name)
+    candidates.append(PKG_DIR.parent.parent / "ffmpeg" / "bin" / name)   # AppImage extraído (paquete)
     for c in candidates:
         if c.is_file() and os.access(c, os.X_OK):
             return str(c)

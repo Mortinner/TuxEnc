@@ -9,7 +9,7 @@ import subprocess
 import sys
 import time
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QIcon
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import QApplication, QMessageBox
@@ -44,7 +44,27 @@ def _make_app() -> QApplication:
     return app
 
 
+def ask_remove_appimage_copy(parent=None) -> bool:
+    """Instalado como paquete y con la copia AppImage de antes integrada: ofrece quitarla."""
+    box = QMessageBox(QMessageBox.Question, APP_NAME, tr("remove_appimage_q"), parent=parent)
+    box.setTextFormat(Qt.RichText)
+    yes = box.addButton(tr("remove_appimage_copy"), QMessageBox.AcceptRole)
+    box.addButton(tr("cancel"), QMessageBox.RejectRole)
+    box.exec()
+    if box.clickedButton() is not yes:
+        return False
+    integration.remove_appimage_copy()
+    QMessageBox.information(parent, APP_NAME, tr("remove_appimage_done"))
+    return True
+
+
 def run_uninstall(app: QApplication) -> int:
+    pm = integration.packaged()
+    if pm:                                        # lo desinstala el gestor de paquetes
+        box = QMessageBox(QMessageBox.Information, tr("uninstall_title"), tr("uninstall_pkg", pm=pm))
+        box.setTextFormat(Qt.RichText)
+        box.exec()
+        return 0
     box = QMessageBox(QMessageBox.Question, tr("uninstall_title"), tr("uninstall_q"))
     box.setIconPixmap(QIcon(str(ASSETS_DIR / "tuxenc-256.png")).pixmap(72, 72))
     yes = box.addButton(tr("uninstall_yes"), QMessageBox.DestructiveRole)
@@ -248,6 +268,12 @@ def main() -> int:
 
     server.newConnection.connect(on_conn)
     win.show()
+    if integration.packaged() and integration.is_integrated() and not cfg.appimage_copy_asked:
+        def _offer_cleanup():
+            cfg.appimage_copy_asked = True        # se pregunta una vez; luego queda en Preferencias
+            cfg.save()
+            ask_remove_appimage_copy(win)
+        QTimer.singleShot(600, _offer_cleanup)
     if files:
         QTimer.singleShot(200, lambda: win.add_paths(files))
     just = os.environ.pop(JUST_INSTALLED, None) or (f"self:{self_updated}" if self_updated else None)

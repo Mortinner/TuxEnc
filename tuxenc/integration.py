@@ -11,7 +11,7 @@ import shutil
 from pathlib import Path
 
 from . import APP_ID, APP_NAME, VERSION
-from .paths import (ASSETS_DIR, CACHE_DIR, CONFIG_DIR, DATA_DIR, DATA_HOME, STATE_DIR,
+from .paths import (ASSETS_DIR, CACHE_DIR, CONFIG_DIR, DATA_DIR, DATA_HOME, PKG_DIR, STATE_DIR,
                     appimage_path, desktop_dir, run_quiet)
 
 INSTALLED_APPIMAGE = DATA_DIR / f"{APP_NAME}.AppImage"
@@ -19,10 +19,26 @@ MANIFEST = DATA_DIR / "manifest.json"
 APPS_DIR = DATA_HOME / "applications"
 ICONS_DIR = DATA_HOME / "icons" / "hicolor"
 ICON_SIZES = (16, 24, 32, 48, 64, 128, 256, 512)
+# El lanzador de un paquete del sistema (AUR: tuxenc-bin) pone aquí el gestor, p. ej. «pacman»
+PACKAGED_ENV = "TUXENC_PACKAGED"
 
 
 def running_from_appimage() -> bool:
     return appimage_path() is not None
+
+
+def packaged() -> str:
+    """Gestor de paquetes si TuxEnc está instalado como paquete del sistema (p. ej. «pacman»), o "".
+
+    Instalado así, lo actualiza y lo desinstala el gestor: TuxEnc no se actualiza solo, no se
+    integra en la carpeta del usuario y el menú y los iconos los pone el paquete.
+    """
+    value = os.environ.get(PACKAGED_ENV, "").strip()
+    if value:
+        return value
+    if appimage_path() is None and str(PKG_DIR).startswith(("/opt/", "/usr/")):
+        return "system"
+    return ""
 
 
 def is_integrated() -> bool:
@@ -216,6 +232,46 @@ def finish_self_update() -> str:
         return ""
     integrate(desktop_shortcut=had_desktop_shortcut())
     return old
+
+
+def remove_appimage_copy() -> list[str]:
+    """Quita la copia AppImage integrada (programa, menú, iconos y acceso directo a esa copia).
+
+    Para cuando TuxEnc pasa a instalarse como paquete: la entrada del menú del usuario taparía la
+    del paquete y abriría el AppImage viejo. Los ajustes, el registro y las claves se quedan.
+    """
+    removed: list[str] = []
+    files: set[str] = set()
+    try:
+        files.update(json.loads(MANIFEST.read_text(encoding="utf-8")).get("files", []))
+    except (OSError, ValueError, AttributeError):
+        pass
+    files.add(str(APPS_DIR / f"{APP_ID}.desktop"))
+    files.add(str(APPS_DIR / f"{APP_ID}-uninstall.desktop"))
+    for size in ICON_SIZES:
+        files.add(str(ICONS_DIR / f"{size}x{size}" / "apps" / f"{APP_ID}.png"))
+    files.add(str(ICONS_DIR / "scalable" / "apps" / f"{APP_ID}.svg"))
+    ddir = desktop_dir()
+    if ddir:
+        shortcut = ddir / f"{APP_ID}.desktop"
+        try:
+            if str(INSTALLED_APPIMAGE) in shortcut.read_text(encoding="utf-8"):
+                files.add(str(shortcut))      # solo el que abre la copia AppImage
+        except OSError:
+            pass
+    files.update(str(DATA_DIR / n) for n in (f"{APP_NAME}.AppImage", f"{APP_NAME}-anterior.AppImage",
+                                              "anterior.json", "manifest.json"))
+    for f in sorted(files):
+        p = Path(f)
+        if p.is_file() or p.is_symlink():
+            try:
+                p.unlink()
+                removed.append(f)
+            except OSError:
+                pass
+    shutil.rmtree(DATA_DIR / ".actualizacion", ignore_errors=True)
+    _refresh_caches()
+    return removed
 
 
 def uninstall() -> list[str]:
