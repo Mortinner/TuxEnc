@@ -17,4 +17,4 @@ APP_NAME = "TuxEnc"
 APP_ID = "tuxenc"
 # Versionado semántico (MAYOR.MENOR.PARCHE). Los cambios de cada versión, en CHANGELOG.md.
 # Las compilaciones internas de prueba llevan «-dev.N» (p. ej. «1.1.0-dev.3»).
-VERSION = "1.3.7-dev.3"
+VERSION = "1.3.7"
