@@ -299,6 +299,14 @@ class SettingsWindow(QDialog):
 
     def _refresh_integration(self) -> None:
         from .. import integration as api
+        pm = api.packaged()
+        if pm:
+            old_copy = api.is_integrated()
+            self.int_label.setText(tr("integrated_pkg", pm=pm) + ("\n" + tr("integrated_pkg_old") if old_copy else ""))
+            self.int_btn.setText(tr("remove_appimage_copy"))
+            self.int_btn.setVisible(old_copy)
+            self.shortcut_btn.setVisible(False)
+            return
         if not api.running_from_appimage():
             self.int_label.setText(tr("integrated_dev"))
             self.int_btn.setVisible(False)
@@ -317,6 +325,11 @@ class SettingsWindow(QDialog):
 
     def _integrate(self) -> None:
         from .. import integration as api
+        if api.packaged():
+            from ..app import ask_remove_appimage_copy
+            ask_remove_appimage_copy(self)
+            self._refresh_integration()
+            return
         update, old = api.is_integrated(), api.installed_version()
         try:
             api.integrate(True)
@@ -354,6 +367,13 @@ class SettingsWindow(QDialog):
             text = tr("upd_uptodate", v=VERSION) + " " + tr("upd_last_check", when=when)
         else:
             text = tr("upd_never")
+        from ..integration import packaged
+        pm = packaged()
+        if pm:                                     # lo actualiza el gestor de paquetes, no TuxEnc
+            self.upd_label.setText(tr("upd_packaged", pm=pm))
+            for w in (self.upd_auto, self.upd_check_btn, self.upd_view_btn, self.upd_back_btn):
+                w.setVisible(False)
+            return
         if not api.can_self_update():
             text += "\n" + tr("upd_dev_note")
         self.upd_label.setText(text)
@@ -412,7 +432,9 @@ class SettingsWindow(QDialog):
         from PySide6.QtCore import qVersion
         from .. import integration
         from ..paths import appimage_path
-        if integration.running_installed_copy():
+        if integration.packaged():
+            runtime = tr("sys_rt_package", pm=integration.packaged())
+        elif integration.running_installed_copy():
             runtime = tr("sys_rt_installed")
         elif appimage_path() is not None:
             runtime = tr("sys_rt_loose")

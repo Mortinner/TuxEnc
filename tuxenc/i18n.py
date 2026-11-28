@@ -568,6 +568,23 @@ STRINGS: dict[str, tuple[str, str]] = {
     "integrated_yes": ("TuxEnc está en el menú de aplicaciones.\nPara desinstalarlo usa «Desinstalar TuxEnc» en el menú.",
                        "TuxEnc is in the applications menu.\nTo uninstall it use “Uninstall TuxEnc” in the menu."),
     "integrated_no": ("TuxEnc no está integrado en el menú.", "TuxEnc is not in the applications menu."),
+    "integrated_pkg": ("TuxEnc está instalado como paquete del sistema ({pm}). El menú y los iconos los pone el paquete; para desinstalarlo, usa el gestor de paquetes.",
+                       "TuxEnc is installed as a system package ({pm}). The package provides the menu entry and icons; uninstall it with the package manager."),
+    "integrated_pkg_old": ("También queda la copia AppImage que se integró antes. Su entrada del menú tapa la del paquete y abre la versión vieja.",
+                           "The AppImage copy integrated earlier is still there. Its menu entry hides the package's and opens the old version."),
+    "remove_appimage_copy": ("Quitar la copia AppImage", "Remove the AppImage copy"),
+    "remove_appimage_q": ("<b>¿Quitar la copia AppImage de TuxEnc?</b><br><br>TuxEnc ya está instalado como paquete del sistema, "
+                          "pero sigue la copia AppImage que se integró antes, y el menú puede abrir esa en lugar de la del paquete.<br><br>"
+                          "Se quitan el programa AppImage, sus entradas del menú, sus iconos y su acceso directo. "
+                          "Tus ajustes, presets, claves e historial de renombrado se quedan.",
+                          "<b>Remove the TuxEnc AppImage copy?</b><br><br>TuxEnc is now installed as a system package, "
+                          "but the AppImage copy integrated earlier is still there, and the menu may open it instead of the package.<br><br>"
+                          "The AppImage program, its menu entries, its icons and its desktop shortcut are removed. "
+                          "Your settings, presets, keys and rename history are kept."),
+    "remove_appimage_done": ("Copia AppImage quitada. El menú ya abre el TuxEnc del paquete.",
+                             "AppImage copy removed. The menu now opens the packaged TuxEnc."),
+    "uninstall_pkg": ("TuxEnc está instalado como paquete del sistema ({pm}). Desinstálalo con el gestor de paquetes, por ejemplo:<br><br><code>sudo pacman -R tuxenc-bin</code>",
+                      "TuxEnc is installed as a system package ({pm}). Uninstall it with the package manager, for example:<br><br><code>sudo pacman -R tuxenc-bin</code>"),
     "integrated_dev": ("Integración disponible solo al ejecutar el AppImage.",
                        "Integration is only available when running the AppImage."),
     "integrate_now": ("Integrar en el sistema", "Integrate into the system"),
@@ -622,6 +639,7 @@ STRINGS: dict[str, tuple[str, str]] = {
     "sys_rt_installed": ("AppImage (integrado en el sistema)", "AppImage (integrated into the system)"),
     "sys_rt_loose": ("AppImage (sin integrar)", "AppImage (not integrated)"),
     "sys_rt_source": ("Código fuente (desarrollo)", "Source code (development)"),
+    "sys_rt_package": ("Paquete del sistema ({pm})", "System package ({pm})"),
     "sys_commit": ("Commit", "Commit hash"),
     "sys_built": ("Fecha de compilación", "Build date"),
     "sys_hw": ("Aceleración por hardware incluida", "Built with support for"),
@@ -811,6 +829,8 @@ STRINGS: dict[str, tuple[str, str]] = {
     "upd_found_short": ("Hay una versión nueva: la {v}.", "A new version is available: {v}."),
     "upd_last_check": ("Última comprobación: {when}.", "Last check: {when}."),
     "upd_never": ("Todavía no se ha comprobado si hay versiones nuevas.", "Not checked for new versions yet."),
+    "upd_packaged": ("Instalado como paquete del sistema ({pm}): se actualiza con el resto del sistema (por ejemplo, con «paru -Syu»), no desde TuxEnc.",
+                     "Installed as a system package ({pm}): it is updated with the rest of the system (for example with “paru -Syu”), not from TuxEnc."),
     "upd_dev_note": ("Se actualiza sola la copia integrada en el sistema; esta solo puede avisarte.",
                      "Only the copy integrated into the system updates itself; this one can only notify you."),
     "upd_rollback": ("Volver a la {v}", "Go back to {v}"),

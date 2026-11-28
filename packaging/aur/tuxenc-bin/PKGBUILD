@@ -1,0 +1,53 @@
+# Maintainer: Mortinner <mortinner@gmail.com>
+#
+# TuxEnc desde la Release oficial de GitHub. El AppImage se extrae en /opt/tuxenc y se ejecuta
+# sin FUSE. Lo actualiza el gestor de paquetes: con TUXENC_PACKAGED, TuxEnc no se actualiza solo
+# ni se integra en la carpeta del usuario.
+
+pkgname=tuxenc-bin
+pkgver=1.3.6
+pkgrel=1
+pkgdesc="Video transcoder like HandBrake: several conversions at once, with renaming for Jellyfin, Plex and Kodi"
+arch=('x86_64')
+url="https://github.com/Mortinner/TuxEnc"
+license=('GPL-3.0-or-later')
+depends=('glibc' 'gcc-libs' 'zlib' 'zstd' 'brotli' 'libxcrypt' 'krb5'
+         'libglvnd' 'libx11' 'libxcb' 'libxkbcommon' 'wayland'
+         'fontconfig' 'freetype2' 'harfbuzz' 'dbus' 'glib2' 'hicolor-icon-theme')
+optdepends=('xdg-desktop-portal: native file dialogs of the desktop'
+            'gtk3: GTK look for Qt dialogs')
+provides=('tuxenc')
+conflicts=('tuxenc')
+options=('!strip' '!debug')
+source=("$url/releases/download/v$pkgver/TuxEnc-$pkgver-linux-x86_64.zip"
+        "tuxenc.sh")
+sha256sums=('317738f95b995632ad6f58a0037f7c34011e6b07b4945d8c1d48edd613e09f19'
+            '04ffa93d5e5c85192aa4ec21c9eff27638d8354b6f140cd1ba0919539cf1658f')
+
+prepare() {
+  chmod +x "TuxEnc-$pkgver/TuxEnc-$pkgver-x86_64.AppImage"
+  rm -rf squashfs-root
+  "./TuxEnc-$pkgver/TuxEnc-$pkgver-x86_64.AppImage" --appimage-extract >/dev/null
+}
+
+package() {
+  install -d "$pkgdir/opt/tuxenc"
+  cp -a squashfs-root/. "$pkgdir/opt/tuxenc/"
+  chmod -R u+rwX,go+rX,go-w "$pkgdir/opt/tuxenc"
+
+  install -Dm755 tuxenc.sh "$pkgdir/usr/bin/tuxenc"
+  install -Dm644 squashfs-root/tuxenc.desktop "$pkgdir/usr/share/applications/tuxenc.desktop"
+  install -Dm644 squashfs-root/usr/share/metainfo/io.github.tuxenc.appdata.xml \
+    "$pkgdir/usr/share/metainfo/io.github.tuxenc.appdata.xml"
+
+  local assets=squashfs-root/usr/app/tuxenc/assets size
+  for size in 16 24 32 48 64 128 256 512; do
+    install -Dm644 "$assets/tuxenc-$size.png" \
+      "$pkgdir/usr/share/icons/hicolor/${size}x${size}/apps/tuxenc.png"
+  done
+  install -Dm644 "$assets/tuxenc.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/tuxenc.svg"
+
+  install -Dm644 "TuxEnc-$pkgver/LICENSE.txt" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 squashfs-root/LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE.ffmpeg"
+  install -Dm644 "TuxEnc-$pkgver/README.md" "TuxEnc-$pkgver/CHANGELOG.md" -t "$pkgdir/usr/share/doc/tuxenc/"
+}
