@@ -4,9 +4,7 @@ Todos los cambios importantes de TuxEnc se anotan aquí. El formato sigue [Keep 
 
 All notable changes to TuxEnc are listed here (Spanish first, English below each version).
 
-## [Sin publicar] · Unreleased
-
-Cambios ya hechos para la 1.3.7, que se publicará cuando haya 4 o 5.
+## [1.3.7] - 2026-11-28
 
 ### Añadido
 - **Modo paquete del sistema y PKGBUILD de AUR (`tuxenc-bin`).** El paquete extrae el AppImage en `/opt/tuxenc` (sin FUSE) y su lanzador avisa a TuxEnc de que lo instaló el gestor de paquetes. Así, TuxEnc no se actualiza solo ni se integra en la carpeta del usuario, y Preferencias dice que se actualiza con el sistema («paru -Syu»). Si queda la copia AppImage integrada de antes, ofrece quitarla, porque su entrada del menú taparía la del paquete; los ajustes se quedan. «Desinstalar» remite a `pacman -R tuxenc-bin`. El PKGBUILD y cómo publicarlo están en `packaging/aur/`.
