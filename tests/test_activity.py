@@ -42,8 +42,47 @@ def test_archivo_roto_no_rompe_nada(tmp_path):
 
 def test_se_recorta_al_crecer(tmp_path, monkeypatch):
     act = tmp_path / "actividad.jsonl"
-    monkeypatch.setattr(activity, "MAX_LINES", 10)
-    for i in range(25):
+    monkeypatch.setattr(activity, "MAX_BYTES", 2000)
+    for i in range(60):
         activity.record_conversion(f"/a/{i}.mkv", f"/b/{i}.mkv", renamed=False, path=act)
     lines = act.read_text().splitlines()
-    assert len(lines) <= 10 and json.loads(lines[-1])["src"] == "/a/24.mkv"
+    assert act.stat().st_size <= 2000 and json.loads(lines[-1])["src"] == "/a/59.mkv"
+    assert all(json.loads(line) for line in lines)          # ninguna línea cortada
+
+
+def test_lineas_al_reves_con_bloques_pequenos(tmp_path):
+    f = tmp_path / "x.jsonl"
+    lines = ["a" * 5, "b" * 300, "", "c", "d" * 70]
+    f.write_text("\n".join(lines) + "\n")
+    assert list(activity._reverse_lines(f, chunk=16)) == ["d" * 70, "c", "b" * 300, "a" * 5]
+
+
+def _big_history(path, batches, per_batch):
+    with open(path, "w") as fh:
+        for b in range(batches):
+            moves = [[f"/d/{b}-{i}.mkv", f"/s/Serie/Season 01/Serie - S01E{i:02d} - [1080p].mkv"]
+                     for i in range(per_batch)]
+            fh.write(json.dumps({"id": f"id{b}", "time": f"2026-01-01T00:00:{b % 60:02d}+00:00"
+                                 if b < 60 else f"2027-{1 + b % 12:02d}-01T00:00:00+00:00",
+                                 "moves": moves, "created_dirs": []}) + "\n")
+
+
+def test_paginas_de_20(tmp_path):
+    h = tmp_path / "history.jsonl"
+    _big_history(h, 3, 15)                       # 45 vídeos
+    act = tmp_path / "a.jsonl"
+    p0, more0 = activity.page(0, history_path=h, path=act)
+    p1, more1 = activity.page(1, history_path=h, path=act)
+    p2, more2 = activity.page(2, history_path=h, path=act)
+    assert (len(p0), more0, len(p1), more1, len(p2), more2) == (20, True, 20, True, 5, False)
+    assert {e.src for e in p0}.isdisjoint({e.src for e in p1})
+
+
+def test_primera_pagina_rapida_con_anos_de_historial(tmp_path):
+    import time
+    h = tmp_path / "history.jsonl"
+    _big_history(h, 3000, 40)                    # 120 000 vídeos renombrados, unos 20 MB
+    t = time.perf_counter()
+    first, more = activity.page(0, history_path=h, path=tmp_path / "a.jsonl")
+    assert len(first) == 20 and more
+    assert time.perf_counter() - t < 0.5, "la primera página no debe leer todo el archivo"

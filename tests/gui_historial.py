@@ -77,6 +77,43 @@ opened_dirs = []
 hv._open = lambda folder: opened_dirs.append(folder)
 cards[2].mouseDoubleClickEvent(None)
 assert opened_dirs == [lib], opened_dirs
+# Paginación: 20 por página, ‹ más recientes / más antiguos ›
+v = dlg.history
+assert v.newer_btn.isHidden() and v.older_btn.isHidden()       # con 3 no hace falta paginar
+with open(h.path, "a") as fh:
+    for b in range(3):
+        moves = [[str(T / f"Descargas/{b}-{i}.mkv"), str(T / f"Series/S/Season 01/S - S01E{i:02d} - [1080p].mkv")]
+                 for i in range(15)]
+        fh.write(json.dumps({"id": f"p{b}", "time": f"2026-11-27T1{b}:00:00+00:00", "moves": moves,
+                             "created_dirs": []}) + "\n")
+v.reload()
+pump(0.2)
+n_cards = lambda: len(v.box.findChildren(hv.HistoryCard))  # noqa: E731
+assert n_cards() == 20 and not v.newer_btn.isEnabled() and v.older_btn.isEnabled(), v.page_lbl.text()
+assert v.page_lbl.text() == tr("hist_page", page=1, a=1, b=20)
+dlg.show(); pump(0.4); dlg.grab().save(str(T / f"{lang}-historial-paginas.png"))
+v.older_btn.click(); pump(0.2)
+assert n_cards() == 20 and v.newer_btn.isEnabled() and v.older_btn.isEnabled()
+v.older_btn.click(); pump(0.2)
+assert n_cards() == 8 and not v.older_btn.isEnabled()                # 45 + 3 = 48 → 20 + 20 + 8
+assert v.page_lbl.text() == tr("hist_page", page=3, a=41, b=48)
+v.newer_btn.click(); pump(0.2)
+assert v.page == 1 and n_cards() == 20
+print("paginación: OK")
+
+# Años de uso: la primera página no lee todo el historial
+with open(h.path, "w") as fh:
+    for b in range(3000):
+        moves = [[f"/d/{b}-{i}.mkv", f"/s/S/Season 01/S - S01E{i:02d}.mkv"] for i in range(40)]
+        fh.write(json.dumps({"id": f"y{b}", "time": "2026-01-01T00:00:00+00:00", "moves": moves,
+                             "created_dirs": []}) + "\n")
+t0 = time.perf_counter()
+v.reload()
+pump(0.1)
+print(f"120 000 vídeos en el historial: primera página en {time.perf_counter() - t0:.2f} s")
+assert time.perf_counter() - t0 < 2 and n_cards() == 20
+dlg.hide()
+
 # Vacío
 h.path.unlink()
 activity.ACTIVITY_FILE.unlink()

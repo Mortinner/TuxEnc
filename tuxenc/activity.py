@@ -10,11 +10,14 @@ salió, adónde fue y qué se hizo.
 """
 from __future__ import annotations
 
+import heapq
 import json
 import os
 import threading
+from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from itertools import islice
 from pathlib import Path
 
 from retitler.parser import SUBTITLE_EXTS
@@ -23,7 +26,7 @@ from retitler.renamer import History
 from .paths import STATE_DIR
 
 ACTIVITY_FILE = STATE_DIR / "actividad.jsonl"
-MAX_LINES = 3000                 # al pasar de aquí se recorta a la mitad (lo más reciente)
+MAX_BYTES = 8 << 20              # unos 30 000 vídeos convertidos; al pasar se queda la mitad más reciente
 _lock = threading.Lock()
 
 
@@ -60,14 +63,19 @@ def record_conversion(src: str, dst: str, *, renamed: bool, original: str = "",
 
 
 def _trim(path: Path) -> None:
+    """Solo mira el tamaño: no lee el archivo salvo cuando hay que recortarlo."""
     try:
-        lines = path.read_text(encoding="utf-8").splitlines()
+        if path.stat().st_size <= MAX_BYTES:
+            return
+        with open(path, "rb") as fh:
+            fh.seek(-(MAX_BYTES // 2), os.SEEK_END)
+            tail = fh.read()
     except OSError:
         return
-    if len(lines) > MAX_LINES:
-        tmp = path.with_suffix(".tmp")
-        tmp.write_text("\n".join(lines[-MAX_LINES // 2:]) + "\n", encoding="utf-8")
-        os.replace(tmp, path)
+    tail = tail[tail.find(b"\n") + 1:]          # sin la primera línea, que puede estar cortada
+    tmp = path.with_suffix(".tmp")
+    tmp.write_bytes(tail)
+    os.replace(tmp, path)
 
 
 def _when(text: str) -> datetime | None:
@@ -78,16 +86,56 @@ def _when(text: str) -> datetime | None:
     return t if t.tzinfo else t.replace(tzinfo=timezone.utc)
 
 
-def _renames(history: History) -> list[Entry]:
-    """Una tarjeta por vídeo de cada lote; los subtítulos se cuentan en la de su vídeo."""
-    out: list[Entry] = []
-    for batch in history.entries():
-        when = _when(batch.get("time", ""))
-        if when is None:
+def _reverse_lines(path: Path, chunk: int = 1 << 16) -> Iterator[str]:
+    """Líneas de un archivo de la última a la primera, leyendo solo lo necesario.
+
+    Así la primera página del historial cuesta lo mismo con un mes de uso que con cinco años.
+    """
+    try:
+        fh = open(path, "rb")
+    except OSError:
+        return
+    with fh:
+        fh.seek(0, os.SEEK_END)
+        pos = fh.tell()
+        rest = b""
+        while pos > 0:
+            step = min(chunk, pos)
+            pos -= step
+            fh.seek(pos)
+            block = fh.read(step) + rest
+            lines = block.split(b"\n")
+            rest = lines.pop(0)          # puede ser el final de una línea más larga: espera al bloque anterior
+            for raw in reversed(lines):
+                if raw.strip():
+                    yield raw.decode("utf-8", "replace")
+        if rest.strip():
+            yield rest.decode("utf-8", "replace")
+
+
+def _iter_renames(path: Path) -> Iterator[Entry]:
+    """Lotes de renombrado, del más nuevo al más viejo; una tarjeta por vídeo.
+
+    Las marcas de «deshecho» van después de su lote en el archivo, así que al leer al revés
+    se ven antes que el lote.
+    """
+    undone: set[str] = set()
+    for line in _reverse_lines(path):
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(row, dict) or not isinstance(row.get("id"), str):
+            continue
+        if "undone" in row:
+            undone.add(row["id"])
+            continue
+        when = _when(row.get("time", ""))
+        if when is None or not isinstance(row.get("moves"), list):
             continue
         videos: list[Entry] = []
         subs: list[str] = []
-        for move in batch.get("moves", []):
+        for move in row["moves"]:
             try:
                 src, dst = str(move[0]), str(move[1])
             except (TypeError, IndexError):
@@ -95,36 +143,41 @@ def _renames(history: History) -> list[Entry]:
             if Path(dst).suffix.lower() in SUBTITLE_EXTS:
                 subs.append(dst)
             else:
-                videos.append(Entry(when, "rename", src, dst, undone="undone" in batch))
+                videos.append(Entry(when, "rename", src, dst, undone=row["id"] in undone))
         for v in videos:        # «Peli (2000) - [1080p].es.srt» va con «Peli (2000) - [1080p].mkv»
             stem = Path(v.dst).with_suffix("").name
             v.subs = sum(1 for s in subs if Path(s).parent == Path(v.dst).parent
                          and Path(s).name.startswith(stem))
-        out.extend(videos)
-    return out
+        yield from videos
 
 
-def _conversions(path: Path) -> list[Entry]:
-    out: list[Entry] = []
-    try:
-        lines = path.read_text(encoding="utf-8").splitlines()
-    except OSError:
-        return out
-    for line in lines:
+def _iter_conversions(path: Path) -> Iterator[Entry]:
+    for line in _reverse_lines(path):
         try:
             row = json.loads(line)
             when = _when(row["time"])
             if when is None:
                 continue
-            out.append(Entry(when, str(row.get("kind", "convert")), str(row["src"]), str(row["dst"]),
-                             subs=int(row.get("subs", 0)), original=str(row.get("original", ""))))
+            yield Entry(when, str(row.get("kind", "convert")), str(row["src"]), str(row["dst"]),
+                        subs=int(row.get("subs", 0)), original=str(row.get("original", "")))
         except (ValueError, KeyError, TypeError):
             continue
-    return out
+
+
+def iter_entries(history_path: Path | None = None, path: Path | None = None) -> Iterator[Entry]:
+    """Todo el historial, lo más reciente primero, leído a medida que se pide."""
+    return heapq.merge(_iter_renames(history_path or History().path), _iter_conversions(path or ACTIVITY_FILE),
+                       key=lambda e: e.time, reverse=True)
+
+
+def page(number: int, size: int = 20, history_path: Path | None = None,
+         path: Path | None = None) -> tuple[list[Entry], bool]:
+    """Página ``number`` (desde 0) de ``size`` tarjetas, y si hay más antiguas detrás."""
+    start = max(0, number) * size
+    items = list(islice(iter_entries(history_path, path), start, start + size + 1))
+    return items[:size], len(items) > size
 
 
 def load(limit: int = 300, history: History | None = None, path: Path | None = None) -> list[Entry]:
-    """Lo más reciente primero."""
-    items = _renames(history or History()) + _conversions(path or ACTIVITY_FILE)
-    items.sort(key=lambda e: e.time, reverse=True)
-    return items[:limit]
+    """Lo más reciente primero, hasta ``limit``."""
+    return list(islice(iter_entries(history.path if history else None, path), limit))

@@ -102,12 +102,13 @@ class HistoryCard(QFrame):
 
 
 class HistoryView(QWidget):
-    """Lista de tarjetas, lo más reciente arriba. Se carga al abrir la pestaña."""
+    """Tarjetas de 20 en 20, lo más reciente primero. Cada página se lee al pedirla."""
 
-    LIMIT = 300
+    PAGE = 20
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.page = 0
         outer = QVBoxLayout(self)
         outer.setContentsMargins(16, 12, 16, 12)
         outer.setSpacing(8)
@@ -132,16 +133,42 @@ class HistoryView(QWidget):
         self.scroll.setWidget(self.box)
         outer.addWidget(self.scroll, 1)
 
+        nav = QHBoxLayout()
+        self.newer_btn = QPushButton("‹  " + tr("hist_newer"))
+        self.newer_btn.clicked.connect(lambda: self.show_page(self.page - 1))
+        self.older_btn = QPushButton(tr("hist_older") + "  ›")
+        self.older_btn.clicked.connect(lambda: self.show_page(self.page + 1))
+        self.page_lbl = QLabel()
+        self.page_lbl.setObjectName("Muted")
+        self.page_lbl.setAlignment(Qt.AlignCenter)
+        nav.addWidget(self.newer_btn, 0)
+        nav.addWidget(self.page_lbl, 1)
+        nav.addWidget(self.older_btn, 0)
+        outer.addLayout(nav)
+
     def reload(self) -> None:
+        """Vuelve a la primera página (lo más reciente)."""
+        self.show_page(0)
+
+    def show_page(self, number: int) -> None:
+        number = max(0, number)
+        entries, more = activity.page(number, self.PAGE)
+        if not entries and number > 0:          # se ha vaciado por detrás: la última que haya
+            return self.show_page(number - 1)
+        self.page = number
         while self.cards.count() > 1:
             w = self.cards.takeAt(0).widget()
             if w is not None:
                 w.setParent(None)
                 w.deleteLater()
-        entries = activity.load(self.LIMIT)
-        if not entries:
-            self.summary.setText(tr("hist_empty"))
-            return
-        self.summary.setText(tr("hist_summary", n=len(entries)))
         for i, e in enumerate(entries):
             self.cards.insertWidget(i, HistoryCard(e))
+        self.scroll.verticalScrollBar().setValue(0)
+        first = number * self.PAGE + 1
+        self.summary.setText(tr("hist_summary") if entries else tr("hist_empty"))
+        self.page_lbl.setText(tr("hist_page", page=number + 1, a=first, b=first + len(entries) - 1)
+                              if entries else "")
+        self.newer_btn.setEnabled(number > 0)
+        self.older_btn.setEnabled(more)
+        for b in (self.newer_btn, self.older_btn):
+            b.setVisible(bool(entries) and (number > 0 or more))
