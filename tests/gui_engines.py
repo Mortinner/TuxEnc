@@ -12,6 +12,7 @@ from tuxenc import i18n; i18n.set_language(lang)
 from tuxenc.app import _make_app
 app = _make_app()
 import tuxenc.ui.main_window as mw
+import tuxenc.ui.settings_window as sw
 from retitler.config import KeyStore
 KeyStore.BUILTIN = {"tmdb": "x" * 32, "tvdb": "y" * 36}             # como el AppImage oficial
 import tuxenc.ui.dialogs as dl
@@ -33,7 +34,7 @@ dlg.grab().save(f"/tmp/shots-merge/{lang}-17-buscadores.png")
 rp.key_rows["omdb"][0].setText("abcd1234"); rp._save_key("omdb"); pump(0.2)
 print("IMDb tras poner la mía:", rp.key_rows["omdb"][1].text().split(" · ")[0], "| botón quitar:", rp.key_rows["omdb"][2].isVisible())
 rp._clear_key("omdb"); pump(0.2); print("IMDb tras quitarla:", rp.key_rows["omdb"][1].text()[:40])
-dlg.tabs.setCurrentIndex(5); pump(0.2)
+dlg.tabs.setCurrentIndex(sw.TABS.index("about")); pump(0.2)
 sa = dlg.tabs.currentWidget(); sa.verticalScrollBar().setValue(sa.verticalScrollBar().maximum()); pump(0.2)
 dlg.grab().save(f"/tmp/shots-merge/{lang}-18-creditos.png")
 dlg.hide()
